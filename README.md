@@ -4,7 +4,8 @@
 
 **سازندهٔ کانفیگ V2Ray روی سرور خودت — VLESS Reality + WARP، با یک دستور.**
 
-![Phase](https://img.shields.io/badge/Phase%201-LIVE-2ee6a6?style=flat-square)
+![Phase](https://img.shields.io/badge/Phase%202-LIVE-2ee6a6?style=flat-square)
+![Subscription](https://img.shields.io/badge/Subscription-link-22c55e?style=flat-square)
 ![Protocol](https://img.shields.io/badge/VLESS-Reality%20%2B%20Vision-22d3ee?style=flat-square)
 ![Engine](https://img.shields.io/badge/Xray--core-latest-7c5cff?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-9fb6c8?style=flat-square)
@@ -23,6 +24,9 @@
 - 🧷 **نصب مقاوم در برابر قطعی** — اگر وسط کار SSH قطع شد، نصب در پس‌زمینه ادامه می‌دهد؛ فقط بعد وضعیت می‌گیری.
 - ⚙️ **دو حالت Reality**: مستقیم (سرعت بالا) و WARP (همه‌چیز باز، رفع محدودیت پروایدر).
 - 👥 **مدیریت کاربر**: تعداد کاربر، حجم، مدت اعتبار — با اعمال خودکار محدودیت.
+- 🔗 **لینک Subscription**: برای هر کاربر یک لینک واحد؛ در v2rayNG واردش می‌کنی و همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.
+- 🩹 **پایداری**: WARP با WireGuard/MASQUE + بازگشت خودکار به مستقیم اگر قطع شد؛ خودتشخیصی مشکلات در `status`؛ بهینه‌سازی سرعت (BBR).
+- ♻️ **نصب مجدد امن**: نصب دوباره کاربران قبلی را پاک نمی‌کند (بکاپ + ادغام خودکار).
 
 > ⚠️ **این روش برای کدام سرورها؟** فقط برای سرورهایی که **از داخل ایران بدون فیلترشکن می‌توان به آن‌ها SSH زد** و آی‌پی/پورتشان از ایران در دسترس است. اتصال با دامنه/CDN برای سرورهای کاملاً بلاک‌شده در فازهای بعدی اضافه می‌شود → [docs/connect-now.md](docs/connect-now.md)
 
@@ -47,6 +51,7 @@ bash /tmp/kian-v2ray.sh status   #  یا بعد از نصب:  kian-v2ray status
 ```
 
 6. لینک‌های کاربر را از همان صفحهٔ تعاملی کپی/پخش کن — یا روی سرور: `kian-v2ray configs`
+7. **ساده‌تر:** به هر کاربر فقط **لینک Subscription** را بده (در صفحهٔ تعاملی برای هر کاربر نمایش داده می‌شود)؛ او همان یک لینک را در v2rayNG وارد می‌کند و همهٔ کانفیگ‌ها خودکار می‌آیند.
 
 ---
 
@@ -73,8 +78,9 @@ Xray-core  (Docker · network host)
 | VLESS + Reality + Vision (مستقیم) | ✅ فاز ۱ |
 | VLESS + Reality + Vision (WARP) | ✅ فاز ۱ |
 | Shadowsocks (chacha20-ietf-poly1305) | ✅ اختیاری |
-| VLESS/VMess + WS / gRPC / HTTPUpgrade + TLS (دامنه) | 🔜 فاز ۲ |
-| فرانت CDN (Cloudflare) | 🔜 فاز ۳ |
+| لینک Subscription (تک‌لینک، خودکار-آپدیت) | ✅ فاز ۲ |
+| VLESS/VMess + WS / gRPC / HTTPUpgrade + TLS (دامنه) | 🔜 فاز ۳ |
+| فرانت CDN (Cloudflare) | 🔜 فاز ۴ |
 | Hysteria2 / TUIC | 🔜 فاز ۵+ |
 
 نقشهٔ کامل: [ROADMAP.md](ROADMAP.md)
@@ -86,12 +92,16 @@ Xray-core  (Docker · network host)
 ```bash
 kian-v2ray status                  # وضعیت سرویس، WARP، کاربرها
 kian-v2ray configs [نام]           # نمایش لینک‌ها + QR ترمینالی
+kian-v2ray sub     [نام]           # ساخت فایل لینک Subscription هر کاربر
 kian-v2ray users                   # فهرست کاربرها + مصرف/انقضا
 kian-v2ray add <نام> [حجم_GB] [روز]   # افزودن کاربر (پیش‌فرض 100GB / 30روز)
 kian-v2ray remove <نام>            # حذف کاربر
 kian-v2ray reset  <نام> [حجم_GB]   # صفر کردن مصرف
 kian-v2ray renew  <نام> [روز]      # تمدید اعتبار
 kian-v2ray update                  # آپدیت Xray به آخرین نسخه
+kian-v2ray warp                    # تلاش مجدد/برگرداندن WARP (WireGuard/MASQUE)
+kian-v2ray fixport                 # رفع تداخل پورت آمار با پنل‌های دیگر
+kian-v2ray untune                  # بازگرداندن بهینه‌سازی شبکه (BBR)
 kian-v2ray uninstall               # حذف کامل
 ```
 
