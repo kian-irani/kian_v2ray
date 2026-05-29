@@ -187,6 +187,7 @@ function readForm() {
     sniMode,
     manualSni,
     sniCount:  Math.max(1, Math.min(5, sniCount || 2)),
+    basePort:  Math.max(1, Math.min(65535, parseInt(($('#base-port') && $('#base-port').value) || BASE_PORT, 10) || BASE_PORT)),
     numUsers:  Math.min(50, Math.max(1, parseInt($('#num-users').value, 10) || 1)),
     prefix:   ($('#user-prefix').value.trim() || 'user').replace(/[^a-zA-Z0-9_-]/g, ''),
     quotaGb:  parseInt($('#quota').value, 10),        // 0 = نامحدود
@@ -219,7 +220,7 @@ function generate(f) {
 
   // ساخت پروفایل‌ها: برای هر (کانال × SNI) یک inbound با پورت خودکار
   const profiles = [];
-  let port = BASE_PORT;
+  let port = f.basePort || BASE_PORT;
   const nextPort = () => { while (f.ss.enabled && port === f.ss.port) port++; return port++; };
   channels.forEach(ch => {
     sniList.forEach((sni, i) => {
@@ -561,6 +562,7 @@ function init() {
 
     if (!isIPv4(f.serverIp)) { err.textContent = 'آی‌پی سرور معتبر نیست (نمونه: 203.0.113.10).'; $('#server-ip').focus(); return; }
     if (f.sniMode === 'manual' && !f.manualSni) { err.textContent = 'یک دامنهٔ استتار (SNI) انتخاب یا وارد کن.'; return; }
+    if (f.basePort > 65500) { err.textContent = 'پورت پایه خیلی بالاست؛ عددی کمتر (مثلاً 8443 یا 9443) انتخاب کن.'; return; }
     if (f.ss.enabled && (f.ss.port < 1 || f.ss.port > 65535)) { err.textContent = 'پورت Shadowsocks نامعتبر است.'; return; }
 
     const btn = $('#gen-btn');

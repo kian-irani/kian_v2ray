@@ -21,7 +21,8 @@ CONTAINER="kian-xray"
 WARP_PORT=40000
 GIB=1073741824
 ETC_DIR="/etc/kian-v2ray"
-XRAY_DIR="/etc/xray"
+XRAY_DIR="/etc/kian-v2ray"          # config.json ایزوله (به /etc/xray دست نمی‌زند)
+LOG_DIR="/var/log/kian-xray"
 USERS_FILE="$ETC_DIR/users.json"
 LINKS_FILE="$ETC_DIR/links.txt"
 INFO_FILE="$ETC_DIR/info.txt"
@@ -211,7 +212,7 @@ cmd_update(){
     echo "$img" > "$IMAGE_FILE"
     docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
     docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" \
-      -v "$CONFIG:/etc/xray/config.json:ro" -v "/var/log/xray:/var/log/xray" \
+      -v "$CONFIG:/etc/xray/config.json:ro" -v "$LOG_DIR:/var/log/xray" \
       "$img" run -c /etc/xray/config.json >/dev/null
     sleep 2
     docker ps --format '{{.Names}}' | grep -qx "$CONTAINER" && say "به‌روزرسانی شد → $img" || err "کانتینر بالا نیامد"
@@ -220,15 +221,15 @@ cmd_update(){
 
 cmd_uninstall(){
   need_root
-  warn "این کار Xray و همه‌ی کانفیگ‌ها را حذف می‌کند."
+  warn "این کار فقط Xrayِ kian-v2ray (kian-xray) و فایل‌های خودش را حذف می‌کند."
+  warn "به پنل‌ها/Xrayهای دیگرِ این سرور (/etc/xray) دست نمی‌زند."
   read -rp "برای تأیید بنویس: DELETE  → " ans
   [ "$ans" = "DELETE" ] || { inf "لغو شد."; exit 0; }
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
   rm -f /etc/cron.d/kian-v2ray-watchdog /usr/local/bin/kian-v2ray-watchdog.sh
-  rm -rf "$ETC_DIR" "$XRAY_DIR" /opt/kian-v2ray
-  command -v warp-cli >/dev/null 2>&1 && { warp-cli --accept-tos disconnect >/dev/null 2>&1 || true; }
+  rm -rf "$ETC_DIR" /opt/kian-v2ray "$LOG_DIR"
   rm -f /usr/local/bin/kian-v2ray
-  say "حذف کامل شد. (WARP در صورت نیاز: apt remove cloudflare-warp)"
+  say "حذف کامل شد. (WARP و سایر سرویس‌ها دست‌نخورده ماندند.)"
 }
 
 cmd_help(){

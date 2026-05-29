@@ -4,14 +4,14 @@
 #   • اطمینان از اجرای کانتینر Xray
 #   • اطمینان از اتصال WARP (در صورت نصب)
 #   • محاسبه‌ی مصرف هر کاربر و اعمال محدودیت حجم/انقضا
-#  بدون آرگومان اجرا می‌شود؛ خروجی به /var/log/xray/watchdog.log می‌رود.
+#  بدون آرگومان اجرا می‌شود؛ خروجی به /var/log/kian-xray/watchdog.log می‌رود.
 # ============================================================================
 set -uo pipefail
 
 CONTAINER="kian-xray"
 WARP_PORT=40000
 ETC_DIR="/etc/kian-v2ray"
-XRAY_DIR="/etc/xray"
+XRAY_DIR="/etc/kian-v2ray"
 USERS_FILE="$ETC_DIR/users.json"
 API="127.0.0.1:10085"
 ts(){ date -u +%FT%TZ; }
