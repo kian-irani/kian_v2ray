@@ -24,6 +24,7 @@ set -uo pipefail
 CONTAINER="kian-xray"
 WARP_PORT=40000
 GIB=1073741824
+RAW_BASE="https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 ETC_DIR="/etc/kian-v2ray"
 XRAY_DIR="/etc/kian-v2ray"          # config.json ایزوله (به /etc/xray دست نمی‌زند)
 LOG_DIR="/var/log/kian-xray"
@@ -382,19 +383,69 @@ cmd_renew(){
 
 cmd_update(){
   need_root
-  inf "گرفتن آخرین نسخه‌ی Xray-core..."
-  local tag img
-  tag="$(curl -fsSL https://api.github.com/repos/XTLS/Xray-core/releases/latest 2>/dev/null | jq -r '.tag_name // empty' | sed 's/^v//')"
-  if [ -n "$tag" ]; then img="ghcr.io/xtls/xray-core:$tag"; else img="ghcr.io/xtls/xray-core:latest"; fi
+  # نسخهٔ پایدار را از VERSION ریپو بخوان (نه latest کور)
+  inf "چک نسخهٔ پایدار..."
+  local remote sv xv
+  remote="$(curl -fsSL "$RAW_BASE/VERSION" 2>/dev/null || true)"
+  sv="$(printf '%s' "$remote" | grep '^SCRIPT_VERSION=' | cut -d= -f2 | tr -d '\r ')"
+  xv="$(printf '%s' "$remote" | grep '^XRAY_VERSION=' | cut -d= -f2 | tr -d '\r ')"
+  [ -z "$xv" ] && xv="latest"
+  local cur_sv; cur_sv="$(cat "$ETC_DIR/script_version.txt" 2>/dev/null || echo "?")"
+  inf "نسخهٔ اسکریپت — فعلی: $cur_sv | جدید: ${sv:-?}"
+  inf "نسخهٔ Xray  — هدف: $xv"
+
+  # بکاپ همه‌چیز قبل از آپدیت (برای rollback)
+  local bdir="$ETC_DIR/backups" bts; bts="$(date -u +%Y%m%d-%H%M%S)"
+  mkdir -p "$bdir"
+  cp "$CONFIG" "$bdir/config_${bts}.json" 2>/dev/null || true
+  cp "$USERS_FILE" "$bdir/users_${bts}.json" 2>/dev/null || true
+  cp /usr/local/bin/kian-v2ray "$bdir/kian-v2ray_${bts}" 2>/dev/null || true
+  local prev_img; prev_img="$(cat "$IMAGE_FILE" 2>/dev/null || echo '')"
+  echo "ROLLBACK_IMG=$prev_img" > "$bdir/rollback_${bts}.env"
+
+  # ۱) آپدیت اسکریپت‌ها (manager + watchdog + sub-server)
+  inf "دریافت اسکریپت‌های جدید..."
+  local ok_scripts=1
+  curl -fsSL "$RAW_BASE/scripts/kian-v2ray"   -o /usr/local/bin/kian-v2ray.new   && chmod +x /usr/local/bin/kian-v2ray.new   || ok_scripts=0
+  curl -fsSL "$RAW_BASE/scripts/watchdog.sh"  -o /usr/local/bin/kian-v2ray-watchdog.sh.new && chmod +x /usr/local/bin/kian-v2ray-watchdog.sh.new || ok_scripts=0
+  curl -fsSL "$RAW_BASE/scripts/sub-server.py" -o /usr/local/bin/kian-sub-server.py.new && chmod +x /usr/local/bin/kian-sub-server.py.new || ok_scripts=0
+  # اعتبارسنجی نحوی قبل از جایگزینی
+  if [ "$ok_scripts" = 1 ] && bash -n /usr/local/bin/kian-v2ray.new 2>/dev/null && bash -n /usr/local/bin/kian-v2ray-watchdog.sh.new 2>/dev/null && python3 -c "import ast,sys; ast.parse(open('/usr/local/bin/kian-sub-server.py.new').read())" 2>/dev/null; then
+    mv /usr/local/bin/kian-v2ray.new /usr/local/bin/kian-v2ray
+    mv /usr/local/bin/kian-v2ray-watchdog.sh.new /usr/local/bin/kian-v2ray-watchdog.sh
+    mv /usr/local/bin/kian-sub-server.py.new /usr/local/bin/kian-sub-server.py
+    systemctl restart kian-sub >/dev/null 2>&1 || true
+    say "اسکریپت‌ها به‌روز شدند"
+  else
+    rm -f /usr/local/bin/*.new 2>/dev/null
+    warn "دریافت/اعتبارسنجی اسکریپت‌ها ناموفق — اسکریپت‌های فعلی دست‌نخورده ماند"
+  fi
+
+  # ۲) آپدیت Xray به نسخهٔ pin‌شده (با rollback اگر بالا نیامد)
+  local img="ghcr.io/xtls/xray-core:$xv"
   if docker pull "$img" >/dev/null 2>&1; then
-    echo "$img" > "$IMAGE_FILE"
     docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
     docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" \
       -v "$CONFIG:/etc/xray/config.json:ro" -v "$LOG_DIR:/var/log/xray" \
-      "$img" run -c /etc/xray/config.json >/dev/null
-    sleep 2
-    docker ps --format '{{.Names}}' | grep -qx "$CONTAINER" && say "به‌روزرسانی شد → $img" || err "کانتینر بالا نیامد"
-  else err "pull نسخه ناموفق ($img)"; fi
+      "$img" run -c /etc/xray/config.json >/dev/null 2>&1 || true
+    sleep 3
+    if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+      echo "$img" > "$IMAGE_FILE"; say "Xray به‌روز شد → $img"
+    elif [ -n "$prev_img" ]; then
+      warn "نسخهٔ جدید بالا نیامد — rollback به $prev_img"
+      docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+      docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" \
+        -v "$CONFIG:/etc/xray/config.json:ro" -v "$LOG_DIR:/var/log/xray" \
+        "$prev_img" run -c /etc/xray/config.json >/dev/null 2>&1 || true
+      sleep 2
+      docker ps --format '{{.Names}}' | grep -qx "$CONTAINER" && say "rollback موفق — نسخهٔ قبلی برگشت" || err "rollback هم ناموفق — لاگ: docker logs $CONTAINER"
+    fi
+  else warn "pull نسخهٔ $img ناموفق — Xray دست‌نخورده ماند"; fi
+
+  # ۳) ثبت نسخهٔ جدید + کاربران دست‌نخورده می‌مانند (config/users.json تغییر نکرد)
+  [ -n "$sv" ] && echo "$sv" > "$ETC_DIR/script_version.txt"
+  say "آپدیت کامل شد. کاربران و کانفیگ‌ها حفظ شدند. (بکاپ: $bdir/*_${bts}.*)"
+  inf "برای دیدن وضعیت: kian-v2ray status"
 }
 
 cmd_uninstall(){

@@ -21,6 +21,7 @@ const SNI_POOL = [
   's3.amazonaws.com',
   'fonts.gstatic.com',
   'speedtest.net',
+  'www.amazon.com',
 ];
 
 // انتخاب n دامنهٔ متمایز و تصادفی از لیست بالا
@@ -477,11 +478,17 @@ function initTabs() {
   tabs.forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
   // کارت‌های راهنما (بار اول / قبلاً نصب کردم / لینک کاربر)
   $$('.guide-card').forEach(c => c.addEventListener('click', () => {
-    switchTab(c.dataset.go);
-    // اگر مقصد «مدیریت» است و کارت مربوط به افزودن/لینک بود، عملیات مناسب را از پیش انتخاب کن
+    const go = c.dataset.go;
+    if (go === 'gen-stay') {  // «بار اولمه» — همین‌جا بمان، فقط به فرم اسکرول کن
+      try { $('#gen-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+      return;
+    }
+    switchTab(go);
+    // اگر مقصد «مدیریت» است، عملیات مناسب را بر اساس آیکون کارت از پیش انتخاب کن
     const sel = $('#mg-action');
-    if (c.dataset.go === 'manage' && sel) {
-      sel.value = c.querySelector('.guide-ic')?.textContent.includes('🔗') ? 'sub' : 'add';
+    if (go === 'manage' && sel) {
+      const ic = c.querySelector('.guide-ic')?.textContent || '';
+      sel.value = ic.includes('🔗') ? 'sub' : ic.includes('❌') ? 'uninstall' : 'add';
       sel.dispatchEvent(new Event('change'));
     }
   }));
@@ -546,6 +553,7 @@ function initManage() {
       sub:    { name: true,  gb: false, days: false },
       status: { name: false, gb: false, days: false },
       users:  { name: false, gb: false, days: false },
+      update: { name: false, gb: false, days: false },
       uninstall: { name: false, gb: false, days: false },
     }[a] || { name: false, gb: false, days: false };
     nameF.classList.toggle('hidden', !need.name);
@@ -561,6 +569,7 @@ function initManage() {
     else if (a === 'sub')    cmd = `kian-v2ray sub ${name}`;
     else if (a === 'status') cmd = `kian-v2ray status`;
     else if (a === 'users')  cmd = `kian-v2ray users`;
+    else if (a === 'update') cmd = `kian-v2ray update`;
     else if (a === 'uninstall') cmd = `kian-v2ray uninstall`;
     out.textContent = cmd;
   }

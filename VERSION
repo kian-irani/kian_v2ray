@@ -1,0 +1,8 @@
+# نسخهٔ اسکریپت‌ها و نصب‌کنندهٔ kian-v2ray
+# این فایل توسط install.sh و «kian-v2ray update» خوانده می‌شود.
+# هر بار که اسکریپت‌ها/نصب‌کننده را تغییر دادی، SCRIPT_VERSION را بالا ببر.
+# XRAY_VERSION نسخهٔ pin‌شدهٔ Xray-core است (تست‌شده و سازگار).
+# نسخه‌های Xray: https://github.com/XTLS/Xray-core/releases
+
+SCRIPT_VERSION=2.0.0
+XRAY_VERSION=26.5.9

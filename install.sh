@@ -374,6 +374,9 @@ if ! docker pull "$XRAY_IMAGE" >/dev/null 2>&1; then
   XRAY_IMAGE="$XRAY_IMAGE_FALLBACK"; docker pull "$XRAY_IMAGE" >/dev/null 2>&1 || true
 fi
 echo "$XRAY_IMAGE" > "$ETC_DIR/image.txt"
+# ثبت نسخهٔ اسکریپت (برای مقایسه در «kian-v2ray update»)
+SCRIPT_VER="$(curl -fsSL "$RAW_BASE/VERSION" 2>/dev/null | grep '^SCRIPT_VERSION=' | cut -d= -f2 | tr -d '\r ')"
+[ -n "$SCRIPT_VER" ] && echo "$SCRIPT_VER" > "$ETC_DIR/script_version.txt"
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 sleep 1
 # جلوگیری از تداخل با Xray/پنل دیگری که از قبل روی همین پورت‌ها فعال است.

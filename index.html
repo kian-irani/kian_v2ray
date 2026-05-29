@@ -50,15 +50,19 @@
   </nav>
 </div>
 
-<!-- ===================== GUIDE BANNER ===================== -->
-<div class="wrap">
+<main class="wrap">
+
+<!-- ===================== TAB: GENERATE ===================== -->
+<section class="panel-tab active" data-panel="gen">
+
+  <!-- راهنمای انتخاب مسیر — فقط در همین تب -->
   <div class="guide" id="guide">
     <div class="guide-q">کدوم وضعیت تویی؟ 👇</div>
     <div class="guide-cards">
-      <button type="button" class="guide-card" data-go="gen">
+      <button type="button" class="guide-card" data-go="gen-stay">
         <div class="guide-ic">🆕</div>
         <div class="guide-tt">بار اولمه</div>
-        <div class="guide-ds">می‌خوام روی یه سرور تازه نصب کنم و کانفیگ بگیرم</div>
+        <div class="guide-ds">می‌خوام روی یه سرور تازه نصب کنم و کانفیگ بگیرم — فرم پایین رو پر کن</div>
       </button>
       <button type="button" class="guide-card" data-go="manage">
         <div class="guide-ic">➕</div>
@@ -70,15 +74,14 @@
         <div class="guide-tt">لینک کاربرم رو می‌خوام</div>
         <div class="guide-ds">می‌خوام لینک Subscription یا کانفیگ یه کاربر موجود رو بگیرم</div>
       </button>
+      <button type="button" class="guide-card" data-go="manage">
+        <div class="guide-ic">❌</div>
+        <div class="guide-tt">می‌خوام کلاً حذف کنم</div>
+        <div class="guide-ds">سرویس رو کامل از سرور پاک کنم (uninstall)</div>
+      </button>
     </div>
     <div class="guide-warn">⚠️ اگه قبلاً نصب کردی و فقط می‌خوای کاربر اضافه کنی، <b>دوباره نصب نکن</b> — از «مدیریت کاربر» استفاده کن. نصب دوباره فقط وقتی لازمه که بخوای تنظیمات پایه (پورت/SNI) رو عوض کنی (کاربرهای قبلی خودکار حفظ می‌شن).</div>
   </div>
-</div>
-
-<main class="wrap">
-
-<!-- ===================== TAB: GENERATE ===================== -->
-<section class="panel-tab active" data-panel="gen">
 
   <div class="notice">
     <div class="notice-ic">📡</div>
@@ -433,6 +436,7 @@
         <option value="remove">🗑️ حذف کاربر</option>
         <option value="users">📋 لیست همهٔ کاربرها و مصرف</option>
         <option value="status">📊 وضعیت سرویس</option>
+        <option value="update">⬆️ آپدیت به آخرین نسخه (حفظ کاربران)</option>
         <option value="uninstall">❌ حذف کامل نصب از سرور</option>
       </select>
     </div>
