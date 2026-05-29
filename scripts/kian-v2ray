@@ -48,10 +48,10 @@ meta_ss(){ jq -r '[.inbounds[]|select(.tag=="shadowsocks")|{p:.port,pw:.settings
 
 urlenc_label(){ printf '%s' "$1" | sed 's/ /%20/g'; }   # برچسب ساده‌ی ASCII
 
-build_vless(){ # uuid port label
-  local uuid="$1" port="$2" label="$3"
+build_vless(){ # uuid port sni label
+  local uuid="$1" port="$2" sni="$3" label="$4"
   printf 'vless://%s@%s:%s?encryption=none&flow=xtls-rprx-vision&security=reality&sni=%s&fp=chrome&pbk=%s&sid=%s&type=tcp#%s\n' \
-    "$uuid" "$(meta_ip)" "$port" "$(meta_sni)" "$(meta_pbk)" "$(meta_sid)" "$(urlenc_label "$label")"
+    "$uuid" "$(meta_ip)" "$port" "$sni" "$(meta_pbk)" "$(meta_sid)" "$(urlenc_label "$label")"
 }
 show_qr(){ command -v qrencode >/dev/null 2>&1 && printf '%s' "$1" | qrencode -t ANSIUTF8 -m 1 2>/dev/null || true; }
 
@@ -113,22 +113,23 @@ cmd_users(){
 
 cmd_configs(){
   need_jq; need_files
-  local filter="${1:-}" pd pw ss
-  pd="$(meta_port reality-direct)"; pw="$(meta_port reality-warp)"; ss="$(meta_ss)"
+  local filter="${1:-}" ss inbounds_tsv
+  ss="$(meta_ss)"
   [ -n "$(meta_pbk)" ] || { err "کلید عمومی در links.txt پیدا نشد."; exit 1; }
+
+  # همهٔ inboundهای reality:  tag \t port \t sni
+  inbounds_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("reality-"))|[.tag,(.port|tostring),(.streamSettings.realitySettings.serverNames[0]//"")]|@tsv' "$CONFIG")"
 
   jq -r '.users[]|select(.active==true)|.id+"\t"+.email' "$USERS_FILE" | while IFS=$'\t' read -r uuid email; do
     local local_name="${email%@*}"
     [ -n "$filter" ] && [ "$filter" != "$local_name" ] && [ "$filter" != "$email" ] && continue
     printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
-    if [ -n "$pd" ]; then
-      local l; l="$(build_vless "$uuid" "$pd" "KIAN-${local_name}-Direct")"
-      printf "${C_G}• Reality مستقیم:${C_N}\n%s\n" "$l"; show_qr "$l"
-    fi
-    if [ -n "$pw" ]; then
-      local l; l="$(build_vless "$uuid" "$pw" "KIAN-${local_name}-WARP")"
-      printf "${C_G}• Reality + WARP:${C_N}\n%s\n" "$l"; show_qr "$l"
-    fi
+    printf '%s\n' "$inbounds_tsv" | while IFS=$'\t' read -r tag port sni; do
+      [ -z "$tag" ] && continue
+      local ch="سریع"; case "$tag" in *warp*) ch="WARP";; esac
+      local l; l="$(build_vless "$uuid" "$port" "$sni" "KIAN-${local_name}-${ch}-${sni}")"
+      printf "${C_G}• %s · %s · پورت %s:${C_N}\n%s\n" "$ch" "$sni" "$port" "$l"; show_qr "$l"
+    done
   done
   if [ -n "$ss" ] && { [ -z "$filter" ] || [ "$filter" = "ss" ]; }; then
     read -r sp sm spw <<<"$ss"

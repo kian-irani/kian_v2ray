@@ -127,31 +127,40 @@
       </button>
       <div class="adv-body hidden" id="adv-body">
         <div class="field">
-          <label for="sni">دامنهٔ استتار (SNI)</label>
+          <label for="sni-mode">دامنهٔ استتار (SNI)</label>
+          <select id="sni-mode">
+            <option value="auto" selected>خودکار — چند دامنهٔ امن (پیشنهادی)</option>
+            <option value="manual">دستی — یک دامنهٔ مشخص</option>
+          </select>
+          <small class="hint">حالت خودکار چند دامنهٔ در-دسترس روی چند پورت می‌سازه تا اگه یکی بسته شد، بقیه کار کنن.</small>
+        </div>
+        <div class="field" id="field-sni-count">
+          <label for="sni-count">چند دامنه/کانفیگ ساخته بشه؟</label>
+          <select id="sni-count">
+            <option value="1">۱ دامنه</option>
+            <option value="2" selected>۲ دامنه (پیشنهادی)</option>
+            <option value="3">۳ دامنه</option>
+          </select>
+        </div>
+        <div class="field hidden" id="field-sni">
+          <label for="sni">دامنهٔ دستی</label>
           <select id="sni">
-            <option value="www.yahoo.com" selected>www.yahoo.com (پیش‌فرض)</option>
-            <option value="dl.google.com">dl.google.com</option>
-            <option value="www.microsoft.com">www.microsoft.com</option>
+            <option value="www.speedtest.net" selected>www.speedtest.net</option>
             <option value="www.bing.com">www.bing.com</option>
-            <option value="www.icloud.com">www.icloud.com</option>
-            <option value="addons.mozilla.org">addons.mozilla.org</option>
+            <option value="www.microsoft.com">www.microsoft.com</option>
+            <option value="www.apple.com">www.apple.com</option>
+            <option value="gateway.icloud.com">gateway.icloud.com</option>
+            <option value="www.samsung.com">www.samsung.com</option>
+            <option value="www.nvidia.com">www.nvidia.com</option>
+            <option value="cdn.jsdelivr.net">cdn.jsdelivr.net</option>
+            <option value="www.cloudflare.com">www.cloudflare.com</option>
             <option value="__custom__">دامنهٔ دلخواه…</option>
           </select>
-          <small class="hint">اگه اتصال برقرار نشد، یکی دیگه رو امتحان کن. پیش‌فرض برای اغلب سرورها خوبه.</small>
+          <small class="hint">دامنه‌ای انتخاب کن که در ایران فیلتر نباشه و TLS 1.3 داشته باشه.</small>
         </div>
         <div class="field hidden" id="field-sni-custom">
           <label for="sni-custom">دامنهٔ دلخواه</label>
           <input id="sni-custom" type="text" placeholder="example.com" autocomplete="off" spellcheck="false">
-        </div>
-        <div class="grid2">
-          <div class="field" id="field-port-direct">
-            <label for="port-direct">پورت «سریع»</label>
-            <input id="port-direct" type="number" min="1" max="65535" value="8443">
-          </div>
-          <div class="field" id="field-port-warp">
-            <label for="port-warp">پورت «WARP»</label>
-            <input id="port-warp" type="number" min="1" max="65535" value="8444">
-          </div>
         </div>
         <label class="switch">
           <input type="checkbox" id="ss-enabled">
@@ -187,6 +196,7 @@
           <label for="user-prefix">نام پایهٔ کاربر</label>
           <input id="user-prefix" type="text" value="user" placeholder="user" autocomplete="off" spellcheck="false">
         </div>
+        <p class="muted small">پورت‌ها خودکار انتخاب می‌شن (از ۸۴۴۳ به بعد) — لازم نیست کاری بکنی.</p>
       </div>
 
       <div id="form-error" class="form-error" role="alert"></div>

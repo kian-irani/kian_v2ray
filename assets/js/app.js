@@ -10,6 +10,31 @@ const RAW_BASE = 'https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main';
 const WARP_PORT = 40000;
 const SS_METHOD = 'chacha20-ietf-poly1305';
 const GIB = 1073741824;
+const BASE_PORT = 8443;        // پورت‌ها از اینجا به‌صورت خودکار اضافه می‌شوند
+
+// دامنه‌های استتار (SNI) — TLS 1.3 و معمولاً در ایران در دسترس‌اند (yahoo حذف شد)
+const SNI_POOL = [
+  'www.speedtest.net',
+  'www.bing.com',
+  'www.microsoft.com',
+  'update.microsoft.com',
+  'www.apple.com',
+  'gateway.icloud.com',
+  'www.samsung.com',
+  'www.nvidia.com',
+  'cdn.jsdelivr.net',
+  'www.cloudflare.com',
+];
+
+// انتخاب n دامنهٔ متمایز و تصادفی از لیست بالا
+function pickSNIs(n) {
+  const pool = SNI_POOL.slice();
+  for (let i = pool.length - 1; i > 0; i--) {       // Fisher–Yates
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.max(1, Math.min(n, pool.length)));
+}
 
 /* ----------------------------- helpers --------------------------------- */
 const $  = (s, el = document) => el.querySelector(s);
@@ -57,25 +82,25 @@ function genReality() {
 }
 
 /* ----------------------------- Xray config ----------------------------- */
+// o.profiles: [{ tag, port, sni, channel:'direct'|'warp' }]
 function buildConfig(o) {
-  const wantDirect = o.mode === 'direct' || o.mode === 'both';
-  const wantWarp   = o.mode === 'warp'   || o.mode === 'both';
   const clients = o.users.map(u => ({ id: u.id, email: u.email, flow: 'xtls-rprx-vision' }));
+  const anyWarp = o.profiles.some(p => p.channel === 'warp');
 
-  const realityInbound = (tag, port) => ({
+  const realityInbound = (p) => ({
     listen: '0.0.0.0',
-    port,
+    port: p.port,
     protocol: 'vless',
-    tag,
+    tag: p.tag,
     settings: { clients: clients.map(c => ({ ...c })), decryption: 'none' },
     streamSettings: {
       network: 'tcp',
       security: 'reality',
       realitySettings: {
         show: false,
-        dest: `${o.sni}:443`,
+        dest: `${p.sni}:443`,
         xver: 0,
-        serverNames: [o.sni],
+        serverNames: [p.sni],
         privateKey: o.reality.privateKey,
         shortIds: [o.reality.shortId],
       },
@@ -86,8 +111,7 @@ function buildConfig(o) {
   const inbounds = [
     { listen: '127.0.0.1', port: 10085, protocol: 'dokodemo-door', settings: { address: '127.0.0.1' }, tag: 'api' },
   ];
-  if (wantDirect) inbounds.push(realityInbound('reality-direct', o.portDirect));
-  if (wantWarp)   inbounds.push(realityInbound('reality-warp',   o.portWarp));
+  o.profiles.forEach(p => inbounds.push(realityInbound(p)));
   if (o.ss.enabled) {
     inbounds.push({
       listen: '0.0.0.0',
@@ -103,17 +127,20 @@ function buildConfig(o) {
   }
 
   const outbounds = [{ tag: 'direct', protocol: 'freedom', settings: { domainStrategy: 'UseIP' } }];
-  if (wantWarp) outbounds.push({ tag: 'warp', protocol: 'socks', settings: { servers: [{ address: '127.0.0.1', port: WARP_PORT }] } });
+  if (anyWarp) outbounds.push({ tag: 'warp', protocol: 'socks', settings: { servers: [{ address: '127.0.0.1', port: WARP_PORT }] } });
   outbounds.push({ tag: 'block', protocol: 'blackhole', settings: {} });
 
-  const ssOut = o.mode === 'warp' ? 'warp' : 'direct';
+  const directTags = o.profiles.filter(p => p.channel === 'direct').map(p => p.tag);
+  const warpTags   = o.profiles.filter(p => p.channel === 'warp').map(p => p.tag);
+  const ssOut = directTags.length ? 'direct' : 'warp';
+
   const rules = [
     { type: 'field', inboundTag: ['api'], outboundTag: 'api' },
     { type: 'field', ip: ['geoip:private'], outboundTag: 'block' },
   ];
-  if (wantWarp)     rules.push({ type: 'field', inboundTag: ['reality-warp'],  outboundTag: 'warp' });
-  if (wantDirect)   rules.push({ type: 'field', inboundTag: ['reality-direct'], outboundTag: 'direct' });
-  if (o.ss.enabled) rules.push({ type: 'field', inboundTag: ['shadowsocks'],   outboundTag: ssOut });
+  if (warpTags.length)   rules.push({ type: 'field', inboundTag: warpTags,   outboundTag: 'warp' });
+  if (directTags.length) rules.push({ type: 'field', inboundTag: directTags, outboundTag: 'direct' });
+  if (o.ss.enabled)      rules.push({ type: 'field', inboundTag: ['shadowsocks'], outboundTag: ssOut });
 
   return {
     log: { loglevel: 'warning', access: '/var/log/xray/access.log', error: '/var/log/xray/error.log' },
@@ -152,16 +179,19 @@ function ssLink({ ip, port, password, label }) {
 function readForm() {
   const mode      = ($('input[name="mode"]:checked') || {}).value || 'both';
   const ssEnabled = $('#ss-enabled').checked;
+  const sniMode   = ($('#sni-mode') && $('#sni-mode').value) || 'auto';   // auto | manual
+  const manualSni = ($('#sni').value === '__custom__' ? $('#sni-custom').value.trim() : $('#sni').value).trim();
+  const sniCount  = parseInt(($('#sni-count') && $('#sni-count').value) || '2', 10);
   return {
     serverIp:  $('#server-ip').value.trim(),
-    sni:       ($('#sni').value === '__custom__' ? $('#sni-custom').value.trim() : $('#sni').value).trim(),
     mode,
-    portDirect: parseInt($('#port-direct').value, 10) || 8443,
-    portWarp:   parseInt($('#port-warp').value, 10)   || 8444,
-    numUsers:   Math.min(50, Math.max(1, parseInt($('#num-users').value, 10) || 1)),
-    prefix:    ($('#user-prefix').value.trim() || 'user').replace(/[^a-zA-Z0-9_-]/g, ''),
-    quotaGb:   parseInt($('#quota').value, 10),        // 0 = نامحدود
-    days:      parseInt($('#days').value, 10),         // 0 = دائمی
+    sniMode,
+    manualSni,
+    sniCount:  Math.max(1, Math.min(5, sniCount || 2)),
+    numUsers:  Math.min(50, Math.max(1, parseInt($('#num-users').value, 10) || 1)),
+    prefix:   ($('#user-prefix').value.trim() || 'user').replace(/[^a-zA-Z0-9_-]/g, ''),
+    quotaGb:  parseInt($('#quota').value, 10),        // 0 = نامحدود
+    days:     parseInt($('#days').value, 10),         // 0 = دائمی
     ss: {
       enabled: ssEnabled,
       port: parseInt($('#ss-port').value, 10) || 8388,
@@ -170,14 +200,30 @@ function readForm() {
   };
 }
 
+const CH_LABEL = { direct: 'سریع', warp: 'WARP' };
+
 /* ------------------------------ generate ------------------------------- */
 function generate(f) {
   const reality = genReality();
   if (f.ss.enabled) f.ss.password = genPassword();
 
-  const wantDirect = f.mode === 'direct' || f.mode === 'both';
-  const wantWarp   = f.mode === 'warp'   || f.mode === 'both';
+  // کانال‌ها بر اساس حالت
+  const channels = f.mode === 'both' ? ['direct', 'warp'] : [f.mode];
 
+  // لیست SNI: یا یک دامنهٔ دستی، یا چند دامنهٔ خودکار
+  const sniList = (f.sniMode === 'manual' && f.manualSni) ? [f.manualSni] : pickSNIs(f.sniCount);
+
+  // ساخت پروفایل‌ها: برای هر (کانال × SNI) یک inbound با پورت خودکار
+  const profiles = [];
+  let port = BASE_PORT;
+  const nextPort = () => { while (f.ss.enabled && port === f.ss.port) port++; return port++; };
+  channels.forEach(ch => {
+    sniList.forEach((sni, i) => {
+      profiles.push({ tag: `reality-${ch}-${i + 1}`, port: nextPort(), sni, channel: ch });
+    });
+  });
+
+  // کاربرها
   const users = [];
   for (let i = 1; i <= f.numUsers; i++) {
     users.push({
@@ -191,42 +237,35 @@ function generate(f) {
     });
   }
 
-  const config = buildConfig({ ...f, reality, users });
+  const config = buildConfig({ profiles, reality, users, ss: f.ss });
 
+  // لینک‌ها: برای هر کاربر، یک لینک به‌ازای هر پروفایل
   const links = [];
   const perUser = users.map(u => {
     const local = u.email.split('@')[0];
-    const out = { email: u.email, local, direct: null, warp: null };
-    if (wantDirect) {
-      out.direct = vlessLink({
-        uuid: u.id, ip: f.serverIp, port: f.portDirect, sni: f.sni,
-        pubkey: reality.publicKey, shortId: reality.shortId, label: `KIAN · ${local} · Direct`,
+    const items = profiles.map(p => {
+      const link = vlessLink({
+        uuid: u.id, ip: f.serverIp, port: p.port, sni: p.sni,
+        pubkey: reality.publicKey, shortId: reality.shortId,
+        label: `KIAN-${local}-${CH_LABEL[p.channel]}-${p.sni}`,
       });
-      links.push(out.direct);
-    }
-    if (wantWarp) {
-      out.warp = vlessLink({
-        uuid: u.id, ip: f.serverIp, port: f.portWarp, sni: f.sni,
-        pubkey: reality.publicKey, shortId: reality.shortId, label: `KIAN · ${local} · WARP`,
-      });
-      links.push(out.warp);
-    }
-    return out;
+      links.push(link);
+      return { channel: p.channel, sni: p.sni, port: p.port, link };
+    });
+    return { email: u.email, local, items };
   });
 
   let ssOut = null;
   if (f.ss.enabled) {
-    ssOut = ssLink({ ip: f.serverIp, port: f.ss.port, password: f.ss.password, label: 'KIAN · Shadowsocks' });
+    ssOut = ssLink({ ip: f.serverIp, port: f.ss.port, password: f.ss.password, label: 'KIAN-Shadowsocks' });
     links.push(ssOut);
   }
 
-  const ports = [];
-  if (wantDirect) ports.push(f.portDirect);
-  if (wantWarp)   ports.push(f.portWarp);
+  const ports = profiles.map(p => p.port);
   if (f.ss.enabled) ports.push(f.ss.port);
 
   const payload = {
-    warp_needed: wantWarp,
+    warp_needed: channels.includes('warp'),
     server_ip: f.serverIp,
     config_b64: utf8ToB64(JSON.stringify(config)),
     users_b64:  utf8ToB64(JSON.stringify({ users })),
@@ -239,7 +278,7 @@ function generate(f) {
     `export KIAN_PAYLOAD='${payloadB64}'\n` +
     `curl -fsSL ${RAW_BASE}/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh`;
 
-  return { f, reality, users, perUser, ssOut, ports, config, payloadB64, installCmd };
+  return { f, reality, users, perUser, ssOut, ports, profiles, sniList, config, payloadB64, installCmd };
 }
 
 /* ------------------------------ rendering ------------------------------ */
@@ -339,28 +378,32 @@ function render(out) {
 
   const step3 = document.createElement('div');
   step3.className = 'panel reveal';
-  const modeLabel  = { direct: 'فقط مستقیم', warp: 'فقط WARP', both: 'مستقیم + WARP' }[out.f.mode];
+  const modeLabel  = { direct: 'سریع', warp: 'WARP', both: 'سریع + WARP' }[out.f.mode];
   const quotaLabel = out.f.quotaGb > 0 ? `${out.f.quotaGb}GB` : 'نامحدود';
   const daysLabel  = out.f.days > 0 ? `${out.f.days} روز` : 'دائمی';
-  step3.innerHTML = `<div class="panel-title">۳) کانفیگ کاربرها (${out.users.length} کاربر)</div>
+  const linksPerUser = out.profiles.length;
+  step3.innerHTML = `<div class="panel-title">۳) کانفیگ کاربرها (${out.users.length} کاربر × ${linksPerUser} لینک)</div>
+    <p class="muted small">برای هر کاربر چند لینک با SNI و پورت‌های مختلف ساخته شد. توی اپ همه را وارد کن و <b>هرکدام وصل شد همان را استفاده کن</b> (بقیه پشتیبان‌اند).</p>
     <div class="badges">
       <span class="badge">${modeLabel}</span>
       <span class="badge">حجم: ${quotaLabel}</span>
       <span class="badge">اعتبار: ${daysLabel}</span>
-      <span class="badge">SNI: ${out.f.sni}</span>
+      <span class="badge">${out.sniList.length} دامنه (SNI)</span>
     </div>`;
   out.perUser.forEach(u => {
     const card = document.createElement('div');
     card.className = 'usercard';
     card.innerHTML = `<div class="usercard-title">👤 ${u.local}</div>`;
-    if (u.direct) card.appendChild(linkRow('Reality مستقیم — سرعت بالا', u.direct));
-    if (u.warp)   card.appendChild(linkRow('Reality + WARP — همه‌چیز باز', u.warp));
+    u.items.forEach(it => {
+      const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
+      card.appendChild(linkRow(`${tag} · ${it.sni} · پورت ${it.port}`, it.link));
+    });
     step3.appendChild(card);
   });
   if (out.ssOut) {
     const card = document.createElement('div');
     card.className = 'usercard';
-    card.innerHTML = `<div class="usercard-title">🧩 Shadowsocks (مشترک · بدون محدودیت حجمِ تک‌کاربره)</div>`;
+    card.innerHTML = `<div class="usercard-title">🧩 Shadowsocks (مشترک)</div>`;
     card.appendChild(linkRow('Shadowsocks', out.ssOut));
     step3.appendChild(card);
   }
@@ -375,11 +418,12 @@ function render(out) {
 
 /* ------------------------------- wiring -------------------------------- */
 function syncVisibility() {
-  const mode = ($('input[name="mode"]:checked') || {}).value || 'both';
-  $('#field-port-direct').classList.toggle('hidden', !(mode === 'direct' || mode === 'both'));
-  $('#field-port-warp').classList.toggle('hidden',   !(mode === 'warp'   || mode === 'both'));
+  const sniMode = ($('#sni-mode') && $('#sni-mode').value) || 'auto';
+  const isManual = sniMode === 'manual';
+  $('#field-sni-count').classList.toggle('hidden', isManual);   // تعداد فقط در حالت خودکار
+  $('#field-sni').classList.toggle('hidden', !isManual);        // انتخاب دستی فقط در حالت دستی
+  $('#field-sni-custom').classList.toggle('hidden', !(isManual && $('#sni').value === '__custom__'));
   $('#field-ss-port').classList.toggle('hidden', !$('#ss-enabled').checked);
-  $('#field-sni-custom').classList.toggle('hidden', $('#sni').value !== '__custom__');
 }
 
 function initTabs() {
@@ -438,7 +482,8 @@ function init() {
 
   $$('input[name="mode"]').forEach(r => r.addEventListener('change', syncVisibility));
   $('#ss-enabled').addEventListener('change', syncVisibility);
-  $('#sni').addEventListener('change', syncVisibility);
+  $('#sni-mode') && $('#sni-mode').addEventListener('change', syncVisibility);
+  $('#sni') && $('#sni').addEventListener('change', syncVisibility);
   syncVisibility();
 
   $('#gen-form').addEventListener('submit', e => {
@@ -448,15 +493,8 @@ function init() {
     err.textContent = '';
 
     if (!isIPv4(f.serverIp)) { err.textContent = 'آی‌پی سرور معتبر نیست (نمونه: 203.0.113.10).'; $('#server-ip').focus(); return; }
-    if (!f.sni)              { err.textContent = 'دامنه‌ی استتار (SNI) را انتخاب یا وارد کن.'; return; }
-    if (f.mode !== 'warp'   && (f.portDirect < 1 || f.portDirect > 65535)) { err.textContent = 'پورت مستقیم نامعتبر است.'; return; }
-    if (f.mode !== 'direct' && (f.portWarp   < 1 || f.portWarp   > 65535)) { err.textContent = 'پورت WARP نامعتبر است.'; return; }
-    if (f.mode === 'both'   && f.portDirect === f.portWarp) { err.textContent = 'پورت مستقیم و WARP باید متفاوت باشند.'; return; }
-    if (f.ss.enabled) {
-      if (f.ss.port < 1 || f.ss.port > 65535) { err.textContent = 'پورت Shadowsocks نامعتبر است.'; return; }
-      const clash = (f.mode !== 'warp' && f.ss.port === f.portDirect) || (f.mode !== 'direct' && f.ss.port === f.portWarp);
-      if (clash) { err.textContent = 'پورت Shadowsocks با پورت‌های دیگر تداخل دارد.'; return; }
-    }
+    if (f.sniMode === 'manual' && !f.manualSni) { err.textContent = 'یک دامنهٔ استتار (SNI) انتخاب یا وارد کن.'; return; }
+    if (f.ss.enabled && (f.ss.port < 1 || f.ss.port > 65535)) { err.textContent = 'پورت Shadowsocks نامعتبر است.'; return; }
 
     const btn = $('#gen-btn');
     btn.disabled = true;
