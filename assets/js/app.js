@@ -8,7 +8,7 @@
 
 const RAW_BASE = 'https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main';
 const WARP_PORT = 40000;
-const SUB_PORT = 8080;          // سرویس سبک Subscription روی سرور کاربر
+const SUB_PORT = 8765;          // سرویس Subscription روی سرور کاربر — پورت غیرمرسوم (۸۰۸۰ با tunnel-node MHRV تداخل دارد)
 const SS_METHOD = 'chacha20-ietf-poly1305';
 const GIB = 1073741824;
 const BASE_PORT = 8443;        // پورت‌ها از اینجا به‌صورت خودکار اضافه می‌شوند
@@ -406,8 +406,9 @@ function render(out) {
       ممکن است به‌مرور شناسایی شود و <b>آی‌پی سرورت فیلتر شود</b>. توصیه: این حالت را <b>فقط برای خودت</b> استفاده کن، نه پخش عمومی.
       اگر آی‌پی فیلتر شد، یک سرور/آی‌پی دیگر بگیر یا از حالت «سریع + WARP» (با SNI) استفاده کن.</div>`;
   } else {
-    step3.innerHTML = `<div class="panel-title">۳) کانفیگ کاربرها (${out.users.length} کاربر × ${linksPerUser} لینک)</div>
-      <p class="muted small">برای هر کاربر چند لینک با SNI و پورت‌های مختلف ساخته شد. توی اپ همه را وارد کن و <b>هرکدام وصل شد همان را استفاده کن</b> (بقیه پشتیبان‌اند).</p>
+    step3.innerHTML = `<div class="panel-title">۳) لینک Subscription کاربرها (${out.users.length} کاربر)</div>
+      <p class="muted small">برای هر کاربر <b>یک لینک Subscription</b> ساخته شد که همهٔ کانفیگ‌ها (SNIها و کانال‌های مختلف) را خودکار از سرور می‌آورد.</p>
+      <div class="sub-port-note">⚠️ <b>مهم:</b> لینک Subscription روی پورت <b>${SUB_PORT}</b> سرورت کار می‌کند. این پورت باید باز بماند (نصب‌کننده خودش در فایروال بازش می‌کند). کانفیگ‌ها از همین پورت به کلاینت داده می‌شوند و همیشه با سرور هماهنگ‌اند.</div>
       <div class="badges">
         <span class="badge">${modeLabel}</span>
         <span class="badge">حجم: ${quotaLabel}</span>
@@ -420,28 +421,18 @@ function render(out) {
       const card = document.createElement('div');
       card.className = 'usercard';
       card.innerHTML = `<div class="usercard-title">👤 ${u.local}</div>`;
-      // لینک Subscription (توصیه‌شده): یک لینک که همهٔ کانفیگ‌ها را می‌آورد و خودکار آپدیت می‌شود
+      // فقط لینک Subscription: یک لینک که همهٔ کانفیگ‌ها را از سرور می‌آورد و خودکار آپدیت می‌شود.
+      // (کانفیگ‌های تکی نمایش داده نمی‌شوند چون اگر پورتی روی سرور اشغال باشد و auto-fix شود،
+      //  لینک‌های تکیِ صفحه قدیمی می‌شوند؛ ولی Subscription همیشه پورت واقعیِ سرور را دارد.)
       if (u.subUrl) {
-        const subRow = linkRow('⭐ لینک Subscription (این یکی را در v2rayNG بزن — همه کانفیگ‌ها خودکار می‌آیند)', u.subUrl);
-        card.appendChild(subRow);
+        card.appendChild(linkRow('⭐ لینک Subscription شما', u.subUrl));
         const hint = document.createElement('div');
         hint.className = 'sub-hint';
-        hint.textContent = 'به‌جای افزودن تک‌تک کانفیگ‌های زیر، فقط همین لینک را در بخش Subscription کلاینت وارد کن.';
+        hint.innerHTML = 'این لینک را در v2rayNG → بخش <b>Subscription / گروه اشتراک</b> وارد کن. همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.';
         card.appendChild(hint);
       }
-      u.items.forEach(it => {
-        const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
-        card.appendChild(linkRow(`${tag} · ${it.sni} · پورت ${it.port}`, it.link));
-      });
       step3.appendChild(card);
     });
-  }
-  if (out.ssOut) {
-    const card = document.createElement('div');
-    card.className = 'usercard';
-    card.innerHTML = `<div class="usercard-title">🧩 Shadowsocks${isNoSni ? '' : ' (مشترک)'}</div>`;
-    card.appendChild(linkRow('Shadowsocks', out.ssOut));
-    step3.appendChild(card);
   }
   box.appendChild(step3);
 

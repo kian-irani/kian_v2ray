@@ -358,7 +358,7 @@ chmod 600 "$ETC_DIR/users.json"; jq -e . "$ETC_DIR/users.json" >/dev/null
 printf '%s' "$PAYLOAD_JSON" | jq -r '.links[]? // empty' > "$ETC_DIR/links.txt" || true
 
 # --- فایل‌های Subscription (فاز ۲): هر کاربر یک توکن از payload → یک فایل base64 ---
-SUB_PORT="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.sub_port // 8080')"
+SUB_PORT="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.sub_port // 8765')"
 SUB_TOKENS="$(printf '%s' "$PAYLOAD_JSON" | jq -c '.sub_tokens // {}')"
 echo "$SUB_TOKENS" > "$ETC_DIR/sub_tokens.json"; chmod 600 "$ETC_DIR/sub_tokens.json"
 echo "$SUB_PORT" > "$ETC_DIR/sub_port.txt"
@@ -477,7 +477,7 @@ mark_step manager
 # --- مرحله ۶.۵: سرویس Subscription (فاز ۲) ---------------------------------
 inf "نصب سرویس Subscription"
 curl -fsSL "$RAW_BASE/scripts/sub-server.py" -o /usr/local/bin/kian-sub-server.py && chmod +x /usr/local/bin/kian-sub-server.py
-SUB_PORT="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8080)"
+SUB_PORT="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8765)"
 cat > /etc/systemd/system/kian-sub.service <<UNIT
 [Unit]
 Description=KIAN V2Ray Subscription server
@@ -515,7 +515,7 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi '^Status:
     ufw allow "${p}/udp" >/dev/null 2>&1 || true
   done
   # پورت سرویس Subscription (TCP)
-  SUB_PORT_FW="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8080)"
+  SUB_PORT_FW="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8765)"
   ufw allow "${SUB_PORT_FW}/tcp" >/dev/null 2>&1 || true
   ufw reload >/dev/null 2>&1 || true
   say "پورت‌ها در فایروال باز شد (SSH: $(echo $SSH_PORTS | tr '\n' ' '))"
