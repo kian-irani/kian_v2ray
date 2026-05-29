@@ -1,0 +1,24 @@
+# ── رازها هرگز کامیت نشوند ───────────────────────────────
+MASTER_KNOWLEDGE*.md
+*MASTER_KNOWLEDGE*
+*.env
+.env*
+secrets*
+*secret*
+*.key
+*.pem
+users.json
+v2users.json
+payload*.b64
+*token*
+*.db
+backups/
+
+# ── سیستم/ادیتور ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+node_modules/
+*.tmp

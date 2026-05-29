@@ -1,0 +1,22 @@
+name: Validate
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax (bash -n)
+        run: |
+          bash -n install.sh
+          bash -n scripts/kian-v2ray
+          bash -n scripts/watchdog.sh
+      - name: JS syntax (node --check)
+        run: node --check assets/js/app.js
+      - name: No secrets committed
+        run: |
+          ! grep -rEn 'ghp_[A-Za-z0-9]{20,}|cfut_[A-Za-z0-9]{20,}|[0-9]{8,10}:AA[A-Za-z0-9_-]{30,}' \
+            --include='*.html' --include='*.js' --include='*.sh' --include='*.md' . \
+            && echo "no secret patterns found"
