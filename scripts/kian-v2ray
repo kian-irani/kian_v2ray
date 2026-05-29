@@ -14,6 +14,7 @@
 #     kian-v2ray update              به‌روزرسانی Xray به آخرین نسخه
 #     kian-v2ray fixport             رفع تداخل پورت API (کرش‌لوپ روی سرور دارای پنل دیگر)
 #     kian-v2ray warp                تلاش مجدد WARP (WireGuard/MASQUE) و برگرداندن از fallback
+#     kian-v2ray untune              بازگرداندن بهینه‌سازی شبکه (BBR/بافرها)
 #     kian-v2ray uninstall           حذف کامل
 #  «نام» می‌تواند بخشِ قبل از @ در ایمیل کاربر باشد (مثلاً user-1).
 # ============================================================================
@@ -170,6 +171,17 @@ _warp_restore_routing(){
   echo off > "$FB"; docker restart "$CONTAINER" >/dev/null 2>&1 || true
   say "routing به warp بازگردانده شد"
 }
+# --- بازگرداندن بهینه‌سازی شبکه (rollback مرحلهٔ ۰.۴) ----------------------
+cmd_untune(){
+  need_root
+  local f="/etc/sysctl.d/99-kian-v2ray.conf"
+  if [ -f "$f" ]; then rm -f "$f"; say "فایل tune حذف شد ($f)"; else inf "فایل tune وجود نداشت"; fi
+  rm -f /etc/modules-load.d/bbr.conf 2>/dev/null || true
+  sysctl --system >/dev/null 2>&1 || true
+  inf "برای بازگشت کامل تنظیمات کرنل به مقادیر قبلی، سرور را reboot کن (یا مقادیر را از $ETC_DIR/sysctl.backup ببین)."
+  say "بهینه‌سازی شبکه برگردانده شد"
+}
+
 cmd_warp(){
   need_root
   command -v warp-cli >/dev/null 2>&1 || { err "WARP نصب نیست."; exit 1; }
@@ -364,6 +376,7 @@ case "${1:-help}" in
   update)    cmd_update ;;
   fixport)   cmd_fixport ;;
   warp)      cmd_warp ;;
+  untune)    cmd_untune ;;
   uninstall) cmd_uninstall ;;
   help|-h|--help) cmd_help ;;
   *) err "دستور ناشناخته: $1"; cmd_help; exit 1 ;;

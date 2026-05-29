@@ -147,6 +147,46 @@ if ! done_step docker; then
   mark_step docker; say "Docker آماده است"
 else inf "Docker از قبل آماده — رد شد"; fi
 
+# --- مرحله ۲.۵: بهینه‌سازی شبکه (BBR + بافرها) — امن، idempotent ------------
+# مرحلهٔ tune مرسوم لینوکس برای سرعت بهتر (مخصوص استریم/اینستاگرام). بین مارکرها
+# نوشته می‌شود تا قابل‌بازگشت باشد؛ از sysctl موجود کاربر بکاپ گرفته می‌شود.
+TUNE_BEGIN="# === KIAN tune (kian-v2ray) ==="
+TUNE_END="# === END KIAN tune ==="
+apply_tune(){
+  local f="/etc/sysctl.d/99-kian-v2ray.conf" bak="$ETC_DIR/sysctl.backup"
+  # بکاپ یک‌بارهٔ تنظیمات فعلی (برای rollback)
+  [ -f "$bak" ] || sysctl -a 2>/dev/null | grep -E '^(net\.core\.(default_qdisc|rmem_max|wmem_max)|net\.ipv4\.tcp_(congestion_control|fastopen|mtu_probing))' > "$bak" 2>/dev/null || true
+  # ماژول BBR
+  modprobe tcp_bbr 2>/dev/null || true
+  grep -qxF 'tcp_bbr' /etc/modules-load.d/bbr.conf 2>/dev/null || echo 'tcp_bbr' > /etc/modules-load.d/bbr.conf
+  # فایل مستقل با مارکر — idempotent (هر بار بازنویسی می‌شود)
+  cat > "$f" <<TUNE
+$TUNE_BEGIN
+net.core.default_qdisc=fq
+net.ipv4.tcp_congestion_control=bbr
+net.core.rmem_max=67108864
+net.core.wmem_max=67108864
+net.core.rmem_default=262144
+net.core.wmem_default=262144
+net.ipv4.tcp_rmem=4096 87380 67108864
+net.ipv4.tcp_wmem=4096 65536 67108864
+net.core.netdev_max_backlog=16384
+net.core.somaxconn=8192
+net.ipv4.tcp_fastopen=3
+net.ipv4.tcp_mtu_probing=1
+net.ipv4.tcp_slow_start_after_idle=0
+net.ipv4.tcp_notsent_lowat=16384
+net.netfilter.nf_conntrack_max=262144
+net.ipv4.tcp_max_syn_backlog=8192
+$TUNE_END
+TUNE
+  sysctl --system >/dev/null 2>&1 || sysctl -p "$f" >/dev/null 2>&1 || true
+  local cc; cc="$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null)"
+  if [ "$cc" = "bbr" ]; then say "بهینه‌سازی شبکه فعال شد (BBR + fq)"
+  else warn "BBR ممکن است روی این کرنل فعال نشده باشد (cc=$cc) — مشکلی برای کارکرد نیست"; fi
+}
+if ! done_step tune; then apply_tune; mark_step tune; else inf "بهینه‌سازی شبکه قبلاً انجام شده — رد شد"; fi
+
 # --- مرحله ۳: WARP (فقط در صورت نیاز) --------------------------------------
 # fallback خودکار: اگر WARP وصل نشد، قوانینِ routing که به warp می‌روند موقتاً به
 # direct تغییر می‌کنند تا کاربرِ کانفیگ‌های warp بی‌نت نماند. هنگام برگشتِ WARP
