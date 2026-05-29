@@ -78,7 +78,7 @@ def re_expiry(days: int):
 
 
 # ---------------------------------------------------------------- ساخت کانفیگ Xray
-def build_config(profiles: list, reality: dict, users: list, ss: dict) -> dict:
+def build_config(profiles: list, reality: dict, users: list, ss: dict, api_port: int = 10085) -> dict:
     clients = [{"id": u["id"], "email": u["email"], "flow": "xtls-rprx-vision"} for u in users]
     any_warp = any(p["channel"] == "warp" for p in profiles)
 
@@ -97,7 +97,7 @@ def build_config(profiles: list, reality: dict, users: list, ss: dict) -> dict:
             "sniffing": {"enabled": True, "destOverride": ["http", "tls", "quic"]},
         }
 
-    inbounds = [{"listen": "127.0.0.1", "port": 10085, "protocol": "dokodemo-door",
+    inbounds = [{"listen": "127.0.0.1", "port": api_port, "protocol": "dokodemo-door",
                  "settings": {"address": "127.0.0.1"}, "tag": "api"}]
     for p in profiles:
         inbounds.append(reality_inbound(p))
@@ -200,7 +200,12 @@ def generate(opts: dict) -> dict:
             "used_bytes": 0, "expires_at": re_expiry(days), "active": True, "note": "",
         })
 
-    config = build_config(profiles, reality, users, ss)
+    import random as _rnd
+    _used = [p["port"] for p in profiles] + ([ss["port"]] if ss["enabled"] else [])
+    api_port = _rnd.randint(20000, 49999)
+    while api_port in _used:
+        api_port = _rnd.randint(20000, 49999)
+    config = build_config(profiles, reality, users, ss, api_port)
 
     links = []
     per_user = []
@@ -229,6 +234,7 @@ def generate(opts: dict) -> dict:
         "users_b64": _b64(json.dumps({"users": users})),
         "links": links,
         "ports": ports,
+        "api_port": api_port,
     }
     payload_b64 = _b64(json.dumps(payload))
     install_cmd = (f"export KIAN_PAYLOAD='{payload_b64}'\n"

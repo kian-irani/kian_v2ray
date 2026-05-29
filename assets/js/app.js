@@ -108,8 +108,9 @@ function buildConfig(o) {
     sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] },
   });
 
+  const apiPort = o.apiPort || 10085;
   const inbounds = [
-    { listen: '127.0.0.1', port: 10085, protocol: 'dokodemo-door', settings: { address: '127.0.0.1' }, tag: 'api' },
+    { listen: '127.0.0.1', port: apiPort, protocol: 'dokodemo-door', settings: { address: '127.0.0.1' }, tag: 'api' },
   ];
   o.profiles.forEach(p => inbounds.push(realityInbound(p)));
   if (o.ss.enabled) {
@@ -242,7 +243,13 @@ function generate(f) {
     });
   }
 
-  const config = buildConfig({ profiles, reality, users, ss: f.ss });
+  // پورت API تصادفی (مشکل ۰.۱): جلوگیری از تداخل با 3x-ui/Marzban که روی 10085 + network=host هستند
+  const usedPorts = profiles.map(p => p.port);
+  if (f.ss.enabled) usedPorts.push(f.ss.port);
+  let apiPort;
+  do { apiPort = 20000 + Math.floor(Math.random() * 30000); } while (usedPorts.includes(apiPort));
+
+  const config = buildConfig({ profiles, reality, users, ss: f.ss, apiPort });
 
   // لینک‌ها: برای هر کاربر، یک لینک به‌ازای هر پروفایل
   const links = [];
@@ -276,6 +283,7 @@ function generate(f) {
     users_b64:  utf8ToB64(JSON.stringify({ users })),
     links,
     ports,
+    api_port: apiPort,
   };
   const payloadB64 = utf8ToB64(JSON.stringify(payload));
 

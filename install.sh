@@ -188,6 +188,31 @@ mkdir -p "$XRAY_DIR" "$LOG_DIR"
 chmod 777 "$LOG_DIR"   # کانتینر Xray با کاربر غیر-root → نیاز به نوشتن لاگ
 printf '%s' "$PAYLOAD_JSON" | jq -r '.config_b64' | base64 -d > "$XRAY_DIR/config.json"
 jq -e . "$XRAY_DIR/config.json" >/dev/null
+
+# --- مشکل ۰.۱: پورت API (آمار) نباید با 3x-ui/Marzban روی همین سرور تداخل کند ---
+# پورت API از config خوانده می‌شود؛ اگر اشغال بود، خودکار اولین پورت آزاد بعدی انتخاب
+# و مستقیم در config.json تزریق می‌شود (auto-fix — کاربر کاری نمی‌کند).
+API_PORT="$(jq -r '(.inbounds[] | select(.tag=="api") | .port) // 10085' "$XRAY_DIR/config.json")"
+_port_busy(){ ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${1}\$"; }
+if _port_busy "$API_PORT"; then
+  warn "پورت API ($API_PORT) اشغال است — احتمالاً پنل دیگری (3x-ui/Marzban) فعال است"
+  NEWAPI="$API_PORT"
+  for _try in $(seq 1 200); do
+    NEWAPI=$(( (RANDOM % 30000) + 20000 ))
+    _port_busy "$NEWAPI" && continue
+    printf '%s\n' "$PAYLOAD_JSON" | jq -r '.ports[]? // empty' | grep -qx "$NEWAPI" && continue
+    break
+  done
+  inf "پورت API به $NEWAPI تغییر کرد (auto-fix)"
+  tmpc="$(mktemp)"
+  jq --argjson old "$API_PORT" --argjson new "$NEWAPI" \
+     '(.inbounds[] | select(.tag=="api") | .port) |= $new' \
+     "$XRAY_DIR/config.json" > "$tmpc" && mv "$tmpc" "$XRAY_DIR/config.json"
+  jq -e . "$XRAY_DIR/config.json" >/dev/null
+  API_PORT="$NEWAPI"
+fi
+echo "127.0.0.1:${API_PORT}" > "$ETC_DIR/api.txt"   # منیجر و watchdog از این می‌خوانند
+say "پورت API: $API_PORT"
 printf '%s' "$PAYLOAD_JSON" | jq -r '.users_b64' | base64 -d > "$ETC_DIR/users.json"
 chmod 600 "$ETC_DIR/users.json"; jq -e . "$ETC_DIR/users.json" >/dev/null
 printf '%s' "$PAYLOAD_JSON" | jq -r '.links[]? // empty' > "$ETC_DIR/links.txt" || true

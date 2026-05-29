@@ -13,7 +13,10 @@ WARP_PORT=40000
 ETC_DIR="/etc/kian-v2ray"
 XRAY_DIR="/etc/kian-v2ray"
 USERS_FILE="$ETC_DIR/users.json"
-API="127.0.0.1:10085"
+CONFIG="$XRAY_DIR/config.json"
+API_FILE="$ETC_DIR/api.txt"
+if [ -f "$API_FILE" ]; then API="$(cat "$API_FILE" 2>/dev/null)"; fi
+[ -z "${API:-}" ] && API="127.0.0.1:$(jq -r '(.inbounds[]|select(.tag=="api")|.port)//10085' "$CONFIG" 2>/dev/null || echo 10085)"
 ts(){ date -u +%FT%TZ; }
 log(){ echo "[$(ts)] $*"; }
 
