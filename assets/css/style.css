@@ -217,6 +217,7 @@ html[dir=rtl] .switch input:checked + .switch-track .switch-thumb{transform:tran
 
 .usercard{border:1px solid var(--line);border-radius:13px;padding:14px 15px;margin-top:14px;background:rgba(255,255,255,.012)}
 .usercard-title{font-weight:700;font-size:15px;margin-bottom:8px;color:#e9f3ee}
+.sub-hint{font-size:12px;color:var(--acc-2);opacity:.85;margin:2px 0 6px;line-height:1.6}
 
 .linkrow{border-top:1px dashed var(--line);padding-top:12px;margin-top:12px}
 .linkrow:first-of-type{border-top:0;padding-top:0;margin-top:0}

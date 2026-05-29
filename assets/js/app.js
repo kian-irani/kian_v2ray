@@ -8,6 +8,7 @@
 
 const RAW_BASE = 'https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main';
 const WARP_PORT = 40000;
+const SUB_PORT = 8080;          // سرویس سبک Subscription روی سرور کاربر
 const SS_METHOD = 'chacha20-ietf-poly1305';
 const GIB = 1073741824;
 const BASE_PORT = 8443;        // پورت‌ها از اینجا به‌صورت خودکار اضافه می‌شوند
@@ -49,8 +50,7 @@ function utf8ToB64(str) {
 function u8ToB64url(u8) {
   let bin = '';
   u8.forEach(b => (bin += String.fromCharCode(b)));
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');}
 function randHex(nBytes) {
   const u = new Uint8Array(nBytes);
   crypto.getRandomValues(u);
@@ -251,8 +251,9 @@ function generate(f) {
 
   const config = buildConfig({ profiles, reality, users, ss: f.ss, apiPort });
 
-  // لینک‌ها: برای هر کاربر، یک لینک به‌ازای هر پروفایل
+  // لینک‌ها: برای هر کاربر، یک لینک به‌ازای هر پروفایل + یک لینک Subscription
   const links = [];
+  const subTokens = {};   // email → token (به payload می‌رود تا سرور فایل sub را بسازد)
   const perUser = users.map(u => {
     const local = u.email.split('@')[0];
     const items = profiles.map(p => {
@@ -264,7 +265,11 @@ function generate(f) {
       links.push(link);
       return { channel: p.channel, sni: p.sni, port: p.port, link };
     });
-    return { email: u.email, local, items };
+    // توکن Subscription تصادفی (مثل UUID — همان‌جا در مرورگر ساخته می‌شود)
+    const token = randHex(16);
+    subTokens[u.email] = token;
+    const subUrl = `http://${f.serverIp}:${SUB_PORT}/sub/${token}`;
+    return { email: u.email, local, items, subUrl };
   });
 
   let ssOut = null;
@@ -284,6 +289,8 @@ function generate(f) {
     links,
     ports,
     api_port: apiPort,
+    sub_port: SUB_PORT,
+    sub_tokens: subTokens,
   };
   const payloadB64 = utf8ToB64(JSON.stringify(payload));
 
@@ -416,6 +423,15 @@ function render(out) {
       const card = document.createElement('div');
       card.className = 'usercard';
       card.innerHTML = `<div class="usercard-title">👤 ${u.local}</div>`;
+      // لینک Subscription (توصیه‌شده): یک لینک که همهٔ کانفیگ‌ها را می‌آورد و خودکار آپدیت می‌شود
+      if (u.subUrl) {
+        const subRow = linkRow('⭐ لینک Subscription (این یکی را در v2rayNG بزن — همه کانفیگ‌ها خودکار می‌آیند)', u.subUrl);
+        card.appendChild(subRow);
+        const hint = document.createElement('div');
+        hint.className = 'sub-hint';
+        hint.textContent = 'به‌جای افزودن تک‌تک کانفیگ‌های زیر، فقط همین لینک را در بخش Subscription کلاینت وارد کن.';
+        card.appendChild(hint);
+      }
       u.items.forEach(it => {
         const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
         card.appendChild(linkRow(`${tag} · ${it.sni} · پورت ${it.port}`, it.link));
