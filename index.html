@@ -50,6 +50,31 @@
   </nav>
 </div>
 
+<!-- ===================== GUIDE BANNER ===================== -->
+<div class="wrap">
+  <div class="guide" id="guide">
+    <div class="guide-q">کدوم وضعیت تویی؟ 👇</div>
+    <div class="guide-cards">
+      <button type="button" class="guide-card" data-go="gen">
+        <div class="guide-ic">🆕</div>
+        <div class="guide-tt">بار اولمه</div>
+        <div class="guide-ds">می‌خوام روی یه سرور تازه نصب کنم و کانفیگ بگیرم</div>
+      </button>
+      <button type="button" class="guide-card" data-go="manage">
+        <div class="guide-ic">➕</div>
+        <div class="guide-tt">قبلاً نصب کردم، کاربر اضافه کنم</div>
+        <div class="guide-ds">سرورم آماده‌ست؛ فقط می‌خوام کاربر/کانفیگ جدید بسازم — <b>نیازی به نصب دوباره نیست</b></div>
+      </button>
+      <button type="button" class="guide-card" data-go="manage">
+        <div class="guide-ic">🔗</div>
+        <div class="guide-tt">لینک کاربرم رو می‌خوام</div>
+        <div class="guide-ds">می‌خوام لینک Subscription یا کانفیگ یه کاربر موجود رو بگیرم</div>
+      </button>
+    </div>
+    <div class="guide-warn">⚠️ اگه قبلاً نصب کردی و فقط می‌خوای کاربر اضافه کنی، <b>دوباره نصب نکن</b> — از «مدیریت کاربر» استفاده کن. نصب دوباره فقط وقتی لازمه که بخوای تنظیمات پایه (پورت/SNI) رو عوض کنی (کاربرهای قبلی خودکار حفظ می‌شن).</div>
+  </div>
+</div>
+
 <main class="wrap">
 
 <!-- ===================== TAB: GENERATE ===================== -->
@@ -402,11 +427,13 @@
       <select id="mg-action">
         <option value="add">➕ افزودن کاربر جدید</option>
         <option value="configs">🔗 دیدن کانفیگ یک کاربر (با QR)</option>
+        <option value="sub">⭐ گرفتن لینک Subscription یک کاربر</option>
         <option value="renew">🔄 تمدید اعتبار کاربر</option>
         <option value="reset">♻️ صفر/تغییر حجم کاربر</option>
         <option value="remove">🗑️ حذف کاربر</option>
         <option value="users">📋 لیست همهٔ کاربرها و مصرف</option>
         <option value="status">📊 وضعیت سرویس</option>
+        <option value="uninstall">❌ حذف کامل نصب از سرور</option>
       </select>
     </div>
 
