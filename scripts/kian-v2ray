@@ -6,6 +6,7 @@
 #  دستورها:
 #     kian-v2ray status              وضعیت سرویس و کاربرها
 #     kian-v2ray configs [نام]       نمایش لینک کانفیگ‌ها + QR ترمینالی
+#     kian-v2ray sub [نام]           ساخت فایل لینک Subscription (توکن تصادفی هر کاربر)
 #     kian-v2ray users               فهرست کاربرها + مصرف/انقضا
 #     kian-v2ray add <نام> [حجم_GB] [روز]   افزودن کاربر  (پیش‌فرض 100GB / 30روز)
 #     kian-v2ray remove <نام>        حذف کاربر
@@ -269,6 +270,48 @@ cmd_configs(){
   echo ""
 }
 
+# --- لینک Subscription (فاز ۲): توکن تصادفی هر کاربر + فایل base64 ---------
+# فایل خروجی همان لینک‌های کانفیگِ خودِ کاربر است (فرمت استاندارد v2rayNG).
+# سرویس دائم اجرا نمی‌شود؛ فایل ساخته می‌شود تا کاربر جایی (Gist/Pages) آپلود کند.
+cmd_sub(){
+  need_root; need_jq; need_files
+  local filter="${1:-}" tokfile="$ETC_DIR/sub_tokens.json" subdir="$ETC_DIR/sub"
+  mkdir -p "$subdir"; [ -f "$tokfile" ] || echo '{}' > "$tokfile"
+  local pbk; pbk="$(meta_pbk)"; [ -n "$pbk" ] || { err "کلید عمومی پیدا نشد."; exit 1; }
+  local ss; ss="$(meta_ss)"
+  local inbounds_tsv; inbounds_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("reality-"))|[.tag,(.port|tostring),(.streamSettings.realitySettings.serverNames[0]//"")]|@tsv' "$CONFIG")"
+  jq -r '.users[]|select(.active==true)|.id+"\t"+.email' "$USERS_FILE" | while IFS=$'\t' read -r uuid email; do
+    local local_name="${email%@*}"
+    [ -n "$filter" ] && [ "$filter" != "$local_name" ] && [ "$filter" != "$email" ] && continue
+    # توکن تصادفی یک‌بارساخت (در صورت نبود)
+    local tok; tok="$(jq -r --arg e "$email" '.[$e]//empty' "$tokfile")"
+    if [ -z "$tok" ]; then
+      tok="$(head -c18 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c24)"
+      local tt; tt="$(mktemp)"; jq --arg e "$email" --arg t "$tok" '.[$e]=$t' "$tokfile" > "$tt" && mv "$tt" "$tokfile"; chmod 600 "$tokfile"
+    fi
+    # جمع‌آوری همهٔ لینک‌های این کاربر
+    local all=""
+    while IFS=$'\t' read -r tag port sni; do
+      [ -z "$tag" ] && continue
+      local ch="سریع"; case "$tag" in *warp*) ch="WARP";; esac
+      all="${all}$(build_vless "$uuid" "$port" "$sni" "KIAN-${local_name}-${ch}-${sni}")"$'\n'
+    done <<EOF
+$inbounds_tsv
+EOF
+    if [ -n "$ss" ]; then
+      read -r sp sm spw <<<"$ss"
+      all="${all}ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#KIAN-${local_name}-SS"$'\n'
+    fi
+    # فایل subscription = base64 از مجموعهٔ لینک‌ها (فرمت v2rayNG)
+    local outfile="$subdir/${tok}.txt"
+    printf '%s' "$all" | base64 -w0 > "$outfile"
+    printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
+    say "فایل subscription ساخته شد: $outfile"
+    inf "این فایل را جایی با لینک مستقیم آپلود کن (مثلاً GitHub Gist/raw یا Pages)."
+    inf "سپس همان URL خام را در v2rayNG → Subscription وارد کن (همهٔ کانفیگ‌ها خودکار می‌آیند)."
+  done
+}
+
 cmd_add(){
   need_root; need_jq; need_files
   local name="${1:-}" gb="${2:-100}" days="${3:-30}"
@@ -368,6 +411,7 @@ cmd_help(){
 case "${1:-help}" in
   status)    cmd_status ;;
   configs)   shift; cmd_configs "${1:-}" ;;
+  sub)       shift; cmd_sub "${1:-}" ;;
   users)     cmd_users ;;
   add)       shift; cmd_add "$@" ;;
   remove|rm) shift; cmd_remove "$@" ;;
