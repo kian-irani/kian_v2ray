@@ -311,7 +311,35 @@ if _port_busy "$API_PORT"; then
 fi
 echo "127.0.0.1:${API_PORT}" > "$ETC_DIR/api.txt"   # منیجر و watchdog از این می‌خوانند
 say "پورت API: $API_PORT"
-printf '%s' "$PAYLOAD_JSON" | jq -r '.users_b64' | base64 -d > "$ETC_DIR/users.json"
+# --- مشکل ۰.۵: نصب مجدد امن — بکاپ + ادغام کاربران قبلی ---
+# اگر نصب قبلی وجود دارد، اول بکاپ بگیر، سپس کاربرانی که در payload جدید نیستند
+# را حفظ کن (هم در users.json و هم به‌عنوان client در همهٔ inboundهای reality جدید)
+# تا نصب دوباره کاربران موجود را پاک نکند.
+NEW_USERS_JSON="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.users_b64' | base64 -d)"
+if [ -f "$ETC_DIR/users.json" ] && jq -e '.users' "$ETC_DIR/users.json" >/dev/null 2>&1; then
+  bdir="$ETC_DIR/backups"; mkdir -p "$bdir"; bts="$(date -u +%Y%m%d-%H%M%S)"
+  cp "$ETC_DIR/users.json" "$bdir/users_${bts}.json" 2>/dev/null || true
+  [ -f "$XRAY_DIR/config.json" ] && cp "$XRAY_DIR/config.json" "$bdir/config_${bts}.json" 2>/dev/null || true
+  warn "نصب قبلی پیدا شد — بکاپ در $bdir/*_${bts}.* ساخته شد"
+  # کاربران قدیمی که ایمیلشان در payload جدید نیست → حفظ شوند
+  OLD_EXTRA="$(jq -c --argjson nu "$NEW_USERS_JSON" \
+    '[.users[] as $o | select(($nu.users|map(.email)|index($o.email))|not) | $o]' \
+    "$ETC_DIR/users.json" 2>/dev/null || echo '[]')"
+  EXTRA_COUNT="$(printf '%s' "$OLD_EXTRA" | jq 'length' 2>/dev/null || echo 0)"
+  if [ "${EXTRA_COUNT:-0}" -gt 0 ]; then
+    inf "ادغام $EXTRA_COUNT کاربر قبلی که در نصب جدید نبودند"
+    # ۱) به users.json جدید اضافه کن
+    NEW_USERS_JSON="$(printf '%s' "$NEW_USERS_JSON" | jq -c --argjson ex "$OLD_EXTRA" '.users += $ex')"
+    # ۲) به‌عنوان client (id,email,flow) به همهٔ inboundهای reality جدید اضافه کن
+    CLIENTS_ADD="$(printf '%s' "$OLD_EXTRA" | jq -c '[.[]|{id:.id,email:.email,flow:"xtls-rprx-vision"}]')"
+    tmpc="$(mktemp)"
+    jq --argjson add "$CLIENTS_ADD" \
+      '(.inbounds[]|select((.tag//"")|startswith("reality-"))|.settings.clients) += $add' \
+      "$XRAY_DIR/config.json" > "$tmpc" && jq -e . "$tmpc" >/dev/null 2>&1 && mv "$tmpc" "$XRAY_DIR/config.json" || rm -f "$tmpc"
+    warn "برای افزودن کاربر جدید بهتر است از «تب مدیریت» یا «kian-v2ray add» استفاده کنی، نه نصب دوباره."
+  fi
+fi
+printf '%s' "$NEW_USERS_JSON" > "$ETC_DIR/users.json"
 chmod 600 "$ETC_DIR/users.json"; jq -e . "$ETC_DIR/users.json" >/dev/null
 printf '%s' "$PAYLOAD_JSON" | jq -r '.links[]? // empty' > "$ETC_DIR/links.txt" || true
 { echo "Server IP : ${SERVER_IP:-?}"; echo "Installed : $(date -u +%FT%TZ)"; echo "WARP      : $WARP_NEEDED"; } > "$ETC_DIR/info.txt"
