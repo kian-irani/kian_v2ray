@@ -139,6 +139,34 @@ cmd_status(){
     act="$(jq '[.users[]|select(.active==true)]|length' "$USERS_FILE" 2>/dev/null)"
     inf "کاربرها: $act فعال از $total"
   fi
+  # --- چک پورت‌های سرویس: واقعاً listening هستند؟ (مهم برای تشخیص مشکل پورت/فایروال) ---
+  local svc_ports lport_problem=""
+  svc_ports="$(jq -r '.inbounds[]|select(((.tag//"")|startswith("reality-")) or (.tag=="shadowsocks"))|.port' "$CONFIG" 2>/dev/null)"
+  if [ -n "$svc_ports" ]; then
+    printf "\n${C_B}پورت‌های سرویس:${C_N}\n"
+    for p in $svc_ports; do
+      if ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${p}\$"; then
+        printf "   ✅ %s — در حال گوش دادن\n" "$p"
+      else
+        printf "   ❌ %s — گوش نمی‌دهد (Xray بالا نیست یا پورت bind نشده)\n" "$p"
+        lport_problem=1
+      fi
+    done
+    # هشدار فایروال: اگر ufw فعال است، آیا این پورت‌ها allow شده‌اند؟
+    if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi '^Status: active'; then
+      local fw_missing=""
+      for p in $svc_ports; do
+        ufw status 2>/dev/null | grep -qE "(^|[^0-9])${p}(/|[[:space:]])" || fw_missing="$fw_missing $p"
+      done
+      if [ -n "$fw_missing" ]; then
+        warn "فایروال فعال است ولی این پورت‌ها در ufw باز نیستند:$fw_missing"
+        PROBLEMS="${PROBLEMS:+$PROBLEMS,}fw"
+      else
+        say "فایروال: همهٔ پورت‌های سرویس باز است"
+      fi
+    fi
+    [ -n "$lport_problem" ] && PROBLEMS="${PROBLEMS:+$PROBLEMS,}listen"
+  fi
   # --- دستور رفع (۰.۳): یک خط، بدون نیاز به دانش کاربر ---
   if [ -n "$PROBLEMS" ]; then
     printf "\n${C_Y}━━━ رفع خودکار ━━━${C_N}\n"
@@ -155,6 +183,12 @@ cmd_status(){
     esac
     case "$PROBLEMS" in
       *crash*) printf "   لاگ کرش:  ${C_G}docker logs $CONTAINER --tail 40${C_N}\n" ;;
+    esac
+    case "$PROBLEMS" in
+      *fw*) printf "   پورت‌ها در فایروال باز نیستند. باز کردن خودکار:  ${C_G}kian-v2ray openports${C_N}\n" ;;
+    esac
+    case "$PROBLEMS" in
+      *listen*) printf "   پورت سرویس گوش نمی‌دهد. ری‌استارت Xray:  ${C_G}docker restart $CONTAINER${C_N}  یا  ${C_G}kian-v2ray fixport${C_N}\n" ;;
     esac
     echo ""
   else
@@ -455,6 +489,20 @@ cmd_uninstall(){
   read -rp "برای تأیید بنویس: DELETE  → " ans
   [ "$ans" = "DELETE" ] || { inf "لغو شد."; exit 0; }
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+  # سرویس Subscription را هم متوقف و حذف کن
+  systemctl disable --now kian-sub >/dev/null 2>&1 || true
+  rm -f /etc/systemd/system/kian-sub.service /usr/local/bin/kian-sub-server.py
+  systemctl daemon-reload >/dev/null 2>&1 || true
+  # بستن پورت‌های سرویس در فایروال (اگر فعال بود)
+  if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi '^Status: active'; then
+    for p in $(jq -r '.inbounds[]|select(((.tag//"")|startswith("reality-")) or (.tag=="shadowsocks"))|.port' "$CONFIG" 2>/dev/null); do
+      ufw delete allow "${p}/tcp" >/dev/null 2>&1 || true
+      ufw delete allow "${p}/udp" >/dev/null 2>&1 || true
+    done
+    sp="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8080)"
+    ufw delete allow "${sp}/tcp" >/dev/null 2>&1 || true
+    ufw reload >/dev/null 2>&1 || true
+  fi
   rm -f /etc/cron.d/kian-v2ray-watchdog /usr/local/bin/kian-v2ray-watchdog.sh
   rm -rf "$ETC_DIR" /opt/kian-v2ray "$LOG_DIR"
   rm -f /usr/local/bin/kian-v2ray
@@ -463,6 +511,22 @@ cmd_uninstall(){
 
 cmd_help(){
   sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+cmd_openports(){
+  need_root
+  if ! command -v ufw >/dev/null 2>&1; then inf "ufw نصب نیست — پورت‌ها آزادند"; return 0; fi
+  if ! ufw status 2>/dev/null | grep -qi '^Status: active'; then
+    inf "فایروال ufw فعال نیست — نیازی به باز کردن نیست (پورت‌ها در دسترس‌اند)"; return 0
+  fi
+  local ports sub; ports="$(jq -r '.inbounds[]|select(((.tag//"")|startswith("reality-")) or (.tag=="shadowsocks"))|.port' "$CONFIG" 2>/dev/null)"
+  for p in $ports; do
+    ufw allow "${p}/tcp" >/dev/null 2>&1 && ufw allow "${p}/udp" >/dev/null 2>&1 && say "باز شد: $p"
+  done
+  sub="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8080)"
+  ufw allow "${sub}/tcp" >/dev/null 2>&1 && say "باز شد: $sub (Subscription)"
+  ufw reload >/dev/null 2>&1 || true
+  say "پورت‌های سرویس در فایروال باز شدند"
 }
 
 case "${1:-help}" in
@@ -476,6 +540,7 @@ case "${1:-help}" in
   renew)     shift; cmd_renew "$@" ;;
   update)    cmd_update ;;
   fixport)   cmd_fixport ;;
+  openports) cmd_openports ;;
   warp)      cmd_warp ;;
   untune)    cmd_untune ;;
   uninstall) cmd_uninstall ;;

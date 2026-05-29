@@ -209,6 +209,8 @@ def generate(opts: dict) -> dict:
 
     links = []
     per_user = []
+    sub_tokens = {}
+    sub_port = 8080
     ip = opts["server_ip"]
     for u in users:
         local = u["email"].split("@")[0]
@@ -218,7 +220,10 @@ def generate(opts: dict) -> dict:
                               reality["shortId"], f'KIAN-{local}-{CH_LABEL[p["channel"]]}-{p["sni"]}')
             links.append(link)
             items.append({"channel": p["channel"], "sni": p["sni"], "port": p["port"], "link": link})
-        per_user.append({"email": u["email"], "local": local, "items": items})
+        token = secrets.token_hex(16)
+        sub_tokens[u["email"]] = token
+        sub_url = f"http://{ip}:{sub_port}/sub/{token}"
+        per_user.append({"email": u["email"], "local": local, "items": items, "subUrl": sub_url})
 
     ss_out_link = None
     if ss["enabled"]:
@@ -235,6 +240,8 @@ def generate(opts: dict) -> dict:
         "links": links,
         "ports": ports,
         "api_port": api_port,
+        "sub_port": sub_port,
+        "sub_tokens": sub_tokens,
     }
     payload_b64 = _b64(json.dumps(payload))
     install_cmd = (f"export KIAN_PAYLOAD='{payload_b64}'\n"
@@ -244,6 +251,7 @@ def generate(opts: dict) -> dict:
         "reality": reality, "users": users, "per_user": per_user, "ss_link": ss_out_link,
         "ports": ports, "profiles": profiles, "sni_list": sni_list, "config": config,
         "payload_b64": payload_b64, "install_cmd": install_cmd, "warp_needed": "warp" in channels,
+        "sub_port": sub_port, "sub_tokens": sub_tokens,
     }
 
 
