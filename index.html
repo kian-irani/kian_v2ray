@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KIAN V2Ray — سازندهٔ کانفیگ Reality + WARP</title>
-<meta name="description" content="ساخت کانفیگ V2Ray (VLESS Reality + WARP) روی سرور خودت، با یک دستور و مقاوم در برابر قطعی SSH. کلیدها در مرورگر خودت ساخته می‌شوند.">
+<title>KIAN V2Ray — ساخت آسان کانفیگ روی سرور خودت</title>
+<meta name="description" content="فقط آی‌پی سرورت رو وارد کن، یک دستور کپی کن، کانفیگ V2Ray (Reality + WARP) آماده‌ست. ساده، رایگان، بدون نیاز به دانش فنی.">
 <meta name="color-scheme" content="dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,160 +22,170 @@
     <div class="brandline">
       <span class="dot"></span>
       <span class="brandmark mono">KIAN<span class="arrow">⟶</span>V2RAY</span>
-      <span class="phase">فاز ۱ · LIVE</span>
+      <span class="phase">رایگان · متن‌باز</span>
     </div>
-    <h1 class="title">تونلِ خودت را در یک دقیقه بساز</h1>
+    <h1 class="title">کانفیگ سرورت رو در یک دقیقه بساز</h1>
     <p class="lede">
-      روی <b>سرور خودت</b> کانفیگ <b>VLESS Reality</b> بساز — دو حالت: <b>مستقیم</b> (سرعت بالا)
-      و <b>WARP</b> (همه‌چیز باز، رفع محدودیت پروایدر). یک دستور می‌گیری، در ترمینال سرور می‌زنی، تمام.
+      فقط <b>آی‌پی سرورت</b> رو وارد کن. یک دستور می‌گیری، توی سرور می‌زنی، و کانفیگ آماده (با QR) تحویل می‌گیری.
+      نیازی نیست چیزی از پورت و تنظیمات فنی بدونی — همه‌چیز خودکاره.
     </p>
     <div class="hero-meta">
-      <span class="chip">🔐 کلیدها در مرورگر خودت ساخته می‌شوند</span>
-      <span class="chip">🧷 مقاوم در برابر قطع SSH</span>
-      <span class="chip">📦 آخرین نسخهٔ Xray-core</span>
+      <span class="chip">🟢 فقط کپی-پیست</span>
+      <span class="chip">🔐 کلیدها توی مرورگر خودت</span>
+      <span class="chip">📱 اندروید + 💻 ویندوز</span>
     </div>
   </div>
 </header>
 
-<!-- ===================== NOTICE: connect now ===================== -->
-<section class="wrap">
+<!-- ============================ TABS ============================ -->
+<div class="wrap">
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="gen">⚙️ ساخت کانفیگ</button>
+    <button class="tab" data-tab="server">🖥️ نصب روی سرور</button>
+    <button class="tab" data-tab="android">📱 اندروید</button>
+    <button class="tab" data-tab="pc">💻 ویندوز / PC</button>
+    <button class="tab" data-tab="tips">💡 نکات و عیب‌یابی</button>
+    <button class="tab" data-tab="about">ℹ️ درباره</button>
+  </nav>
+</div>
+
+<main class="wrap">
+
+<!-- ===================== TAB: GENERATE ===================== -->
+<section class="panel-tab active" data-panel="gen">
+
   <div class="notice">
     <div class="notice-ic">📡</div>
     <div>
-      <div class="notice-title">این روش برای کدام سرورها کار می‌کند؟</div>
+      <div class="notice-title">قبل از شروع: این روش برای چه سروری کار می‌کند؟</div>
       <p>
-        روشِ فعلی برای سرورهایی است که <b>از داخل ایران بدون فیلترشکن می‌توان به آن‌ها SSH زد</b>
-        و آی‌پی/پورتشان از ایران در دسترس است (اغلب سرورهای خارج که هنوز کاملاً بلاک نشده‌اند).
-        اگر آی‌پیِ سرورت از ایران بسته است، اتصال با دامنه/CDN در فازهای بعدی اضافه می‌شود
-        (پایین صفحه را ببین).
+        برای سروری که <b>از داخل ایران بدون فیلترشکن بهش SSH می‌خوره</b> و آی‌پی‌اش از ایران بازه
+        (بیشتر سرورهای خارجِ تازه). اگه سرور نداری، توی تب
+        <b>«نصب روی سرور»</b> گفتم از کجا بخری.
       </p>
     </div>
   </div>
-</section>
 
-<!-- ========================= GENERATOR ========================= -->
-<main class="wrap">
-  <section class="card">
+  <div class="card">
     <div class="card-head">
       <h2>⚙️ ساخت کانفیگ</h2>
-      <p class="muted">مشخصات سرور و گزینه‌ها را پر کن، بعد دکمهٔ پایین را بزن.</p>
+      <p class="muted">فقط آی‌پی سرورت رو بزن و دکمه رو فشار بده. همین.</p>
     </div>
 
     <form id="gen-form" novalidate>
-      <!-- سرور -->
-      <div class="section">
-        <div class="section-label">۱ · سرور</div>
-        <div class="grid2">
-          <div class="field">
-            <label for="server-ip">آی‌پی سرور (IPv4)</label>
-            <input id="server-ip" type="text" inputmode="decimal" placeholder="203.0.113.10" autocomplete="off" spellcheck="false">
-            <small class="hint">همان آی‌پی که با آن SSH می‌زنی.</small>
-          </div>
-          <div class="field">
-            <label for="sni">دامنهٔ استتار (SNI / dest)</label>
-            <select id="sni">
-              <option value="www.yahoo.com" selected>www.yahoo.com</option>
-              <option value="dl.google.com">dl.google.com</option>
-              <option value="www.microsoft.com">www.microsoft.com</option>
-              <option value="www.bing.com">www.bing.com</option>
-              <option value="www.icloud.com">www.icloud.com</option>
-              <option value="addons.mozilla.org">addons.mozilla.org</option>
-              <option value="__custom__">دامنهٔ دلخواه…</option>
-            </select>
-            <small class="hint">سایتی معتبر با TLS 1.3 که در ایران فیلتر نباشد.</small>
-          </div>
-        </div>
-        <div class="field hidden" id="field-sni-custom">
-          <label for="sni-custom">دامنهٔ دلخواه</label>
-          <input id="sni-custom" type="text" placeholder="example.com" autocomplete="off" spellcheck="false">
-        </div>
+
+      <!-- تنها فیلد ضروری -->
+      <div class="field big">
+        <label for="server-ip">🖥️ آی‌پی سرور</label>
+        <input id="server-ip" type="text" inputmode="decimal" placeholder="مثلاً ۱۸۵.۱۲.۳.۴۵" autocomplete="off" spellcheck="false">
+        <small class="hint">همون آی‌پی که با اون به سرور وصل می‌شی (SSH). بعد از خرید سرور بهت داده می‌شه.</small>
       </div>
 
-      <!-- حالت -->
-      <div class="section">
-        <div class="section-label">۲ · حالت اتصال</div>
+      <!-- حالت: کارت‌های ساده و درشت -->
+      <div class="field">
+        <label>🌐 حالت اتصال</label>
         <div class="modes">
           <label class="mode">
             <input type="radio" name="mode" value="both" checked>
             <span class="mode-box">
-              <span class="mode-title">مستقیم + WARP</span>
-              <span class="mode-sub">پیشنهادی — هر کاربر دو لینک می‌گیرد</span>
+              <span class="mode-title">هر دو ✨</span>
+              <span class="mode-sub">پیشنهادی — هم سریع، هم همه‌چیز باز. دو لینک می‌گیری.</span>
             </span>
           </label>
           <label class="mode">
             <input type="radio" name="mode" value="direct">
             <span class="mode-box">
-              <span class="mode-title">فقط مستقیم</span>
-              <span class="mode-sub">سریع‌ترین — ولی بعضی سایت‌ها را پروایدر می‌بندد</span>
+              <span class="mode-title">سریع</span>
+              <span class="mode-sub">سریع‌ترین، ولی شاید بعضی سایت‌ها باز نشه.</span>
             </span>
           </label>
           <label class="mode">
             <input type="radio" name="mode" value="warp">
             <span class="mode-box">
-              <span class="mode-title">فقط WARP</span>
-              <span class="mode-sub">همه‌چیز باز — کمی کندتر</span>
+              <span class="mode-title">همه‌چیز باز</span>
+              <span class="mode-sub">از WARP رد می‌شه، کمی کندتر.</span>
             </span>
           </label>
         </div>
+        <small class="hint">نمی‌دونی کدوم؟ همون «هر دو» رو بذار — هر دو لینک رو می‌گیری و هرکدوم بهتر بود استفاده کن.</small>
+      </div>
+
+      <!-- تعداد کاربر -->
+      <div class="field">
+        <label for="num-users">👥 چند نفر می‌خوان استفاده کنن؟</label>
+        <div class="stepper">
+          <button type="button" class="step-btn" data-step="-1" aria-label="کمتر">−</button>
+          <input id="num-users" type="number" min="1" max="50" value="1" readonly>
+          <button type="button" class="step-btn" data-step="1" aria-label="بیشتر">+</button>
+        </div>
+        <small class="hint">برای هر نفر یک کانفیگ جدا ساخته می‌شه. اگه فقط خودتی، روی ۱ بذار.</small>
+      </div>
+
+      <!-- تنظیمات پیشرفته (مخفی، اختیاری) -->
+      <button type="button" class="adv-toggle" id="adv-toggle" aria-expanded="false">
+        <span class="adv-caret">▸</span> تنظیمات پیشرفته (اختیاری — اگه نمی‌دونی دست نزن)
+      </button>
+      <div class="adv-body hidden" id="adv-body">
+        <div class="field">
+          <label for="sni">دامنهٔ استتار (SNI)</label>
+          <select id="sni">
+            <option value="www.yahoo.com" selected>www.yahoo.com (پیش‌فرض)</option>
+            <option value="dl.google.com">dl.google.com</option>
+            <option value="www.microsoft.com">www.microsoft.com</option>
+            <option value="www.bing.com">www.bing.com</option>
+            <option value="www.icloud.com">www.icloud.com</option>
+            <option value="addons.mozilla.org">addons.mozilla.org</option>
+            <option value="__custom__">دامنهٔ دلخواه…</option>
+          </select>
+          <small class="hint">اگه اتصال برقرار نشد، یکی دیگه رو امتحان کن. پیش‌فرض برای اغلب سرورها خوبه.</small>
+        </div>
+        <div class="field hidden" id="field-sni-custom">
+          <label for="sni-custom">دامنهٔ دلخواه</label>
+          <input id="sni-custom" type="text" placeholder="example.com" autocomplete="off" spellcheck="false">
+        </div>
         <div class="grid2">
           <div class="field" id="field-port-direct">
-            <label for="port-direct">پورت Reality مستقیم</label>
+            <label for="port-direct">پورت «سریع»</label>
             <input id="port-direct" type="number" min="1" max="65535" value="8443">
           </div>
           <div class="field" id="field-port-warp">
-            <label for="port-warp">پورت Reality + WARP</label>
+            <label for="port-warp">پورت «WARP»</label>
             <input id="port-warp" type="number" min="1" max="65535" value="8444">
           </div>
         </div>
-      </div>
-
-      <!-- کاربرها -->
-      <div class="section">
-        <div class="section-label">۳ · کاربرها</div>
-        <div class="grid3">
-          <div class="field">
-            <label for="num-users">تعداد کاربر</label>
-            <input id="num-users" type="number" min="1" max="50" value="1">
-          </div>
+        <label class="switch">
+          <input type="checkbox" id="ss-enabled">
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+          <span class="switch-label">Shadowsocks هم اضافه کن <span class="muted small">(پروتکل پشتیبان)</span></span>
+        </label>
+        <div class="field hidden" id="field-ss-port">
+          <label for="ss-port">پورت Shadowsocks</label>
+          <input id="ss-port" type="number" min="1" max="65535" value="8388">
+        </div>
+        <div class="grid2">
           <div class="field">
             <label for="quota">حجم هر کاربر</label>
             <select id="quota">
               <option value="50">۵۰ گیگ</option>
-              <option value="100" selected>۱۰۰ گیگ</option>
+              <option value="100">۱۰۰ گیگ</option>
               <option value="200">۲۰۰ گیگ</option>
               <option value="500">۵۰۰ گیگ</option>
-              <option value="0">نامحدود</option>
+              <option value="0" selected>نامحدود</option>
             </select>
           </div>
           <div class="field">
             <label for="days">مدت اعتبار</label>
             <select id="days">
-              <option value="30" selected>۳۰ روز</option>
-              <option value="45">۴۵ روز</option>
+              <option value="30">۳۰ روز</option>
               <option value="60">۶۰ روز</option>
               <option value="90">۹۰ روز</option>
-              <option value="0">دائمی</option>
+              <option value="0" selected>دائمی</option>
             </select>
           </div>
         </div>
         <div class="field">
-          <label for="user-prefix">نام پایهٔ کاربر <span class="muted small">(اختیاری)</span></label>
+          <label for="user-prefix">نام پایهٔ کاربر</label>
           <input id="user-prefix" type="text" value="user" placeholder="user" autocomplete="off" spellcheck="false">
-          <small class="hint">نام‌ها این‌طور ساخته می‌شوند: <span class="mono">user-1</span>، <span class="mono">user-2</span> …</small>
-        </div>
-      </div>
-
-      <!-- اختیاری -->
-      <div class="section">
-        <div class="section-label">۴ · افزودنی (اختیاری)</div>
-        <label class="switch">
-          <input type="checkbox" id="ss-enabled">
-          <span class="switch-track"><span class="switch-thumb"></span></span>
-          <span class="switch-label">Shadowsocks هم اضافه کن <span class="muted small">— پروتکل پشتیبان، مشترک بین کاربرها</span></span>
-        </label>
-        <div class="field hidden" id="field-ss-port">
-          <label for="ss-port">پورت Shadowsocks</label>
-          <input id="ss-port" type="number" min="1" max="65535" value="8388">
         </div>
       </div>
 
@@ -185,74 +195,233 @@
         <span class="btn-text">🚀 ساخت کانفیگ و دستور نصب</span>
         <span class="btn-spin" aria-hidden="true"></span>
       </button>
-      <p class="muted small center">هیچ اطلاعاتی به جایی ارسال نمی‌شود — همه‌چیز همین‌جا در مرورگر تو ساخته می‌شود.</p>
+      <p class="muted small center">هیچ اطلاعاتی به جایی ارسال نمی‌شه — همه‌چیز همین‌جا توی مرورگر تو ساخته می‌شه.</p>
     </form>
-  </section>
+  </div>
 
-  <!-- ========================= RESULTS ========================= -->
   <section id="result" class="result hidden" aria-live="polite"></section>
-</main>
+</section>
 
-<!-- ========================= ROADMAP ========================= -->
-<section class="wrap">
-  <div class="roadmap">
-    <h2 class="roadmap-title">🗺️ نقشهٔ راه</h2>
-    <p class="muted">این صفحه مرحله‌به‌مرحله کامل‌تر می‌شود. هر فاز که تست و تأیید شد، به همین‌جا اضافه می‌شود.</p>
-    <ol class="timeline">
-      <li class="tl done">
-        <div class="tl-dot"></div>
-        <div class="tl-body">
-          <div class="tl-head"><span class="tl-tag">فاز ۱</span><span class="tl-state live">اکنون فعال</span></div>
-          <h3>Reality مستقیم + WARP (آی‌پی مستقیم)</h3>
-          <p>ساخت کانفیگ در مرورگر، نصب تک‌دستوری مقاوم به قطعی، پنل وضعیت، مدیریت کاربر/حجم/مدت، Shadowsocks اختیاری.</p>
-        </div>
-      </li>
-      <li class="tl next">
-        <div class="tl-dot"></div>
-        <div class="tl-body">
-          <div class="tl-head"><span class="tl-tag">فاز ۲</span><span class="tl-state">بعدی</span></div>
-          <h3>دامنه + TLS واقعی</h3>
-          <p>VLESS/VMess روی WS · gRPC · HTTPUpgrade پشت Caddy روی پورت ۴۴۳ — عبور از DPI و کار روی سرورهای سخت‌گیر.</p>
-        </div>
-      </li>
-      <li class="tl">
-        <div class="tl-dot"></div>
-        <div class="tl-body">
-          <div class="tl-head"><span class="tl-tag">فاز ۳</span></div>
-          <h3>فرانتِ CDN</h3>
-          <p>اتصال از پشت Cloudflare/CDN حتی وقتی آی‌پیِ سرور از ایران کاملاً بسته است.</p>
-        </div>
-      </li>
-      <li class="tl">
-        <div class="tl-dot"></div>
-        <div class="tl-body">
-          <div class="tl-head"><span class="tl-tag">فاز ۴</span></div>
-          <h3>یکپارچگی با ربات تلگرام</h3>
-          <p>دکمهٔ «دریافت V2Ray»، اشتراک per-user، هشدار حجم (۸۰٪/۱۰۰٪)، آمار زنده.</p>
-        </div>
-      </li>
-      <li class="tl">
-        <div class="tl-dot"></div>
-        <div class="tl-body">
-          <div class="tl-head"><span class="tl-tag">فاز ۵+</span></div>
-          <h3>Subscription · چند سرور · Hysteria2/TUIC</h3>
-          <p>لینک اشتراک برای آپدیت خودکار کانفیگ در کلاینت، چند سرور با توزیع بار، و پروتکل‌های UDP-محور سریع.</p>
-        </div>
-      </li>
-    </ol>
+<!-- ===================== TAB: SERVER ===================== -->
+<section class="panel-tab" data-panel="server">
+  <div class="card prose">
+    <h2>🖥️ نصب روی سرور — قدم به قدم</h2>
+
+    <div class="step-list">
+      <div class="stp"><span class="stp-n">۱</span><div>
+        <b>یک برنامهٔ SSH باز کن</b>
+        <p>روی گوشی: اپ <b>Termius</b> رو نصب کن. روی ویندوز: <b>PowerShell</b> یا <b>PuTTY</b>.</p>
+        <a class="btn-link" href="https://play.google.com/store/apps/details?id=com.server.auditor.ssh.client" target="_blank" rel="noopener">دانلود Termius (اندروید) ↗</a>
+      </div></div>
+
+      <div class="stp"><span class="stp-n">۲</span><div>
+        <b>به سرورت وصل شو</b>
+        <p>با آی‌پی و رمز سرور وصل شو. توی ترمینال این رو بزن (آی‌پی خودت رو بذار):</p>
+        <div class="cmdline mono">ssh root@آی‌پی‌سرور</div>
+        <p class="muted small">رمز سرور رو هنگام خرید بهت می‌دن. موقع تایپ رمز چیزی نمایش داده نمی‌شه — طبیعیه.</p>
+      </div></div>
+
+      <div class="stp"><span class="stp-n">۳</span><div>
+        <b>دستور نصب رو از تب «ساخت کانفیگ» بگیر</b>
+        <p>برگرد به تب اول، آی‌پی سرورت رو وارد کن، دکمه رو بزن و <b>«دستور نصب»</b> رو کپی کن.</p>
+      </div></div>
+
+      <div class="stp"><span class="stp-n">۴</span><div>
+        <b>دستور رو توی ترمینال سرور Paste کن</b>
+        <p>نصب خودش انجام می‌شه. <b>اگه وسط کار اینترنتت قطع شد هم اشکالی نداره</b> — نصب پشت‌صحنه ادامه می‌ده.</p>
+        <p class="tipline">📱 <b>روی موبایل:</b> اگه Ctrl+V کار نکرد، روی ترمینال نگه‌دار (long-press) و از منو <b>Paste</b> رو بزن.</p>
+      </div></div>
+
+      <div class="stp"><span class="stp-n">۵</span><div>
+        <b>۲ تا ۵ دقیقه صبر کن، بعد وضعیت رو چک کن</b>
+        <div class="cmdline mono">bash /tmp/kian-v2ray.sh status</div>
+        <p>اگه نوشت Xray در حال اجراست ✅ تمومه. لینک‌های کانفیگ همون‌هایی هستن که توی تب اول گرفتی.</p>
+      </div></div>
+    </div>
+
+    <h3>🛒 سرور نداری؟ از کجا بخری</h3>
+    <div class="buy-grid">
+      <div class="buy">
+        <div class="buy-title">🌐 Netlen (ترکیه)</div>
+        <ul class="mini"><li>✓ بدون احراز هویت</li><li>✓ پرداخت کریپتو</li><li>✗ انگلیسی</li></ul>
+        <a class="btn-link" href="https://www.netlen.com.tr/" target="_blank" rel="noopener">netlen.com.tr ↗</a>
+      </div>
+      <div class="buy">
+        <div class="buy-title">🇮🇷 Parsdev</div>
+        <ul class="mini"><li>✓ پشتیبانی فارسی</li><li>✓ پرداخت ریالی</li><li>✗ احراز هویت</li></ul>
+        <a class="btn-link" href="https://parsdev.com/" target="_blank" rel="noopener">parsdev.com ↗</a>
+      </div>
+    </div>
+    <p class="muted small">حداقل سرور: ۱ هسته CPU، ۵۱۲ مگ رم، اوبونتو ۲۲ یا ۲۴. لوکیشن خارج از ایران.</p>
+
+    <div class="callout">
+      💬 توی نصب گیر کردی؟ توی کانال بپرس:
+      <a href="https://t.me/kian_irani_cdn_f" target="_blank" rel="noopener">@kian_irani_cdn_f</a>
+    </div>
   </div>
 </section>
+
+<!-- ===================== TAB: ANDROID ===================== -->
+<section class="panel-tab" data-panel="android">
+  <div class="card prose">
+    <h2>📱 راه‌اندازی روی اندروید</h2>
+
+    <div class="step-list">
+      <div class="stp"><span class="stp-n">۱</span><div>
+        <b>اپ v2rayNG رو نصب کن</b>
+        <p>رایگان و متن‌باز — از Reality پشتیبانی می‌کنه.</p>
+        <a class="btn-link" href="https://github.com/2dust/v2rayNG/releases/latest" target="_blank" rel="noopener">دانلود v2rayNG از گیت‌هاب ↗</a>
+        <p class="muted small">جایگزین: NekoBox for Android.</p>
+      </div></div>
+
+      <div class="stp"><span class="stp-n">۲</span><div>
+        <b>لینک کانفیگ رو وارد کن</b>
+        <p>دو راه داری:</p>
+        <p>• <b>کپی-پیست:</b> توی تب «ساخت کانفیگ» روی «کپی لینک» بزن، بعد توی v2rayNG: دکمهٔ <b>+</b> بالا ← <b>«Import config from Clipboard»</b>.</p>
+        <p>• <b>QR:</b> توی v2rayNG: دکمهٔ <b>+</b> ← <b>«Scan QR code»</b> ← QR روی صفحه رو اسکن کن.</p>
+      </div></div>
+
+      <div class="stp"><span class="stp-n">۳</span><div>
+        <b>وصل شو</b>
+        <p>روی کانفیگ بزن تا انتخاب بشه، بعد دکمهٔ گرد پایین (▶) رو بزن. اولین بار اجازهٔ VPN می‌خواد — تأیید کن.</p>
+      </div></div>
+
+      <div class="stp"><span class="stp-n">۴</span><div>
+        <b>اگه «هر دو» رو ساخته بودی</b>
+        <p>دو کانفیگ داری: یکی <b>سریع (Direct)</b> و یکی <b>WARP</b>. اول سریع رو امتحان کن؛ اگه سایتی باز نشد، به WARP سوییچ کن.</p>
+      </div></div>
+    </div>
+
+    <div class="callout">📤 می‌خوای کانفیگ رو به دوستت بدی؟ همون لینک یا QR رو بفرست — همه‌چیز خودکار وارد می‌شه.</div>
+  </div>
+</section>
+
+<!-- ===================== TAB: PC ===================== -->
+<section class="panel-tab" data-panel="pc">
+  <div class="card prose">
+    <h2>💻 راه‌اندازی روی ویندوز / کامپیوتر</h2>
+
+    <div class="step-list">
+      <div class="stp"><span class="stp-n">۱</span><div>
+        <b>اپ v2rayN رو دانلود کن</b>
+        <p>برای ویندوز — از Reality پشتیبانی می‌کنه.</p>
+        <a class="btn-link" href="https://github.com/2dust/v2rayN/releases/latest" target="_blank" rel="noopener">دانلود v2rayN ↗</a>
+        <p class="muted small">جایگزین چندسکویی (ویندوز/مک/لینوکس): NekoRay.</p>
+      </div></div>
+
+      <div class="stp"><span class="stp-n">۲</span><div>
+        <b>لینک کانفیگ رو وارد کن</b>
+        <p>توی تب «ساخت کانفیگ» روی «کپی لینک» بزن. بعد توی v2rayN از منوی بالا:
+        <b>Servers ← Import bulk URL from clipboard</b> (یا Ctrl+V داخل لیست سرورها).</p>
+      </div></div>
+
+      <div class="stp"><span class="stp-n">۳</span><div>
+        <b>روشن کن</b>
+        <p>روی کانفیگ دابل‌کلیک کن تا فعال بشه. بعد پایین‌راست ویندوز روی آیکن v2rayN راست‌کلیک ←
+        <b>System Proxy ← Set system proxy</b>.</p>
+      </div></div>
+    </div>
+
+    <div class="callout">🍎 <b>آیفون/iOS:</b> از اپ‌های <b>Streisand</b> یا <b>V2Box</b> (رایگان) یا <b>Shadowrocket</b> (پولی) استفاده کن — لینک یا QR رو همون‌طوری Import کن.</div>
+  </div>
+</section>
+
+<!-- ===================== TAB: TIPS ===================== -->
+<section class="panel-tab" data-panel="tips">
+  <div class="card prose">
+    <h2>💡 نکات و عیب‌یابی</h2>
+
+    <h3>فرق «سریع» و «WARP» چیه؟</h3>
+    <ul class="tips">
+      <li><b>سریع (Direct):</b> ترافیک مستقیم از سرورت می‌ره بیرون. سریع‌ترینه، ولی بعضی سایت‌ها رو ممکنه پروایدرِ سرور بسته باشه.</li>
+      <li><b>WARP:</b> ترافیک از WARP کلودفلر رد می‌شه و تقریباً همه‌چیز باز می‌شه، فقط کمی کندتره.</li>
+      <li>پیشنهاد: حالت <b>«هر دو»</b> رو بساز و هرکدوم بهتر جواب داد استفاده کن.</li>
+    </ul>
+
+    <h3>اتصال برقرار نمی‌شه؟</h3>
+    <ul class="tips">
+      <li>مطمئن شو آی‌پی سرور درست وارد شده و سرور روشنه.</li>
+      <li>صبر کن نصب کامل بشه (با <span class="mono">status</span> چک کن کانتینر Xray بالا باشه).</li>
+      <li>توی تب «ساخت کانفیگ» → تنظیمات پیشرفته → یک <b>SNI</b> دیگه امتحان کن.</li>
+      <li>اگه سرور فایروال (ufw) داره، پورت‌های ۸۴۴۳ و ۸۴۴۴ باید باز باشن.</li>
+    </ul>
+
+    <h3>دستورهای مدیریت (روی سرور)</h3>
+    <p>بعد از نصب، این دستورها رو داری:</p>
+    <div class="cmdtable">
+      <div><span class="mono">kian-v2ray status</span><i>وضعیت سرویس و کاربرها</i></div>
+      <div><span class="mono">kian-v2ray configs</span><i>نمایش لینک‌ها + QR</i></div>
+      <div><span class="mono">kian-v2ray users</span><i>لیست کاربرها و مصرف</i></div>
+      <div><span class="mono">kian-v2ray add علی 100 30</span><i>کاربر جدید: ۱۰۰گیگ، ۳۰روز</i></div>
+      <div><span class="mono">kian-v2ray renew علی 30</span><i>تمدید ۳۰ روزه</i></div>
+      <div><span class="mono">kian-v2ray remove علی</span><i>حذف کاربر</i></div>
+      <div><span class="mono">kian-v2ray update</span><i>آپدیت Xray به آخرین نسخه</i></div>
+    </div>
+
+    <h3>حجم و انقضا</h3>
+    <ul class="tips">
+      <li>سیستم هر ۱۰ دقیقه مصرف هر کاربر رو چک می‌کنه و اگه حجمش تموم شد یا منقضی شد، خودکار غیرفعالش می‌کنه.</li>
+      <li>برای فعال‌کردن دوباره: <span class="mono">kian-v2ray reset نام</span> یا <span class="mono">renew نام</span>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================== TAB: ABOUT ===================== -->
+<section class="panel-tab" data-panel="about">
+  <div class="card prose">
+    <h2>ℹ️ درباره</h2>
+    <p>
+      KIAN V2Ray یک ابزار رایگان و متن‌بازه که روی <b>سرورِ خودت</b> کانفیگ V2Ray (VLESS Reality + WARP) می‌سازه.
+      کلیدها توی مرورگر خودت ساخته می‌شن و هیچ‌جا ذخیره نمی‌شن. هدف اینه که حتی بدون دانش فنی، فقط با کپی-پیست کار کنه.
+    </p>
+
+    <h3>🗺️ نقشهٔ راه</h3>
+    <ul class="tips">
+      <li>✅ <b>فاز ۱ (الان):</b> Reality سریع + WARP، نصب تک‌دستوری، مدیریت کاربر/حجم.</li>
+      <li>🔜 <b>فاز ۲:</b> دامنه + TLS واقعی (WS/gRPC پشت Caddy) برای سرورهای سخت‌گیر.</li>
+      <li>🔜 <b>فاز ۳:</b> فرانت CDN برای سرورهایی که آی‌پی‌شون از ایران بسته‌ست.</li>
+      <li>🔜 <b>فاز ۴:</b> اتصال مستقیم به ربات تلگرام + هشدار حجم.</li>
+    </ul>
+
+    <h3>👤 کانال‌ها و ارتباط</h3>
+    <div class="links-grid">
+      <a class="lk" href="https://t.me/kian_irani_cdn_f" target="_blank" rel="noopener">🎓 آموزش و کانال<br><span>@kian_irani_cdn_f</span></a>
+      <a class="lk" href="https://t.me/Kian_irani_t" target="_blank" rel="noopener">🆘 پشتیبانی<br><span>@Kian_irani_t</span></a>
+      <a class="lk" href="https://t.me/Mhrv_script_bot" target="_blank" rel="noopener">🤖 ربات MHRV<br><span>@Mhrv_script_bot</span></a>
+      <a class="lk" href="https://t.me/Zyrln_script_bot" target="_blank" rel="noopener">🤖 ربات Zyrln<br><span>@Zyrln_script_bot</span></a>
+      <a class="lk" href="https://github.com/kian-irani/kian_v2ray" target="_blank" rel="noopener">⭐ سورس در گیت‌هاب<br><span>kian_v2ray</span></a>
+    </div>
+
+    <h3>💝 حمایت (اختیاری)</h3>
+    <p class="muted">این پروژه رایگانه ولی هزینهٔ سرور و وقت توسعه واقعیه. اگه دوست داشتی:</p>
+    <div class="donate">
+      <span class="donate-label">🔺 Tron (TRC20) — USDT / TRX:</span>
+      <code class="mono" id="trc20">TEVuoZ7574341zbc8pc5jrrBrgqGGMys5q</code>
+      <button type="button" class="copy" id="copy-trc20"><span>کپی</span></button>
+    </div>
+
+    <h3>🙏 ساخته‌شده با استفاده از</h3>
+    <p class="muted small">
+      <a href="https://github.com/XTLS/Xray-core" target="_blank" rel="noopener">Xray-core (REALITY)</a> ·
+      <a href="https://developers.cloudflare.com/warp-client/" target="_blank" rel="noopener">Cloudflare WARP</a> ·
+      TweetNaCl.js · qrcodejs
+    </p>
+    <p class="muted small">ساخته شده با ❤️ توسط Kian Irani</p>
+  </div>
+</section>
+
+</main>
 
 <!-- ========================= FOOTER ========================= -->
 <footer class="footer">
   <div class="wrap foot-inner">
     <span class="mono">KIAN ⟶ V2RAY</span>
     <nav class="foot-links">
-      <a href="https://github.com/KIAN-IRANI/kian_v2ray" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/kian-irani/kian_v2ray" target="_blank" rel="noopener">GitHub</a>
       <a href="https://t.me/kian_irani_cdn_f" target="_blank" rel="noopener">کانال</a>
-      <a href="https://t.me/Mhrv_script_bot" target="_blank" rel="noopener">ربات</a>
+      <a href="https://t.me/Kian_irani_t" target="_blank" rel="noopener">پشتیبانی</a>
     </nav>
-    <span class="muted small">منبع‌باز · بدون لاگ · کلید سمت کاربر</span>
+    <span class="muted small">متن‌باز · بدون لاگ · کلید سمت کاربر</span>
   </div>
 </footer>
 

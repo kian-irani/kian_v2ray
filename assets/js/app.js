@@ -382,7 +382,60 @@ function syncVisibility() {
   $('#field-sni-custom').classList.toggle('hidden', $('#sni').value !== '__custom__');
 }
 
+function initTabs() {
+  const tabs = $$('#tabs .tab');
+  const panels = $$('.panel-tab');
+  tabs.forEach(t => t.addEventListener('click', () => {
+    const name = t.dataset.tab;
+    tabs.forEach(x => x.classList.toggle('active', x === t));
+    panels.forEach(p => p.classList.toggle('active', p.dataset.panel === name));
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+  }));
+}
+
+function initStepper() {
+  const input = $('#num-users');
+  $$('.step-btn').forEach(b => b.addEventListener('click', () => {
+    const step = parseInt(b.dataset.step, 10) || 0;
+    let v = (parseInt(input.value, 10) || 1) + step;
+    v = Math.min(50, Math.max(1, v));
+    input.value = v;
+  }));
+}
+
+function initAdvanced() {
+  const tg = $('#adv-toggle');
+  const body = $('#adv-body');
+  tg.addEventListener('click', () => {
+    const open = body.classList.toggle('hidden') === false;
+    tg.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+}
+
+function initCopyTrc20() {
+  const btn = $('#copy-trc20');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const txt = $('#trc20').textContent.trim();
+    try { await navigator.clipboard.writeText(txt); }
+    catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = txt; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (_) {}
+      ta.remove();
+    }
+    const prev = btn.innerHTML;
+    btn.classList.add('ok'); btn.innerHTML = '<span>کپی شد ✓</span>';
+    setTimeout(() => { btn.innerHTML = prev; btn.classList.remove('ok'); }, 1400);
+  });
+}
+
 function init() {
+  initTabs();
+  initStepper();
+  initAdvanced();
+  initCopyTrc20();
+
   $$('input[name="mode"]').forEach(r => r.addEventListener('change', syncVisibility));
   $('#ss-enabled').addEventListener('change', syncVisibility);
   $('#sni').addEventListener('change', syncVisibility);
