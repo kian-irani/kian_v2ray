@@ -299,6 +299,7 @@ mkdir -p "$XRAY_DIR" "$LOG_DIR"
 chmod 777 "$LOG_DIR"   # کانتینر Xray با کاربر غیر-root → نیاز به نوشتن لاگ
 printf '%s' "$PAYLOAD_JSON" | jq -r '.config_b64' | base64 -d > "$XRAY_DIR/config.json"
 jq -e . "$XRAY_DIR/config.json" >/dev/null
+chmod 644 "$XRAY_DIR/config.json"   # کانتینر Xray با کاربر غیر-root → باید config را بخواند
 
 # --- مشکل ۰.۱: پورت API (آمار) نباید با 3x-ui/Marzban روی همین سرور تداخل کند ---
 # پورت API از config خوانده می‌شود؛ اگر اشغال بود، خودکار اولین پورت آزاد بعدی انتخاب
@@ -434,6 +435,7 @@ if [ -n "$FIXED" ] && [ -d "$ETC_DIR/sub" ] && [ -f "$ETC_DIR/sub_tokens.json" ]
   warn "پورت‌ها به‌خاطر تداخل تغییر کردند — لینک‌های نمایش‌داده‌شده در صفحه ممکن است پورت قدیمی داشته باشند؛ از «kian-v2ray configs» یا «kian-v2ray sub» لینک به‌روز را بگیر."
 fi
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+chmod 644 "$XRAY_DIR/config.json"   # تضمین خواندنی بودن برای کاربر غیر-root کانتینر (بعد از auto-fixها)
 docker run -d --name "$CONTAINER" --restart unless-stopped \
   --network host --memory="512m" \
   -v "$XRAY_DIR/config.json:/etc/xray/config.json:ro" \

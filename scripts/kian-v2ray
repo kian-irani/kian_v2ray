@@ -25,6 +25,8 @@ CONTAINER="kian-xray"
 WARP_PORT=40000
 GIB=1073741824
 RAW_BASE="https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
+# config.json باید برای کاربر غیر-root کانتینر Xray خواندنی باشد (وگرنه permission denied → کرش‌لوپ)
+ensure_cfg_perm(){ [ -f "$CONFIG" ] && chmod 644 "$CONFIG" 2>/dev/null || true; }
 ETC_DIR="/etc/kian-v2ray"
 XRAY_DIR="/etc/kian-v2ray"          # config.json ایزوله (به /etc/xray دست نمی‌زند)
 LOG_DIR="/var/log/kian-xray"
@@ -98,7 +100,10 @@ cmd_status(){
       err "Xray در کرش‌لوپ است (Restarting)"
       # علت رایج: تداخل پورت bind در لاگ
       local logtail; logtail="$(docker logs "$CONTAINER" --tail 30 2>&1 || true)"
-      if printf '%s' "$logtail" | grep -qiE 'address already in use|bind:.*in use|listen.*fail'; then
+      if printf '%s' "$logtail" | grep -qiE 'permission denied'; then
+        err "علت: مجوز config.json (کانتینر نمی‌تواند بخواند). رفع: kian-v2ray fixperm"
+        PROBLEMS="perm"
+      elif printf '%s' "$logtail" | grep -qiE 'address already in use|bind:.*in use|listen.*fail'; then
         local badport; badport="$(printf '%s' "$logtail" | grep -oiE ':[0-9]+: bind|:[0-9]+ .*in use' | grep -oE '[0-9]+' | head -1)"
         err "علت: تداخل پورت${badport:+ ($badport)} — احتمالاً پنل دیگری (3x-ui/Marzban) همان پورت را گرفته"
         PROBLEMS="port"
@@ -182,6 +187,9 @@ cmd_status(){
       *warp*) printf "   WARP قطع است. تلاش مجدد (WireGuard/MASQUE + fallback):  ${C_G}kian-v2ray warp${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
+      *perm*) printf "   مشکل مجوز config. رفع فوری:  ${C_G}kian-v2ray fixperm${C_N}\n" ;;
+    esac
+    case "$PROBLEMS" in
       *crash*) printf "   لاگ کرش:  ${C_G}docker logs $CONTAINER --tail 40${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
@@ -256,6 +264,7 @@ cmd_fixport(){
   jq --argjson new "$free" '(.inbounds[]|select(.tag=="api")|.port)|=$new' "$CONFIG" > "$tmpc" && mv "$tmpc" "$CONFIG"
   jq -e . "$CONFIG" >/dev/null || { err "config خراب شد — بازگردانی لازم است"; exit 1; }
   echo "127.0.0.1:${free}" > "$API_FILE"
+  ensure_cfg_perm
   docker restart "$CONTAINER" >/dev/null 2>&1 || docker start "$CONTAINER" >/dev/null 2>&1 || true
   sleep 3
   if docker ps --format '{{.Names}}'|grep -qx "$CONTAINER"; then say "پورت API به $free تغییر کرد و Xray بالا آمد ✅"
@@ -457,6 +466,7 @@ cmd_update(){
 
   # ۲) آپدیت Xray به نسخهٔ pin‌شده (با rollback اگر بالا نیامد)
   local img="ghcr.io/xtls/xray-core:$xv"
+  ensure_cfg_perm
   if docker pull "$img" >/dev/null 2>&1; then
     docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
     docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" \
@@ -513,6 +523,20 @@ cmd_help(){
   sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
 }
 
+cmd_fixperm(){
+  need_root
+  ensure_cfg_perm
+  inf "مجوز config.json به 644 تنظیم شد (خواندنی برای کانتینر)"
+  docker restart "$CONTAINER" >/dev/null 2>&1 || docker start "$CONTAINER" >/dev/null 2>&1 || true
+  sleep 3
+  if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+    say "Xray بالا آمد ✅ — حالا کانفیگ‌ها باید کار کنند"
+  else
+    err "هنوز بالا نیامد — لاگ: docker logs $CONTAINER --tail 20"
+    docker logs "$CONTAINER" --tail 15 2>&1 || true
+  fi
+}
+
 cmd_openports(){
   need_root
   if ! command -v ufw >/dev/null 2>&1; then inf "ufw نصب نیست — پورت‌ها آزادند"; return 0; fi
@@ -540,6 +564,7 @@ case "${1:-help}" in
   renew)     shift; cmd_renew "$@" ;;
   update)    cmd_update ;;
   fixport)   cmd_fixport ;;
+  fixperm)   cmd_fixperm ;;
   openports) cmd_openports ;;
   warp)      cmd_warp ;;
   untune)    cmd_untune ;;
