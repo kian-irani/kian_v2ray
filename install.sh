@@ -342,7 +342,28 @@ fi
 printf '%s' "$NEW_USERS_JSON" > "$ETC_DIR/users.json"
 chmod 600 "$ETC_DIR/users.json"; jq -e . "$ETC_DIR/users.json" >/dev/null
 printf '%s' "$PAYLOAD_JSON" | jq -r '.links[]? // empty' > "$ETC_DIR/links.txt" || true
-{ echo "Server IP : ${SERVER_IP:-?}"; echo "Installed : $(date -u +%FT%TZ)"; echo "WARP      : $WARP_NEEDED"; } > "$ETC_DIR/info.txt"
+
+# --- فایل‌های Subscription (فاز ۲): هر کاربر یک توکن از payload → یک فایل base64 ---
+SUB_PORT="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.sub_port // 8080')"
+SUB_TOKENS="$(printf '%s' "$PAYLOAD_JSON" | jq -c '.sub_tokens // {}')"
+echo "$SUB_TOKENS" > "$ETC_DIR/sub_tokens.json"; chmod 600 "$ETC_DIR/sub_tokens.json"
+echo "$SUB_PORT" > "$ETC_DIR/sub_port.txt"
+mkdir -p "$ETC_DIR/sub"
+if [ "$(printf '%s' "$SUB_TOKENS" | jq 'length')" -gt 0 ]; then
+  # برای هر ایمیل، لینک‌های همان کاربر (که نام کاربر در label لینک هست) را جمع کن
+  printf '%s' "$SUB_TOKENS" | jq -r 'to_entries[]|.key+"\t"+.value' | while IFS=$'\t' read -r email token; do
+    local_name="${email%@*}"
+    # لینک‌های این کاربر = خطوطی از links.txt که با KIAN-<name>- برچسب خورده‌اند یا SS مشترک
+    user_links="$(grep -E "#KIAN-${local_name}-" "$ETC_DIR/links.txt" 2>/dev/null || true)"
+    ss_link="$(grep -iE 'KIAN-Shadowsocks|KIAN-SS' "$ETC_DIR/links.txt" 2>/dev/null || true)"
+    all_links="$(printf '%s\n%s\n' "$user_links" "$ss_link" | sed '/^$/d')"
+    [ -z "$all_links" ] && all_links="$(cat "$ETC_DIR/links.txt")"   # fallback: همه
+    printf '%s' "$all_links" | base64 -w0 > "$ETC_DIR/sub/${token}.txt"
+  done
+  say "فایل‌های Subscription ساخته شد ($(printf '%s' "$SUB_TOKENS" | jq 'length') کاربر)"
+fi
+
+{ echo "Server IP : ${SERVER_IP:-?}"; echo "Installed : $(date -u +%FT%TZ)"; echo "WARP      : $WARP_NEEDED"; echo "Sub Port  : $SUB_PORT"; } > "$ETC_DIR/info.txt"
 say "فایل‌های کانفیگ نوشته شد"
 
 # --- مرحله ۵: اجرای کانتینر Xray -------------------------------------------
@@ -386,6 +407,29 @@ CRON
 say "مدیر و watchdog نصب شد"
 mark_step manager
 
+# --- مرحله ۶.۵: سرویس Subscription (فاز ۲) ---------------------------------
+inf "نصب سرویس Subscription"
+curl -fsSL "$RAW_BASE/scripts/sub-server.py" -o /usr/local/bin/kian-sub-server.py && chmod +x /usr/local/bin/kian-sub-server.py
+SUB_PORT="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8080)"
+cat > /etc/systemd/system/kian-sub.service <<UNIT
+[Unit]
+Description=KIAN V2Ray Subscription server
+After=network.target
+[Service]
+ExecStart=/usr/bin/python3 /usr/local/bin/kian-sub-server.py $SUB_PORT $ETC_DIR/sub
+Restart=always
+RestartSec=3
+User=root
+[Install]
+WantedBy=multi-user.target
+UNIT
+systemctl daemon-reload >/dev/null 2>&1 || true
+systemctl enable --now kian-sub >/dev/null 2>&1 || true
+sleep 1
+if curl -fsS --max-time 5 "http://127.0.0.1:${SUB_PORT}/health" 2>/dev/null | grep -q ok; then
+  say "سرویس Subscription فعال شد (پورت $SUB_PORT)"
+else warn "سرویس Subscription هنوز پاسخ نداد — بعداً: systemctl status kian-sub"; fi
+
 # --- مرحله ۷: فایروال (ایمن — هرگز ufw را خودکار روشن نمی‌کند) --------------
 # اگر کاربر فایروال نداشته باشد، روشن‌کردنش می‌تواند SSH را قطع کند → فقط وقتی
 # ufw از قبل «فعال» است پورت‌های ما را باز می‌کنیم (و پورت‌های SSH را هم تضمین می‌کنیم).
@@ -400,6 +444,9 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi '^Status:
     ufw allow "${p}/tcp" >/dev/null 2>&1 || true
     ufw allow "${p}/udp" >/dev/null 2>&1 || true
   done
+  # پورت سرویس Subscription (TCP)
+  SUB_PORT_FW="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8080)"
+  ufw allow "${SUB_PORT_FW}/tcp" >/dev/null 2>&1 || true
   ufw reload >/dev/null 2>&1 || true
   say "پورت‌ها در فایروال باز شد (SSH: $(echo $SSH_PORTS | tr '\n' ' '))"
 else
