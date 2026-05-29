@@ -29,11 +29,51 @@ if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$CONTAINER"; then
   docker start "$CONTAINER" >/dev/null 2>&1 || docker restart "$CONTAINER" >/dev/null 2>&1 || true
 fi
 
-# --- ۲) سلامت WARP (اگر نصب باشد) -----------------------------------------
+# --- ۲) سلامت WARP (اگر نصب باشد) + fallback خودکار -----------------------
+CONFIG="${CONFIG:-$XRAY_DIR/config.json}"
+FB_FLAG="$ETC_DIR/warp_fallback.txt"
+warp_up(){ curl -fsS --max-time 8 --socks5 "127.0.0.1:$WARP_PORT" https://1.1.1.1/cdn-cgi/trace 2>/dev/null | grep -q 'warp=on'; }
+fb_set(){ # on|off — تغییر routing بین warp و direct، سپس restart
+  command -v jq >/dev/null 2>&1 || return 0
+  [ -f "$CONFIG" ] || return 0
+  local tmp; tmp="$(mktemp)"
+  if [ "$1" = on ]; then
+    [ "$(cat "$FB_FLAG" 2>/dev/null)" = on ] && return 0
+    jq -e '.outbounds[]?|select(.tag=="warp")' "$CONFIG" >/dev/null 2>&1 || return 0
+    jq '(.routing.rules[]?|select(.outboundTag=="warp")|.outboundTag)="direct"' "$CONFIG" > "$tmp" \
+      && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || { rm -f "$tmp"; return 0; }
+    echo on > "$FB_FLAG"; log "WARP وصل نشد → fallback به direct فعال شد"
+  else
+    [ "$(cat "$FB_FLAG" 2>/dev/null)" = on ] || return 0
+    jq '(.routing.rules[]?|select((.inboundTag//[])|any(test("^reality-warp-")))|.outboundTag)="warp"' "$CONFIG" > "$tmp" \
+      && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || { rm -f "$tmp"; return 0; }
+    echo off > "$FB_FLAG"; log "WARP برگشت → routing به warp بازگردانده شد"
+  fi
+  docker restart "$CONTAINER" >/dev/null 2>&1 || true
+}
 if command -v warp-cli >/dev/null 2>&1; then
-  if ! curl -fsS --max-time 8 --socks5 "127.0.0.1:$WARP_PORT" https://1.1.1.1/cdn-cgi/trace 2>/dev/null | grep -q 'warp=on'; then
+  if warp_up; then
+    # اگر قبلاً fallback شده بودیم و حالا WARP سالم است → برگردان
+    [ "$(cat "$FB_FLAG" 2>/dev/null)" = on ] && fb_set off
+  else
     log "WARP قطع است — تلاش برای اتصال مجدد"
     warp-cli --accept-tos connect >/dev/null 2>&1 || { systemctl restart warp-svc >/dev/null 2>&1; sleep 3; warp-cli --accept-tos connect >/dev/null 2>&1; }
+    sleep 5
+    if ! warp_up; then
+      # تلاش با پروتکل دیگر (WireGuard ↔ MASQUE)
+      cur="$(warp-cli --accept-tos tunnel protocol get 2>/dev/null | grep -oiE 'wireguard|masque' | head -1)"
+      alt="WireGuard"; echo "$cur" | grep -qi wireguard && alt="MASQUE"
+      log "تلاش با پروتکل $alt"
+      warp-cli --accept-tos tunnel protocol set "$alt" >/dev/null 2>&1 || warp-cli --accept-tos set-tunnel-protocol "$alt" >/dev/null 2>&1 || true
+      warp-cli --accept-tos disconnect >/dev/null 2>&1; sleep 1; warp-cli --accept-tos connect >/dev/null 2>&1 || true
+      sleep 6
+    fi
+    if warp_up; then
+      log "WARP دوباره وصل شد"
+      [ "$(cat "$FB_FLAG" 2>/dev/null)" = on ] && fb_set off
+    else
+      fb_set on   # کاربر بی‌نت نماند
+    fi
   fi
 fi
 

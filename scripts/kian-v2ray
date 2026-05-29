@@ -13,6 +13,7 @@
 #     kian-v2ray renew <نام> [روز]   تمدید اعتبار از همین لحظه
 #     kian-v2ray update              به‌روزرسانی Xray به آخرین نسخه
 #     kian-v2ray fixport             رفع تداخل پورت API (کرش‌لوپ روی سرور دارای پنل دیگر)
+#     kian-v2ray warp                تلاش مجدد WARP (WireGuard/MASQUE) و برگرداندن از fallback
 #     kian-v2ray uninstall           حذف کامل
 #  «نام» می‌تواند بخشِ قبل از @ در ایمیل کاربر باشد (مثلاً user-1).
 # ============================================================================
@@ -111,8 +112,15 @@ cmd_status(){
   fi
   if command -v warp-cli >/dev/null 2>&1; then
     if curl -fsS --max-time 8 --socks5 "127.0.0.1:$WARP_PORT" https://1.1.1.1/cdn-cgi/trace 2>/dev/null | grep -q 'warp=on'; then
-      say "WARP: متصل (socks5 :$WARP_PORT)"
-    else warn "WARP: قطع — watchdog تلاش می‌کند یا: warp-cli --accept-tos connect"; PROBLEMS="${PROBLEMS:+$PROBLEMS,}warp"; fi
+      say "WARP: متصل (socks5 :$WARP_PORT$( [ -f "$ETC_DIR/warp_proto.txt" ] && printf ' — %s' "$(cat "$ETC_DIR/warp_proto.txt")"))"
+      if [ "$(cat "$ETC_DIR/warp_fallback.txt" 2>/dev/null)" = on ]; then
+        warn "اما routing هنوز روی fallback (direct) است — برای برگرداندن: kian-v2ray warp"
+        PROBLEMS="${PROBLEMS:+$PROBLEMS,}warpfb"
+      fi
+    elif [ "$(cat "$ETC_DIR/warp_fallback.txt" 2>/dev/null)" = on ]; then
+      warn "WARP قطع — fallback فعال است: ترافیک warp فعلاً مستقیم می‌رود (کاربر بی‌نت نمی‌ماند)"
+      PROBLEMS="${PROBLEMS:+$PROBLEMS,}warp"
+    else warn "WARP: قطع — watchdog تلاش می‌کند یا: kian-v2ray warp"; PROBLEMS="${PROBLEMS:+$PROBLEMS,}warp"; fi
   else inf "WARP نصب نشده (حالت مستقیم)"; fi
   # تداخل پورت API را مستقل هم چک کن
   local apiport; apiport="${API##*:}"
@@ -137,7 +145,10 @@ cmd_status(){
         printf "${C_G}   kian-v2ray fixport${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
-      *warp*) printf "   WARP قطع است. تلاش مجدد:  ${C_G}warp-cli --accept-tos connect${C_N}\n" ;;
+      *warpfb*) printf "   WARP سالم است ولی routing روی fallback مانده. برگرداندن:  ${C_G}kian-v2ray warp${C_N}\n" ;;
+    esac
+    case "$PROBLEMS" in
+      *warp*) printf "   WARP قطع است. تلاش مجدد (WireGuard/MASQUE + fallback):  ${C_G}kian-v2ray warp${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
       *crash*) printf "   لاگ کرش:  ${C_G}docker logs $CONTAINER --tail 40${C_N}\n" ;;
@@ -146,6 +157,35 @@ cmd_status(){
   else
     printf "\n${C_D}برای لینک‌ها: kian-v2ray configs   |   فهرست کاربرها: kian-v2ray users${C_N}\n\n"
   fi
+}
+
+# --- مدیریت دستی WARP: تلاش مجدد (WireGuard/MASQUE) و برگرداندن از fallback ---
+_warp_up(){ curl -fsS --max-time 8 --socks5 "127.0.0.1:$WARP_PORT" https://1.1.1.1/cdn-cgi/trace 2>/dev/null | grep -q 'warp=on'; }
+_warp_restore_routing(){
+  local FB="$ETC_DIR/warp_fallback.txt" tmp
+  [ "$(cat "$FB" 2>/dev/null)" = on ] || return 0
+  tmp="$(mktemp)"
+  jq '(.routing.rules[]?|select((.inboundTag//[])|any(test("^reality-warp-")))|.outboundTag)="warp"' "$CONFIG" > "$tmp" \
+    && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || rm -f "$tmp"
+  echo off > "$FB"; docker restart "$CONTAINER" >/dev/null 2>&1 || true
+  say "routing به warp بازگردانده شد"
+}
+cmd_warp(){
+  need_root
+  command -v warp-cli >/dev/null 2>&1 || { err "WARP نصب نیست."; exit 1; }
+  inf "تلاش برای اتصال WARP..."
+  warp-cli --accept-tos connect >/dev/null 2>&1 || { systemctl restart warp-svc >/dev/null 2>&1; sleep 3; warp-cli --accept-tos connect >/dev/null 2>&1; }
+  sleep 5
+  if ! _warp_up; then
+    local cur alt; cur="$(warp-cli --accept-tos tunnel protocol get 2>/dev/null | grep -oiE 'wireguard|masque' | head -1)"
+    alt="WireGuard"; echo "$cur" | grep -qi wireguard && alt="MASQUE"
+    inf "تلاش با پروتکل $alt"
+    warp-cli --accept-tos tunnel protocol set "$alt" >/dev/null 2>&1 || warp-cli --accept-tos set-tunnel-protocol "$alt" >/dev/null 2>&1 || true
+    warp-cli --accept-tos disconnect >/dev/null 2>&1; sleep 1; warp-cli --accept-tos connect >/dev/null 2>&1 || true
+    sleep 6
+  fi
+  if _warp_up; then say "WARP متصل است ✅"; _warp_restore_routing
+  else err "WARP هنوز وصل نشد — fallback (direct) فعال می‌ماند تا کاربر بی‌نت نماند. بعداً دوباره: kian-v2ray warp"; fi
 }
 
 # --- رفع خودکار تداخل پورت API (۰.۱/۰.۳) ----------------------------------
@@ -323,6 +363,7 @@ case "${1:-help}" in
   renew)     shift; cmd_renew "$@" ;;
   update)    cmd_update ;;
   fixport)   cmd_fixport ;;
+  warp)      cmd_warp ;;
   uninstall) cmd_uninstall ;;
   help|-h|--help) cmd_help ;;
   *) err "دستور ناشناخته: $1"; cmd_help; exit 1 ;;

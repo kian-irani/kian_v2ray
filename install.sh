@@ -148,6 +148,35 @@ if ! done_step docker; then
 else inf "Docker از قبل آماده — رد شد"; fi
 
 # --- مرحله ۳: WARP (فقط در صورت نیاز) --------------------------------------
+# fallback خودکار: اگر WARP وصل نشد، قوانینِ routing که به warp می‌روند موقتاً به
+# direct تغییر می‌کنند تا کاربرِ کانفیگ‌های warp بی‌نت نماند. هنگام برگشتِ WARP
+# دوباره به warp برمی‌گردند. وضعیت در warp_fallback.txt نگه‌داری می‌شود.
+warp_fallback(){ # $1 = on|off
+  local cfg="$XRAY_DIR/config.json" flag="$ETC_DIR/warp_fallback.txt" tmp
+  [ -f "$cfg" ] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  if [ "$1" = "on" ]; then
+    # فقط اگر outbound warp اصلاً وجود دارد و قبلاً fallback نشده‌ایم
+    jq -e '.outbounds[]?|select(.tag=="warp")' "$cfg" >/dev/null 2>&1 || return 0
+    [ "$(cat "$flag" 2>/dev/null)" = "on" ] && return 0
+    tmp="$(mktemp)"
+    jq '(.routing.rules[]?|select(.outboundTag=="warp")|.outboundTag)="direct"' "$cfg" > "$tmp" \
+      && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$cfg" || rm -f "$tmp"
+    echo on > "$flag"
+    docker restart "$CONTAINER" >/dev/null 2>&1 || true
+    warn "fallback فعال شد: ترافیک warp موقتاً مستقیم می‌رود (در status اطلاع داده می‌شود)"
+  else
+    [ "$(cat "$flag" 2>/dev/null)" = "on" ] || { echo off > "$flag"; return 0; }
+    # برگرداندن: قوانینِ مربوط به inboundهای reality-warp-* را به warp بازگردان
+    tmp="$(mktemp)"
+    jq '(.routing.rules[]?|select((.inboundTag//[])|any(test("^reality-warp-")))|.outboundTag)="warp"' "$cfg" > "$tmp" \
+      && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$cfg" || rm -f "$tmp"
+    echo off > "$flag"
+    docker restart "$CONTAINER" >/dev/null 2>&1 || true
+    say "WARP برگشت: ترافیک warp دوباره از WARP می‌رود"
+  fi
+}
+
 install_warp(){
   if command -v warp-cli >/dev/null 2>&1; then inf "WARP از قبل نصب است"
   else
@@ -163,20 +192,49 @@ install_warp(){
   fi
   systemctl enable --now warp-svc >/dev/null 2>&1 || true
   sleep 3
-  if ! warp-cli --accept-tos status 2>/dev/null | grep -qiE 'connected|registration'; then
-    (yes | warp-cli --accept-tos registration new) >/dev/null 2>&1 || warp-cli --accept-tos register >/dev/null 2>&1 || true
+  # --- ثبت‌نام مطمئن‌تر: فقط اگر هنوز ثبت نشده، و بدون اتکای صرف به `yes |` ---
+  if ! warp-cli --accept-tos registration show >/dev/null 2>&1 \
+     && ! warp-cli --accept-tos status 2>/dev/null | grep -qiE 'connected|registration ok|registered'; then
+    inf "ثبت‌نام WARP..."
+    for r in 1 2 3; do
+      warp-cli --accept-tos registration new </dev/null >/dev/null 2>&1 \
+        || warp-cli --accept-tos register </dev/null >/dev/null 2>&1 \
+        || (yes | warp-cli --accept-tos registration new) >/dev/null 2>&1 || true
+      warp-cli --accept-tos registration show >/dev/null 2>&1 && break
+      sleep 3
+    done
   fi
-  warp-cli --accept-tos tunnel protocol set MASQUE >/dev/null 2>&1 || true
   warp-cli --accept-tos mode proxy >/dev/null 2>&1 || warp-cli --accept-tos set-mode proxy >/dev/null 2>&1 || true
   warp-cli --accept-tos proxy port "$WARP_PORT" >/dev/null 2>&1 || warp-cli --accept-tos set-proxy-port "$WARP_PORT" >/dev/null 2>&1 || true
-  warp-cli --accept-tos connect >/dev/null 2>&1 || true
-  local ok=0
-  for i in 1 2 3 4 5 6; do
-    sleep 4
-    if curl -fsS --max-time 8 --socks5 "127.0.0.1:$WARP_PORT" https://1.1.1.1/cdn-cgi/trace 2>/dev/null | grep -q 'warp=on'; then ok=1; break; fi
+
+  # --- تلاش با هر پروتکل: اول WireGuard (پایدارتر)، بعد MASQUE ---
+  _warp_try(){ # $1=protocol
+    warp-cli --accept-tos tunnel protocol set "$1" >/dev/null 2>&1 \
+      || warp-cli --accept-tos set-tunnel-protocol "$1" >/dev/null 2>&1 || true
+    warp-cli --accept-tos disconnect >/dev/null 2>&1 || true
+    sleep 1
     warp-cli --accept-tos connect >/dev/null 2>&1 || true
+    local k
+    for k in 1 2 3 4 5; do
+      sleep 4
+      if curl -fsS --max-time 8 --socks5 "127.0.0.1:$WARP_PORT" https://1.1.1.1/cdn-cgi/trace 2>/dev/null | grep -q 'warp=on'; then return 0; fi
+      warp-cli --accept-tos connect >/dev/null 2>&1 || true
+    done
+    return 1
+  }
+  local ok=0 proto=""
+  for proto in WireGuard MASQUE; do
+    inf "اتصال WARP با پروتکل $proto..."
+    if _warp_try "$proto"; then ok=1; echo "$proto" > "$ETC_DIR/warp_proto.txt"; break; fi
+    warn "WARP با $proto وصل نشد — تلاش با پروتکل بعدی"
   done
-  [ "$ok" = 1 ] && say "WARP متصل شد (socks5 :$WARP_PORT)" || warn "WARP هنوز تأیید نشد — watchdog دوباره تلاش می‌کند"
+  if [ "$ok" = 1 ]; then
+    say "WARP متصل شد (socks5 :$WARP_PORT — پروتکل $(cat "$ETC_DIR/warp_proto.txt" 2>/dev/null))"
+    warp_fallback off || true
+  else
+    warn "WARP وصل نشد — فعال‌سازی fallback موقت به direct تا کاربر بی‌نت نماند"
+    warp_fallback on || true
+  fi
 }
 if [ "$WARP_NEEDED" = "true" ]; then
   if ! done_step warp; then install_warp; mark_step warp; fi
