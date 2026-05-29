@@ -324,6 +324,8 @@ html[dir=rtl] .adv-toggle[aria-expanded="true"] .adv-caret{transform:scaleX(-1) 
 
 .callout{margin-top:18px;background:rgba(46,230,166,.07);border:1px solid rgba(46,230,166,.25);border-radius:12px;padding:13px 15px;font-size:14px;color:#cfeede}
 .callout a{font-weight:700}
+.risk{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.35);border-radius:12px;padding:13px 15px;font-size:14px;color:#ffd4d4;line-height:1.9}
+.risk b{color:#fff}
 
 .cmdtable{display:flex;flex-direction:column;gap:7px;margin:8px 0}
 .cmdtable>div{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#080c11;border:1px solid var(--line-2);border-radius:9px;padding:9px 12px;flex-wrap:wrap}

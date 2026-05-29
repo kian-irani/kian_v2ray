@@ -45,6 +45,7 @@
     <button class="tab" data-tab="android">📱 اندروید</button>
     <button class="tab" data-tab="pc">💻 ویندوز / PC</button>
     <button class="tab" data-tab="tips">💡 نکات و عیب‌یابی</button>
+    <button class="tab" data-tab="manage">👥 مدیریت کاربر</button>
     <button class="tab" data-tab="about">ℹ️ درباره</button>
   </nav>
 </div>
@@ -106,8 +107,15 @@
               <span class="mode-sub">از WARP رد می‌شه، کمی کندتر.</span>
             </span>
           </label>
+          <label class="mode">
+            <input type="radio" name="mode" value="nosni">
+            <span class="mode-box">
+              <span class="mode-title">بدون SNI ⚠️</span>
+              <span class="mode-sub">Shadowsocks ساده — بدون استتار. فقط برای خودت.</span>
+            </span>
+          </label>
         </div>
-        <small class="hint">نمی‌دونی کدوم؟ همون «هر دو» رو بذار — هر دو لینک رو می‌گیری و هرکدوم بهتر بود استفاده کن.</small>
+        <small class="hint">نمی‌دونی کدوم؟ همون «هر دو» رو بذار — هر دو لینک رو می‌گیری و هرکدوم بهتر بود استفاده کن. «بدون SNI» ساده‌ست ولی ممکنه آی‌پی سرورت زودتر فیلتر بشه (پایین توضیح دادم).</small>
       </div>
 
       <!-- تعداد کاربر -->
@@ -126,6 +134,7 @@
         <span class="adv-caret">▸</span> تنظیمات پیشرفته (اختیاری — اگه نمی‌دونی دست نزن)
       </button>
       <div class="adv-body hidden" id="adv-body">
+        <div id="sni-block">
         <div class="field">
           <label for="sni-mode">دامنهٔ استتار (SNI)</label>
           <select id="sni-mode">
@@ -162,6 +171,7 @@
           <label for="sni-custom">دامنهٔ دلخواه</label>
           <input id="sni-custom" type="text" placeholder="example.com" autocomplete="off" spellcheck="false">
         </div>
+        </div><!-- /sni-block -->
         <label class="switch">
           <input type="checkbox" id="ss-enabled">
           <span class="switch-track"><span class="switch-thumb"></span></span>
@@ -373,6 +383,54 @@
       <li>سیستم هر ۱۰ دقیقه مصرف هر کاربر رو چک می‌کنه و اگه حجمش تموم شد یا منقضی شد، خودکار غیرفعالش می‌کنه.</li>
       <li>برای فعال‌کردن دوباره: <span class="mono">kian-v2ray reset نام</span> یا <span class="mono">renew نام</span>.</li>
     </ul>
+  </div>
+</section>
+
+<!-- ===================== TAB: MANAGE ===================== -->
+<section class="panel-tab" data-panel="manage">
+  <div class="card prose">
+    <h2>👥 مدیریت کاربر — بدون حفظ‌کردن دستور</h2>
+    <p>عملیات را انتخاب کن و فیلدها را پر کن؛ یک <b>دستور آمادهٔ کپی</b> می‌گیری. کافی است یک‌بار آن را در ترمینال سرور (SSH) Paste کنی — نیازی نیست چیزی را به‌خاطر بسپاری یا دستی بنویسی.</p>
+
+    <div class="field">
+      <label for="mg-action">چه کاری می‌خوای بکنی؟</label>
+      <select id="mg-action">
+        <option value="add">➕ افزودن کاربر جدید</option>
+        <option value="configs">🔗 دیدن کانفیگ یک کاربر (با QR)</option>
+        <option value="renew">🔄 تمدید اعتبار کاربر</option>
+        <option value="reset">♻️ صفر/تغییر حجم کاربر</option>
+        <option value="remove">🗑️ حذف کاربر</option>
+        <option value="users">📋 لیست همهٔ کاربرها و مصرف</option>
+        <option value="status">📊 وضعیت سرویس</option>
+      </select>
+    </div>
+
+    <div class="field" id="mg-name-f">
+      <label for="mg-name">نام کاربر (انگلیسی — مثل ali یا user-2)</label>
+      <input id="mg-name" type="text" placeholder="ali" autocomplete="off" spellcheck="false">
+      <small class="hint">همان نامی که موقع ساخت گذاشتی، یا یک نام جدید برای کاربر تازه.</small>
+    </div>
+
+    <div class="grid2">
+      <div class="field" id="mg-gb-f">
+        <label for="mg-gb">حجم (گیگ — ۰ یعنی نامحدود)</label>
+        <input id="mg-gb" type="number" min="0" max="100000" value="100">
+      </div>
+      <div class="field" id="mg-days-f">
+        <label for="mg-days">مدت (روز — ۰ یعنی دائمی)</label>
+        <input id="mg-days" type="number" min="0" max="3650" value="30">
+      </div>
+    </div>
+
+    <label>👇 این دستور را در ترمینال سرور بزن:</label>
+    <div class="terminal">
+      <div class="term-bar"><i></i><i></i><i></i><span>root@server:~#</span></div>
+      <pre class="term-body mono" id="mg-out"></pre>
+    </div>
+    <div class="row" id="mg-copy-row"></div>
+    <p class="muted small">برای «افزودن کاربر»، بعد از اجرا، کانفیگ همان کاربر با QR در ترمینال نشان داده می‌شود. این دستورها فقط روی سروری کار می‌کنند که قبلاً نصب را روی آن انجام داده‌ای.</p>
+
+    <div class="callout">🔭 در فازهای بعدی، این کارها مستقیم از <b>ربات تلگرام</b> بدون ترمینال انجام می‌شود (نقشهٔ راه را در تب «درباره» ببین).</div>
   </div>
 </section>
 

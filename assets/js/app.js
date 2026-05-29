@@ -118,10 +118,8 @@ function buildConfig(o) {
       port: o.ss.port,
       protocol: 'shadowsocks',
       tag: 'shadowsocks',
-      settings: {
-        clients: [{ password: o.ss.password, email: 'ss-shared@kian', method: SS_METHOD }],
-        network: 'tcp,udp',
-      },
+      // chacha20-ietf-poly1305 = تک‌کاربره: method + password (نه clients[])
+      settings: { method: SS_METHOD, password: o.ss.password, network: 'tcp,udp' },
       sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] },
     });
   }
@@ -132,7 +130,8 @@ function buildConfig(o) {
 
   const directTags = o.profiles.filter(p => p.channel === 'direct').map(p => p.tag);
   const warpTags   = o.profiles.filter(p => p.channel === 'warp').map(p => p.tag);
-  const ssOut = directTags.length ? 'direct' : 'warp';
+  // اگر خروجی warp وجود نداشته باشد، Shadowsocks باید از direct برود
+  const ssOut = (directTags.length || !anyWarp) ? 'direct' : 'warp';
 
   const rules = [
     { type: 'field', inboundTag: ['api'], outboundTag: 'api' },
@@ -205,13 +204,18 @@ const CH_LABEL = { direct: 'سریع', warp: 'WARP' };
 /* ------------------------------ generate ------------------------------- */
 function generate(f) {
   const reality = genReality();
+  if (f.mode === 'nosni') f.ss.enabled = true;       // بدون SNI = فقط Shadowsocks
   if (f.ss.enabled) f.ss.password = genPassword();
 
-  // کانال‌ها بر اساس حالت
-  const channels = f.mode === 'both' ? ['direct', 'warp'] : [f.mode];
+  // کانال‌های Reality بر اساس حالت (nosni هیچ کانال Reality ندارد)
+  const channels = f.mode === 'both' ? ['direct', 'warp']
+                 : f.mode === 'nosni' ? []
+                 : [f.mode];
 
-  // لیست SNI: یا یک دامنهٔ دستی، یا چند دامنهٔ خودکار
-  const sniList = (f.sniMode === 'manual' && f.manualSni) ? [f.manualSni] : pickSNIs(f.sniCount);
+  // لیست SNI فقط وقتی Reality داریم
+  const sniList = channels.length === 0 ? []
+                : (f.sniMode === 'manual' && f.manualSni) ? [f.manualSni]
+                : pickSNIs(f.sniCount);
 
   // ساخت پروفایل‌ها: برای هر (کانال × SNI) یک inbound با پورت خودکار
   const profiles = [];
@@ -378,32 +382,42 @@ function render(out) {
 
   const step3 = document.createElement('div');
   step3.className = 'panel reveal';
-  const modeLabel  = { direct: 'سریع', warp: 'WARP', both: 'سریع + WARP' }[out.f.mode];
+  const isNoSni = out.f.mode === 'nosni';
+  const modeLabel  = { direct: 'سریع', warp: 'WARP', both: 'سریع + WARP', nosni: 'بدون SNI' }[out.f.mode];
   const quotaLabel = out.f.quotaGb > 0 ? `${out.f.quotaGb}GB` : 'نامحدود';
   const daysLabel  = out.f.days > 0 ? `${out.f.days} روز` : 'دائمی';
   const linksPerUser = out.profiles.length;
-  step3.innerHTML = `<div class="panel-title">۳) کانفیگ کاربرها (${out.users.length} کاربر × ${linksPerUser} لینک)</div>
-    <p class="muted small">برای هر کاربر چند لینک با SNI و پورت‌های مختلف ساخته شد. توی اپ همه را وارد کن و <b>هرکدام وصل شد همان را استفاده کن</b> (بقیه پشتیبان‌اند).</p>
-    <div class="badges">
-      <span class="badge">${modeLabel}</span>
-      <span class="badge">حجم: ${quotaLabel}</span>
-      <span class="badge">اعتبار: ${daysLabel}</span>
-      <span class="badge">${out.sniList.length} دامنه (SNI)</span>
-    </div>`;
-  out.perUser.forEach(u => {
-    const card = document.createElement('div');
-    card.className = 'usercard';
-    card.innerHTML = `<div class="usercard-title">👤 ${u.local}</div>`;
-    u.items.forEach(it => {
-      const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
-      card.appendChild(linkRow(`${tag} · ${it.sni} · پورت ${it.port}`, it.link));
+  if (isNoSni) {
+    step3.innerHTML = `<div class="panel-title">۳) کانفیگ بدون SNI (Shadowsocks)</div>
+      <div class="risk">⚠️ این کانفیگ <b>استتار TLS ندارد</b>. ساده و سریع است، ولی چون شبیه ترافیک معمولی نیست،
+      ممکن است به‌مرور شناسایی شود و <b>آی‌پی سرورت فیلتر شود</b>. توصیه: این حالت را <b>فقط برای خودت</b> استفاده کن، نه پخش عمومی.
+      اگر آی‌پی فیلتر شد، یک سرور/آی‌پی دیگر بگیر یا از حالت «سریع + WARP» (با SNI) استفاده کن.</div>`;
+  } else {
+    step3.innerHTML = `<div class="panel-title">۳) کانفیگ کاربرها (${out.users.length} کاربر × ${linksPerUser} لینک)</div>
+      <p class="muted small">برای هر کاربر چند لینک با SNI و پورت‌های مختلف ساخته شد. توی اپ همه را وارد کن و <b>هرکدام وصل شد همان را استفاده کن</b> (بقیه پشتیبان‌اند).</p>
+      <div class="badges">
+        <span class="badge">${modeLabel}</span>
+        <span class="badge">حجم: ${quotaLabel}</span>
+        <span class="badge">اعتبار: ${daysLabel}</span>
+        <span class="badge">${out.sniList.length} دامنه (SNI)</span>
+      </div>`;
+  }
+  if (out.profiles.length) {
+    out.perUser.forEach(u => {
+      const card = document.createElement('div');
+      card.className = 'usercard';
+      card.innerHTML = `<div class="usercard-title">👤 ${u.local}</div>`;
+      u.items.forEach(it => {
+        const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
+        card.appendChild(linkRow(`${tag} · ${it.sni} · پورت ${it.port}`, it.link));
+      });
+      step3.appendChild(card);
     });
-    step3.appendChild(card);
-  });
+  }
   if (out.ssOut) {
     const card = document.createElement('div');
     card.className = 'usercard';
-    card.innerHTML = `<div class="usercard-title">🧩 Shadowsocks (مشترک)</div>`;
+    card.innerHTML = `<div class="usercard-title">🧩 Shadowsocks${isNoSni ? '' : ' (مشترک)'}</div>`;
     card.appendChild(linkRow('Shadowsocks', out.ssOut));
     step3.appendChild(card);
   }
@@ -418,11 +432,16 @@ function render(out) {
 
 /* ------------------------------- wiring -------------------------------- */
 function syncVisibility() {
+  const mode = ($('input[name="mode"]:checked') || {}).value || 'both';
+  const noSni = mode === 'nosni';
+  const sniBlock = $('#sni-block');
+  if (sniBlock) sniBlock.classList.toggle('hidden', noSni);   // در حالت بدون SNI کل بخش SNI پنهان
+
   const sniMode = ($('#sni-mode') && $('#sni-mode').value) || 'auto';
   const isManual = sniMode === 'manual';
-  $('#field-sni-count').classList.toggle('hidden', isManual);   // تعداد فقط در حالت خودکار
-  $('#field-sni').classList.toggle('hidden', !isManual);        // انتخاب دستی فقط در حالت دستی
-  $('#field-sni-custom').classList.toggle('hidden', !(isManual && $('#sni').value === '__custom__'));
+  $('#field-sni-count').classList.toggle('hidden', noSni || isManual);
+  $('#field-sni').classList.toggle('hidden', noSni || !isManual);
+  $('#field-sni-custom').classList.toggle('hidden', noSni || !(isManual && $('#sni').value === '__custom__'));
   $('#field-ss-port').classList.toggle('hidden', !$('#ss-enabled').checked);
 }
 
@@ -474,11 +493,59 @@ function initCopyTrc20() {
   });
 }
 
+function initManage() {
+  const action = $('#mg-action');
+  if (!action) return;
+  const nameEl = $('#mg-name'), gbEl = $('#mg-gb'), daysEl = $('#mg-days'), out = $('#mg-out');
+  const nameF = $('#mg-name-f'), gbF = $('#mg-gb-f'), daysF = $('#mg-days-f');
+
+  function recompute() {
+    const a = action.value;
+    const name = (nameEl.value.trim() || '<نام>').replace(/[^a-zA-Z0-9_<>-]/g, '');
+    const gb = Math.max(0, parseInt(gbEl.value, 10) || 0);
+    const days = Math.max(0, parseInt(daysEl.value, 10) || 0);
+
+    // نمایش فیلدهای مرتبط با هر عملیات
+    const need = {
+      add:    { name: true,  gb: true,  days: true },
+      remove: { name: true,  gb: false, days: false },
+      renew:  { name: true,  gb: false, days: true },
+      reset:  { name: true,  gb: true,  days: false },
+      configs:{ name: true,  gb: false, days: false },
+      status: { name: false, gb: false, days: false },
+      users:  { name: false, gb: false, days: false },
+    }[a] || { name: false, gb: false, days: false };
+    nameF.classList.toggle('hidden', !need.name);
+    gbF.classList.toggle('hidden', !need.gb);
+    daysF.classList.toggle('hidden', !need.days);
+
+    let cmd = '';
+    if (a === 'add')      cmd = `kian-v2ray add ${name} ${gb} ${days} && kian-v2ray configs ${name}`;
+    else if (a === 'remove') cmd = `kian-v2ray remove ${name}`;
+    else if (a === 'renew')  cmd = `kian-v2ray renew ${name} ${days}`;
+    else if (a === 'reset')  cmd = `kian-v2ray reset ${name} ${gb}`;
+    else if (a === 'configs')cmd = `kian-v2ray configs ${name}`;
+    else if (a === 'status') cmd = `kian-v2ray status`;
+    else if (a === 'users')  cmd = `kian-v2ray users`;
+    out.textContent = cmd;
+  }
+
+  [action, nameEl, gbEl, daysEl].forEach(el => {
+    el.addEventListener('input', recompute);
+    el.addEventListener('change', recompute);
+  });
+  recompute();
+
+  const row = $('#mg-copy-row');
+  if (row) row.appendChild(copyBtn('کپی دستور', () => out.textContent));
+}
+
 function init() {
   initTabs();
   initStepper();
   initAdvanced();
   initCopyTrc20();
+  initManage();
 
   $$('input[name="mode"]').forEach(r => r.addEventListener('change', syncVisibility));
   $('#ss-enabled').addEventListener('change', syncVisibility);

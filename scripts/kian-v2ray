@@ -44,7 +44,7 @@ meta_sni(){ jq -r '[.inbounds[]|select((.tag//"")|startswith("reality-"))|.strea
 meta_sid(){ jq -r '[.inbounds[]|select((.tag//"")|startswith("reality-"))|.streamSettings.realitySettings.shortIds[0]][0] // empty' "$CONFIG" 2>/dev/null; }
 meta_pbk(){ grep -oE 'pbk=[A-Za-z0-9_-]+' "$LINKS_FILE" 2>/dev/null | head -1 | cut -d= -f2; }
 meta_port(){ jq -r --arg t "$1" '[.inbounds[]|select(.tag==$t)|.port][0] // empty' "$CONFIG" 2>/dev/null; }
-meta_ss(){ jq -r '[.inbounds[]|select(.tag=="shadowsocks")|{p:.port,pw:.settings.clients[0].password,m:.settings.clients[0].method}][0] // empty | if .==null then "" else "\(.p) \(.m) \(.pw)" end' "$CONFIG" 2>/dev/null; }
+meta_ss(){ jq -r '[.inbounds[]|select(.tag=="shadowsocks")|{p:.port,pw:(.settings.password // .settings.clients[0].password),m:(.settings.method // .settings.clients[0].method)}][0] // empty | if .==null then "" else "\(.p) \(.m) \(.pw)" end' "$CONFIG" 2>/dev/null; }
 
 urlenc_label(){ printf '%s' "$1" | sed 's/ /%20/g'; }   # برچسب ساده‌ی ASCII
 
