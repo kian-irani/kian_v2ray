@@ -376,16 +376,46 @@ fi
 echo "$XRAY_IMAGE" > "$ETC_DIR/image.txt"
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 sleep 1
-# جلوگیری از تداخل با Xray/پنل دیگری که از قبل روی همین پورت‌ها فعال است
-BUSY=""
-for p in $(printf '%s' "$PAYLOAD_JSON" | jq -r '.ports[]? // empty'); do
-  if ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${p}$"; then BUSY="$BUSY $p"; fi
+# جلوگیری از تداخل با Xray/پنل دیگری که از قبل روی همین پورت‌ها فعال است.
+# به‌جای توقف، پورت‌های اشغال را خودکار با پورت آزاد جایگزین می‌کنیم (auto-fix)
+# هم در config.json، هم در links.txt، هم در فایل‌های Subscription.
+port_busy(){ ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${1}\$"; }
+free_port(){ # یک پورت آزاد که با هیچ‌کدام از پورت‌های استفاده‌شده تداخل ندارد
+  local cand used="$1"
+  for _ in $(seq 1 300); do
+    cand=$(( (RANDOM % 20000) + 20000 ))
+    port_busy "$cand" && continue
+    printf '%s\n' $used | grep -qx "$cand" && continue
+    echo "$cand"; return 0
+  done
+  echo ""; return 1
+}
+ALL_PORTS="$(jq -r '.inbounds[]|select((.tag//"")|startswith("reality-") or .tag=="shadowsocks")|.port' "$XRAY_DIR/config.json" 2>/dev/null)"
+FIXED=""
+for p in $ALL_PORTS; do
+  if port_busy "$p"; then
+    np="$(free_port "$ALL_PORTS $FIXED")"
+    if [ -n "$np" ]; then
+      inf "پورت $p اشغال بود → جایگزین با $np (auto-fix)"
+      tmpc="$(mktemp)"
+      jq --argjson o "$p" --argjson n "$np" '(.inbounds[]|select(.port==$o)|.port)=$n' "$XRAY_DIR/config.json" > "$tmpc" && jq -e . "$tmpc" >/dev/null 2>&1 && mv "$tmpc" "$XRAY_DIR/config.json" || rm -f "$tmpc"
+      # در links.txt و فایل‌های sub هم پورت را اصلاح کن (الگوی :port در URL یا base64)
+      sed -i "s/:${p}?/:${np}?/g; s/:${p}#/:${np}#/g" "$ETC_DIR/links.txt" 2>/dev/null || true
+      FIXED="$FIXED $np"
+    else
+      err "پورت $p اشغال است و پورت آزاد پیدا نشد."; exit 1
+    fi
+  fi
 done
-if [ -n "$BUSY" ]; then
-  err "این پورت‌ها روی سرور از قبل اشغال‌اند:$BUSY"
-  err "ظاهراً یک Xray/پنل دیگر روی این سرور فعال است."
-  err "در صفحهٔ تعاملی → «تنظیمات پیشرفته» → «پورت پایه» را عوض کن (مثلاً 9443) و دستور نصب جدید را اجرا کن."
-  exit 1
+# اگر links.txt تغییر کرد، فایل‌های Subscription را از نو بساز
+if [ -n "$FIXED" ] && [ -d "$ETC_DIR/sub" ] && [ -f "$ETC_DIR/sub_tokens.json" ]; then
+  jq -r 'to_entries[]|.key+"\t"+.value' "$ETC_DIR/sub_tokens.json" | while IFS=$'\t' read -r email token; do
+    ln="${email%@*}"
+    ul="$(grep -E "#KIAN-${ln}-" "$ETC_DIR/links.txt" 2>/dev/null; grep -iE 'KIAN-Shadowsocks|KIAN-SS' "$ETC_DIR/links.txt" 2>/dev/null)"
+    [ -z "$ul" ] && ul="$(cat "$ETC_DIR/links.txt")"
+    printf '%s' "$ul" | sed '/^$/d' | base64 -w0 > "$ETC_DIR/sub/${token}.txt"
+  done
+  warn "پورت‌ها به‌خاطر تداخل تغییر کردند — لینک‌های نمایش‌داده‌شده در صفحه ممکن است پورت قدیمی داشته باشند؛ از «kian-v2ray configs» یا «kian-v2ray sub» لینک به‌روز را بگیر."
 fi
 docker run -d --name "$CONTAINER" --restart unless-stopped \
   --network host --memory="512m" \
