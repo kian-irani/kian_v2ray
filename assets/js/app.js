@@ -332,9 +332,33 @@ async function generate(f) {
                 : pickSNIs(f.sniCount);
 
   // ساخت پروفایل‌ها: برای هر (کانال × SNI) یک inbound با پورت خودکار
+  // اگر کاربر basePort سفارشی نزده، اول از پورت‌های "تقریباً همیشه باز" استفاده می‌کنیم
+  // (مثل 443، 2083، 8080، 2096 — تقریباً همهٔ پروایدرها باز می‌گذارند).
+  // اگر TLS فعال است، 443 و 80 برای Caddy رزرو می‌شوند.
   const profiles = [];
-  let port = f.basePort || BASE_PORT;
-  const nextPort = () => { while (f.ss.enabled && port === f.ss.port) port++; return port++; };
+  const userBasePort = parseInt(($('#base-port') && $('#base-port').value), 10);
+  const tlsReserves443 = !!(f.tls && f.tls.enabled && isDomain(f.tls.domain) && f.tls.protos.length);
+  const wellKnownOpen = [443, 2083, 2087, 2096, 8080, 2052, 2086];
+  const reservedByTls = tlsReserves443 ? [443, 80] : [];
+  // اگر کاربر basePort سفارشی داده، فقط همان را استفاده کن (رفتار قدیمی)
+  // وگرنه، اول پورت‌های معروف بازنشده، بعد از 8443 ادامه بده
+  let portPool;
+  if (userBasePort && userBasePort > 0 && userBasePort !== BASE_PORT) {
+    portPool = [];   // فقط ترتیبی از basePort
+    for (let p = userBasePort; p < userBasePort + 50; p++) portPool.push(p);
+  } else {
+    portPool = wellKnownOpen.filter(p => !reservedByTls.includes(p));
+    for (let p = 8443; p < 8493; p++) portPool.push(p);   // بعد از پورت‌های معروف
+  }
+  // پورت‌های ممنوع: ss و WARP و رزروشده توسط TLS
+  const banned = new Set([WARP_PORT, ...reservedByTls]);
+  if (f.ss.enabled) banned.add(f.ss.port);
+  let portIdx = 0;
+  const nextPort = () => {
+    while (portIdx < portPool.length && banned.has(portPool[portIdx])) portIdx++;
+    if (portIdx >= portPool.length) throw new Error('پورت کافی پیدا نشد — basePort را عوض کن');
+    return portPool[portIdx++];
+  };
   channels.forEach(ch => {
     sniList.forEach((sni, i) => {
       profiles.push({ tag: `reality-${ch}-${i + 1}`, port: nextPort(), sni, channel: ch });

@@ -508,6 +508,7 @@ docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 chmod 644 "$XRAY_DIR/config.json"   # تضمین خواندنی بودن برای کاربر غیر-root کانتینر (بعد از تخصیص پورت)
 docker run -d --name "$CONTAINER" --restart unless-stopped \
   --network host --memory="512m" \
+  --cap-add=NET_BIND_SERVICE \
   -v "$XRAY_DIR/config.json:/etc/xray/config.json:ro" \
   -v "$LOG_DIR:/var/log/xray" \
   "$XRAY_IMAGE" run -c /etc/xray/config.json >/dev/null 2>&1

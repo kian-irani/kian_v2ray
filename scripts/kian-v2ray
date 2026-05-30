@@ -447,15 +447,18 @@ EOF
     printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
     if [ -n "$gist_url" ]; then
       say "⭐ لینک Subscription (HTTPS — توصیه‌شده):"
-      say "  ${C_G}$gist_url${C_N}"
+      printf "  ${C_G}%s${C_N}\n" "$gist_url"
       inf "این لینک روی همهٔ پروایدرها و فایروال‌ها کار می‌کند."
     fi
-    if systemctl is-active kian-sub >/dev/null 2>&1; then
+    # لینک‌های پشتیبان فقط در صورتی نشان داده شوند که Gist موفق نبود
+    # (v2rayNG فقط https://Subscription می‌پذیرد، پس http همه را به اشتباه نمی‌اندازد)
+    if [ -z "$gist_url" ] && systemctl is-active kian-sub >/dev/null 2>&1; then
       printf "\n"
-      inf "لینک‌های پشتیبان (روی پورت سرور — اگر Gist فلد):"
+      warn "Gist در دسترس نبود — لینک‌های پشتیبان فقط برای curl/مرورگر کار می‌کنند، نه v2rayNG:"
       for sp in $(echo "$subports" | tr ',' ' '); do
         [ -n "$sp" ] && printf "    http://${ip}:${sp}/sub/${tok}\n"
       done
+      inf "برای import در v2rayNG، فایل خام را در یک Gist عمومی آپلود کن یا 'kian-v2ray configs' را بزن و لینک‌ها را تک‌تک کپی کن."
     fi
     if [ -z "$gist_url" ] && ! systemctl is-active kian-sub >/dev/null 2>&1; then
       warn "نه Gist و نه سرویس sub فعال است. فایل خام: $outfile"
@@ -570,7 +573,7 @@ cmd_update(){
   ensure_cfg_perm
   if docker pull "$img" >/dev/null 2>&1; then
     docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-    docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" \
+    docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" --cap-add=NET_BIND_SERVICE \
       -v "$CONFIG:/etc/xray/config.json:ro" -v "$LOG_DIR:/var/log/xray" \
       "$img" run -c /etc/xray/config.json >/dev/null 2>&1 || true
     sleep 3
@@ -579,7 +582,7 @@ cmd_update(){
     elif [ -n "$prev_img" ]; then
       warn "نسخهٔ جدید بالا نیامد — rollback به $prev_img"
       docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-      docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" \
+      docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" --cap-add=NET_BIND_SERVICE \
         -v "$CONFIG:/etc/xray/config.json:ro" -v "$LOG_DIR:/var/log/xray" \
         "$prev_img" run -c /etc/xray/config.json >/dev/null 2>&1 || true
       sleep 2
