@@ -358,7 +358,7 @@ chmod 600 "$ETC_DIR/users.json"; jq -e . "$ETC_DIR/users.json" >/dev/null
 printf '%s' "$PAYLOAD_JSON" | jq -r '.links[]? // empty' > "$ETC_DIR/links.txt" || true
 
 # --- فایل‌های Subscription (فاز ۲): هر کاربر یک توکن از payload → یک فایل base64 ---
-SUB_PORT="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.sub_port // 80')"
+SUB_PORT="$(printf '%s' "$PAYLOAD_JSON" | jq -r '(.sub_port // 80) | if type=="array" then map(tostring)|join(",") else tostring end')"
 SUB_TOKENS="$(printf '%s' "$PAYLOAD_JSON" | jq -c '.sub_tokens // {}')"
 echo "$SUB_TOKENS" > "$ETC_DIR/sub_tokens.json"; chmod 600 "$ETC_DIR/sub_tokens.json"
 echo "$SUB_PORT" > "$ETC_DIR/sub_port.txt"
@@ -547,24 +547,32 @@ mark_step manager
 # --- مرحله ۶.۵: سرویس Subscription (فاز ۲) ---------------------------------
 inf "نصب سرویس Subscription"
 curl -fsSL "$RAW_BASE/scripts/sub-server.py" -o /usr/local/bin/kian-sub-server.py && chmod +x /usr/local/bin/kian-sub-server.py
-SUB_PORT="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
-# اگر پورت sub (پیش‌فرض ۸۰) اشغال بود، یک پورت آزاد جایگزین کن و فایل پورت را به‌روز کن
-if ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${SUB_PORT}\$"; then
-  warn "پورت Subscription ($SUB_PORT) اشغال است (احتمالاً وب‌سرور دیگری). جایگزینی خودکار..."
+# چند پورت کاندید را امتحان می‌کنیم: هر کدام آزاد بود، sub رویش بالا می‌آید.
+# هدف: حداقل یکی از بیرون قابل دسترس باشد، بدون اقدام کاربر.
+#   • 80  : استاندارد وب (تقریباً همیشه از بیرون باز است)
+#   • 8888: پورت رایج HTTP جایگزین
+#   • 2086: یکی از پورت‌های HTTP که Cloudflare/پروایدرها معمولاً اجازه می‌دهند
+#   • یک پورت تصادفی بالا: آخرین fallback
+sub_port_busy(){ ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${1}\$"; }
+SUB_PORTS=""
+for cand in 80 8888 2086; do
+  sub_port_busy "$cand" || SUB_PORTS="${SUB_PORTS:+$SUB_PORTS,}$cand"
+done
+# اگر همهٔ کاندیدها اشغال بودند، حداقل یک پورت تصادفی بالا
+if [ -z "$SUB_PORTS" ]; then
   for _ in $(seq 1 200); do
-    cand=$(( (RANDOM % 10000) + 20000 ))
-    ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${cand}\$" && continue
-    SUB_PORT="$cand"; break
+    rp=$(( (RANDOM % 10000) + 20000 ))
+    sub_port_busy "$rp" || { SUB_PORTS="$rp"; break; }
   done
-  echo "$SUB_PORT" > "$ETC_DIR/sub_port.txt"
-  warn "پورت Subscription به $SUB_PORT تغییر کرد. ⚠️ این پورت باید از بیرون باز باشد؛ اگر کار نکرد پورت ۸۰ را روی سرور خالی کن و دوباره نصب کن."
 fi
+[ -z "$SUB_PORTS" ] && SUB_PORTS="80"   # برای ایمنی؛ نباید برسیم اینجا
+echo "$SUB_PORTS" > "$ETC_DIR/sub_port.txt"   # ممکن است "80,8888,2086" یا "23456"
 cat > /etc/systemd/system/kian-sub.service <<UNIT
 [Unit]
-Description=KIAN V2Ray Subscription server
+Description=KIAN V2Ray Subscription server (multi-port)
 After=network.target
 [Service]
-ExecStart=/usr/bin/python3 /usr/local/bin/kian-sub-server.py $SUB_PORT $ETC_DIR/sub
+ExecStart=/usr/bin/python3 /usr/local/bin/kian-sub-server.py $SUB_PORTS $ETC_DIR/sub
 Restart=always
 RestartSec=3
 User=root
@@ -574,9 +582,18 @@ UNIT
 systemctl daemon-reload >/dev/null 2>&1 || true
 systemctl enable --now kian-sub >/dev/null 2>&1 || true
 sleep 1
-if curl -fsS --max-time 5 "http://127.0.0.1:${SUB_PORT}/health" 2>/dev/null | grep -q ok; then
-  say "سرویس Subscription فعال شد (پورت $SUB_PORT)"
-else warn "سرویس Subscription هنوز پاسخ نداد — بعداً: systemctl status kian-sub"; fi
+# چک سلامت روی هر پورتی که بالا آمد
+SUB_OK=""
+for p in $(echo "$SUB_PORTS" | tr ',' ' '); do
+  if curl -fsS --max-time 5 "http://127.0.0.1:${p}/health" 2>/dev/null | grep -q ok; then
+    SUB_OK="${SUB_OK:+$SUB_OK,}$p"
+  fi
+done
+if [ -n "$SUB_OK" ]; then
+  say "سرویس Subscription فعال شد (پورت‌ها: $SUB_OK)"
+else
+  warn "سرویس Subscription هنوز پاسخ نداد — بعداً: systemctl status kian-sub"
+fi
 
 # --- مرحله ۷: فایروال (ایمن — هرگز ufw را خودکار روشن نمی‌کند) --------------
 # اگر کاربر فایروال نداشته باشد، روشن‌کردنش می‌تواند SSH را قطع کند → فقط وقتی
@@ -595,9 +612,11 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi '^Status:
     ufw allow "${p}/tcp" >/dev/null 2>&1 || true
     ufw allow "${p}/udp" >/dev/null 2>&1 || true
   done
-  # پورت سرویس Subscription (TCP)
-  SUB_PORT_FW="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
-  ufw allow "${SUB_PORT_FW}/tcp" >/dev/null 2>&1 || true
+  # پورت‌های سرویس Subscription (می‌تواند چند پورت با ویرگول جدا باشد)
+  SUB_PORTS_FW="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
+  for sp in $(echo "$SUB_PORTS_FW" | tr ',' ' '); do
+    [ -n "$sp" ] && ufw allow "${sp}/tcp" >/dev/null 2>&1 || true
+  done
   ufw reload >/dev/null 2>&1 || true
   say "پورت‌ها در فایروال باز شد (SSH: $(echo $SSH_PORTS | tr '\n' ' '))"
 else

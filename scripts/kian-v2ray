@@ -350,12 +350,15 @@ EOF
     # فایل subscription = base64 از مجموعهٔ لینک‌ها (فرمت v2rayNG)
     local outfile="$subdir/${tok}.txt"
     printf '%s' "$all" | base64 -w0 > "$outfile"
-    local subport; subport="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
+    local subports; subports="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
     local ip; ip="$(meta_ip)"
     printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
     if systemctl is-active kian-sub >/dev/null 2>&1; then
-      say "لینک Subscription: ${C_G}http://${ip}:${subport}/sub/${tok}${C_N}"
-      inf "همین لینک را در v2rayNG → Subscription وارد کن؛ همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند."
+      inf "لینک‌های Subscription (هر کدام کار کرد، همان را استفاده کن):"
+      for sp in $(echo "$subports" | tr ',' ' '); do
+        [ -n "$sp" ] && say "  http://${ip}:${sp}/sub/${tok}"
+      done
+      inf "یکی از این لینک‌ها را در v2rayNG → Subscription وارد کن."
     else
       warn "سرویس Subscription فعال نیست (systemctl status kian-sub). فایل ساخته شد: $outfile"
       inf "یا این فایل را جایی با لینک مستقیم (Gist/raw) آپلود کن و URL را در v2rayNG بزن."
@@ -511,7 +514,9 @@ cmd_uninstall(){
       ufw delete allow "${p}/udp" >/dev/null 2>&1 || true
     done
     sp="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
-    ufw delete allow "${sp}/tcp" >/dev/null 2>&1 || true
+    for one in $(echo "$sp" | tr ',' ' '); do
+      [ -n "$one" ] && ufw delete allow "${one}/tcp" >/dev/null 2>&1 || true
+    done
     ufw reload >/dev/null 2>&1 || true
   fi
   rm -f /etc/cron.d/kian-v2ray-watchdog /usr/local/bin/kian-v2ray-watchdog.sh
@@ -549,7 +554,9 @@ cmd_openports(){
     ufw allow "${p}/tcp" >/dev/null 2>&1 && ufw allow "${p}/udp" >/dev/null 2>&1 && say "باز شد: $p"
   done
   sub="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
-  ufw allow "${sub}/tcp" >/dev/null 2>&1 && say "باز شد: $sub (Subscription)"
+  for one in $(echo "$sub" | tr ',' ' '); do
+    [ -n "$one" ] && ufw allow "${one}/tcp" >/dev/null 2>&1 && say "باز شد: $one (Subscription)"
+  done
   ufw reload >/dev/null 2>&1 || true
   say "پورت‌های سرویس در فایروال باز شدند"
 }

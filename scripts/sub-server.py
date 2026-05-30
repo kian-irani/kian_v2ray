@@ -6,21 +6,24 @@
 #   - بدون directory listing
 #   - توکن با regex سخت‌گیرانه اعتبارسنجی می‌شود → path traversal ممکن نیست
 #   - هیچ مسیر دیگری سرو نمی‌شود (404)
-#  اجرا: sub-server.py <port> <subdir>
+#  اجرا: sub-server.py <port[,port,port...]> <subdir>
+#   چند پورت با کاما جدا می‌شوند تا اگر یکی توسط پروایدر بسته بود،
+#   دیگری از بیرون قابل دسترس باشد (بدون نیاز به اقدام کاربر).
 # ============================================================================
 import os
 import re
 import sys
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 80
+PORTS_ARG = sys.argv[1] if len(sys.argv) > 1 else "80"
 SUBDIR = sys.argv[2] if len(sys.argv) > 2 else "/etc/kian-v2ray/sub"
 
 TOKEN_RE = re.compile(r"^[A-Za-z0-9]{8,64}$")  # فقط حروف/عدد — بدون / یا .
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "kian-sub/1.0"
+    server_version = "kian-sub/1.1"
 
     def _deny(self, code=404):
         self.send_response(code)
@@ -65,11 +68,39 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-if __name__ == "__main__":
-    os.makedirs(SUBDIR, exist_ok=True)
-    srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
-    print(f"kian sub-server on :{PORT} serving {SUBDIR}")
+def serve(port: int):
+    """یک سرور روی پورت داده‌شده اجرا می‌کند. اگر bind نشد، خاموش می‌شود (بقیه پورت‌ها فعال می‌مانند)."""
+    try:
+        srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+    except OSError as e:
+        print(f"[!] kian sub-server: bind فلد روی :{port} — {e}", flush=True)
+        return
+    print(f"[+] kian sub-server on :{port} serving {SUBDIR}", flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         srv.shutdown()
+
+
+if __name__ == "__main__":
+    os.makedirs(SUBDIR, exist_ok=True)
+    ports = []
+    for p in PORTS_ARG.split(","):
+        p = p.strip()
+        if p.isdigit():
+            n = int(p)
+            if 1 <= n <= 65535 and n not in ports:
+                ports.append(n)
+    if not ports:
+        ports = [80]
+    threads = []
+    for p in ports:
+        t = threading.Thread(target=serve, args=(p,), daemon=True)
+        t.start()
+        threads.append(t)
+    # تا وقتی حداقل یکی از سرورها زنده است، سرویس را زنده نگه دار
+    try:
+        for t in threads:
+            t.join()
+    except KeyboardInterrupt:
+        sys.exit(0)

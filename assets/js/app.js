@@ -8,7 +8,7 @@
 
 const RAW_BASE = 'https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main';
 const WARP_PORT = 40000;
-const SUB_PORT = 80;            // سرویس Subscription روی پورت استاندارد ۸۰ (پروایدرها همیشه بازش می‌گذارند). باید روی سرور خالی باشد.
+const SUB_PORTS = [80, 8888, 2086]; // سرویس Subscription روی چند پورت همزمان اجرا می‌شود — هر کدام از بیرون باز بود، همان کار می‌کند. کاربر کاری نمی‌کند.
 const SS_METHOD = 'chacha20-ietf-poly1305';
 const GIB = 1073741824;
 const BASE_PORT = 8443;        // پورت‌ها از اینجا به‌صورت خودکار اضافه می‌شوند
@@ -265,8 +265,8 @@ function generate(f) {
     // توکن Subscription تصادفی (مثل UUID — همان‌جا در مرورگر ساخته می‌شود)
     const token = randHex(16);
     subTokens[u.email] = token;
-    const subUrl = `http://${f.serverIp}:${SUB_PORT}/sub/${token}`;
-    return { email: u.email, local, items, subUrl };
+    const subUrls = SUB_PORTS.map(p => `http://${f.serverIp}:${p}/sub/${token}`);
+    return { email: u.email, local, items, subUrls };
   });
 
   let ssOut = null;
@@ -286,7 +286,7 @@ function generate(f) {
     links,
     ports,
     api_port: apiPort,
-    sub_port: SUB_PORT,
+    sub_port: SUB_PORTS,
     sub_tokens: subTokens,
     reality_pbk: reality.publicKey,   // کلید عمومی (راز نیست) — سرور لینک‌ها را از config نهایی می‌سازد
     reality_sid: reality.shortId,
@@ -424,18 +424,38 @@ function render(out) {
       const card = document.createElement('div');
       card.className = 'usercard';
       card.innerHTML = `<div class="usercard-title">👤 ${u.local}</div>`;
-      // فقط لینک Subscription: یک لینک که همهٔ کانفیگ‌ها را از سرور می‌آورد و خودکار آپدیت می‌شود.
-      // (کانفیگ‌های تکی نمایش داده نمی‌شوند چون اگر پورتی روی سرور اشغال باشد و auto-fix شود،
-      //  لینک‌های تکیِ صفحه قدیمی می‌شوند؛ ولی Subscription همیشه پورت واقعیِ سرور را دارد.)
-      if (u.subUrl) {
-        card.appendChild(linkRow('⭐ لینک Subscription شما', u.subUrl));
+      // ۱) لینک‌های Subscription (چند پورت — هر کدام کار کرد، همان را در v2rayNG وارد کن)
+      if (u.subUrls && u.subUrls.length) {
+        const subHead = document.createElement('div');
+        subHead.className = 'sub-head';
+        subHead.innerHTML = '⭐ <b>لینک‌های Subscription</b> — یکی را در v2rayNG → Subscription وارد کن:';
+        card.appendChild(subHead);
+        u.subUrls.forEach((url, i) => {
+          card.appendChild(linkRow(`گزینهٔ ${i + 1}`, url));
+        });
         const hint = document.createElement('div');
         hint.className = 'sub-hint';
-        hint.innerHTML = 'این لینک را در v2rayNG → بخش <b>Subscription / گروه اشتراک</b> وارد کن. همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.';
+        hint.innerHTML = 'سرویس روی <b>چند پورت همزمان</b> روی سرورت اجرا می‌شود — هر پروایدری حداقل یکی را باز می‌گذارد. <b>اگر اولی fail شد، بعدی را امتحان کن.</b> اگر هیچ‌کدام کار نکرد، کانفیگ‌های تکیِ پایین را وارد کن.';
         card.appendChild(hint);
       }
+      // ۲) کانفیگ‌های تکی (پشتیبان — همیشه کار می‌کنند، حتی اگر sub fail شد)
+      const sep = document.createElement('div');
+      sep.className = 'config-sep';
+      sep.textContent = 'یا کانفیگ‌های تکی (هرکدام وصل شد، همان را نگه دار):';
+      card.appendChild(sep);
+      u.items.forEach(it => {
+        const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
+        card.appendChild(linkRow(`${tag} · ${it.sni}`, it.link));
+      });
       step3.appendChild(card);
     });
+  }
+  if (out.ssOut) {
+    const card = document.createElement('div');
+    card.className = 'usercard';
+    card.innerHTML = `<div class="usercard-title">🧩 Shadowsocks${isNoSni ? '' : ' (مشترک)'}</div>`;
+    card.appendChild(linkRow('Shadowsocks', out.ssOut));
+    step3.appendChild(card);
   }
   box.appendChild(step3);
 

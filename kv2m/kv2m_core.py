@@ -210,7 +210,7 @@ def generate(opts: dict) -> dict:
     links = []
     per_user = []
     sub_tokens = {}
-    sub_port = 80
+    sub_ports = [80, 8888, 2086]   # هماهنگ با app.js — هر کدام بالا آمد، استفاده می‌شود
     ip = opts["server_ip"]
     for u in users:
         local = u["email"].split("@")[0]
@@ -222,8 +222,9 @@ def generate(opts: dict) -> dict:
             items.append({"channel": p["channel"], "sni": p["sni"], "port": p["port"], "link": link})
         token = secrets.token_hex(16)
         sub_tokens[u["email"]] = token
-        sub_url = f"http://{ip}:{sub_port}/sub/{token}"
-        per_user.append({"email": u["email"], "local": local, "items": items, "subUrl": sub_url})
+        sub_urls = [f"http://{ip}:{sp}/sub/{token}" for sp in sub_ports]
+        per_user.append({"email": u["email"], "local": local, "items": items,
+                         "subUrls": sub_urls, "subUrl": sub_urls[0]})
 
     ss_out_link = None
     if ss["enabled"]:
@@ -240,7 +241,7 @@ def generate(opts: dict) -> dict:
         "links": links,
         "ports": ports,
         "api_port": api_port,
-        "sub_port": sub_port,
+        "sub_port": sub_ports,
         "sub_tokens": sub_tokens,
         "reality_pbk": reality["publicKey"],   # کلید عمومی (راز نیست؛ در هر لینک هست) — سرور لینک‌ها را از config می‌سازد
         "reality_sid": reality["shortId"],
@@ -254,7 +255,7 @@ def generate(opts: dict) -> dict:
         "reality": reality, "users": users, "per_user": per_user, "ss_link": ss_out_link,
         "ports": ports, "profiles": profiles, "sni_list": sni_list, "config": config,
         "payload_b64": payload_b64, "install_cmd": install_cmd, "warp_needed": "warp" in channels,
-        "sub_port": sub_port, "sub_tokens": sub_tokens,
+        "sub_port": sub_ports, "sub_tokens": sub_tokens,
     }
 
 
