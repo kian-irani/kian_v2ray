@@ -49,6 +49,7 @@ fb_set(){ # on|off — تغییر routing بین warp و direct، سپس restart
       && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || { rm -f "$tmp"; return 0; }
     echo off > "$FB_FLAG"; log "WARP برگشت → routing به warp بازگردانده شد"
   fi
+  chmod 644 "$CONFIG" 2>/dev/null || true   # حفظ خواندنی بودن برای کانتینر غیر-root
   docker restart "$CONTAINER" >/dev/null 2>&1 || true
 }
 if command -v warp-cli >/dev/null 2>&1; then
@@ -127,6 +128,7 @@ if [ "$BEFORE" != "$AFTER" ]; then
     )' "$XRAY_DIR/config.json" > "$CFGTMP" 2>/dev/null
   if jq -e . "$CFGTMP" >/dev/null 2>&1; then
     mv "$CFGTMP" "$XRAY_DIR/config.json"
+    chmod 644 "$XRAY_DIR/config.json" 2>/dev/null || true   # خواندنی برای کانتینر غیر-root
     docker restart "$CONTAINER" >/dev/null 2>&1 || true
     log "config بازسازی و Xray restart شد"
   else

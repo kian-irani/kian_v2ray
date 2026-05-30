@@ -22,9 +22,9 @@ APP_VERSION = "1.0"
 
 # دامنه‌های استتار در-دسترس-در-ایران (هم‌سان با app.js)
 SNI_POOL = [
-    "www.speedtest.net", "www.bing.com", "www.microsoft.com", "update.microsoft.com",
-    "www.apple.com", "gateway.icloud.com", "www.samsung.com", "www.nvidia.com",
-    "cdn.jsdelivr.net", "www.cloudflare.com",
+    # تست‌شده روی شبکهٔ ایران (TLS1.3، در دسترس) — هماهنگ با app.js
+    "www.icloud.com", "cloudflare.com", "s3.amazonaws.com",
+    "fonts.gstatic.com", "speedtest.net", "www.amazon.com",
 ]
 CH_LABEL = {"direct": "سریع", "warp": "WARP"}
 

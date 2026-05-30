@@ -74,6 +74,7 @@ rebuild_and_restart(){
   jq --argjson cl "$active" '.inbounds |= map(if ((.tag//"")|startswith("reality-")) then .settings.clients=$cl else . end)' "$CONFIG" > "$cfgtmp" 2>/dev/null
   if jq -e . "$cfgtmp" >/dev/null 2>&1; then
     mv "$cfgtmp" "$CONFIG"
+    ensure_cfg_perm
     docker restart "$CONTAINER" >/dev/null 2>&1 || true
     say "کانفیگ بازسازی و Xray ری‌استارت شد"
   else
@@ -212,7 +213,7 @@ _warp_restore_routing(){
   tmp="$(mktemp)"
   jq '(.routing.rules[]?|select((.inboundTag//[])|any(test("^reality-warp-")))|.outboundTag)="warp"' "$CONFIG" > "$tmp" \
     && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || rm -f "$tmp"
-  echo off > "$FB"; docker restart "$CONTAINER" >/dev/null 2>&1 || true
+  echo off > "$FB"; ensure_cfg_perm; docker restart "$CONTAINER" >/dev/null 2>&1 || true
   say "routing به warp بازگردانده شد"
 }
 # --- بازگرداندن بهینه‌سازی شبکه (rollback مرحلهٔ ۰.۴) ----------------------
