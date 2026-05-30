@@ -17,10 +17,78 @@ jobs:
         run: node --check assets/js/app.js
       - name: Python syntax (py_compile)
         run: |
-          python3 -m py_compile scripts/sub-server.py scripts/sync_upstream.py
+          python3 -m py_compile scripts/sub-server.py scripts/sync_upstream.py scripts/gist_sync.py
           python3 -m py_compile kv2m/kv2m_core.py kv2m/kv2m_cli.py kv2m/kv2m_gui.py kv2m/kv2m.py
       - name: No secrets committed
         run: |
-          ! grep -rEn 'ghp_[A-Za-z0-9]{20,}|cfut_[A-Za-z0-9]{20,}|[0-9]{8,10}:AA[A-Za-z0-9_-]{30,}' \
-            --include='*.html' --include='*.js' --include='*.sh' --include='*.py' --include='*.md' . \
+          ! grep -rEn 'ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{40,}|cfut_[A-Za-z0-9]{20,}|cfat_[A-Za-z0-9]{20,}|[0-9]{8,10}:AA[A-Za-z0-9_-]{30,}' \
+            --include='*.html' --include='*.js' --include='*.sh' --include='*.py' --include='*.md' --include='*.yml' . \
             && echo "no secret patterns found"
+      - name: Setup Node for smoke test
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install jsdom
+        run: npm install --no-save jsdom@22
+      - name: Smoke test (end-to-end config generation)
+        run: |
+          cat > /tmp/smoke.js <<'JS'
+          const {JSDOM} = require('jsdom');
+          const fs = require('fs');
+          const c = require('crypto');
+          const dom = new JSDOM(fs.readFileSync('index.html', 'utf8'),
+            { runScripts: 'dangerously', url: 'https://x.io/' });
+          const {window} = dom;
+          window.crypto = { randomUUID: () => c.randomUUID(),
+                            getRandomValues: a => { a.set(c.randomBytes(a.length)); return a; } };
+          window.requestAnimationFrame = cb => setTimeout(() => cb(0), 0);
+          const inj = p => { const s = window.document.createElement('script');
+                             s.textContent = fs.readFileSync(p, 'utf8');
+                             window.document.body.appendChild(s); };
+          inj('assets/vendor/nacl.min.js');
+          inj('assets/vendor/qrcode.min.js');
+          inj('assets/js/app.js');
+          window.document.dispatchEvent(new window.Event('DOMContentLoaded', { bubbles: true }));
+          const $ = s => window.document.querySelector(s);
+
+          $('#server-ip').value = '1.2.3.4';
+          $('#gen-btn').click();
+          setTimeout(() => {
+            const e1 = $('#form-error').textContent;
+            if (!e1) { console.error('FAIL: empty name should error'); process.exit(1); }
+            console.log('PASS: empty name rejected');
+
+            $('#user-prefix').value = 'testuser';
+            $('#gen-btn').click();
+            setTimeout(() => {
+              const txt = $('#result').textContent;
+              const m = txt.match(/KIAN_PAYLOAD='([^']+)'/);
+              if (!m) { console.error('FAIL: no payload'); process.exit(1); }
+              const pl = JSON.parse(Buffer.from(m[1], 'base64').toString());
+              if (!pl.reality_pbk || !pl.gist_proxy || !pl.sub_port) {
+                console.error('FAIL: missing payload fields'); process.exit(1);
+              }
+              console.log('PASS: payload + config generated (no TLS)');
+
+              $('#tls-enabled').checked = true;
+              $('#tls-domain').value = 'vpn.example.com';
+              $('#gen-btn').click();
+              setTimeout(() => {
+                const m2 = $('#result').textContent.match(/KIAN_PAYLOAD='([^']+)'/);
+                if (!m2) { console.error('FAIL: TLS payload missing'); process.exit(1); }
+                const pl2 = JSON.parse(Buffer.from(m2[1], 'base64').toString());
+                if (pl2.tls_domain !== 'vpn.example.com' || !pl2.caddyfile_b64) {
+                  console.error('FAIL: TLS fields missing'); process.exit(1);
+                }
+                const cad = Buffer.from(pl2.caddyfile_b64, 'base64').toString();
+                if (!cad.includes('vpn.example.com') || !cad.includes('reverse_proxy')) {
+                  console.error('FAIL: invalid Caddyfile'); process.exit(1);
+                }
+                console.log('PASS: TLS Caddyfile generated');
+                console.log('All smoke tests passed.');
+                process.exit(0);
+              }, 400);
+            }, 400);
+          }, 400);
+          JS
+          node /tmp/smoke.js
