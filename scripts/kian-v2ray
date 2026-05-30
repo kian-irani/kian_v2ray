@@ -72,14 +72,60 @@ build_vless(){ # uuid port sni label
   printf 'vless://%s@%s:%s?encryption=none&flow=xtls-rprx-vision&security=reality&sni=%s&fp=chrome&pbk=%s&sid=%s&type=tcp#%s\n' \
     "$uuid" "$(meta_ip)" "$port" "$sni" "$(meta_pbk)" "$(meta_sid)" "$(urlenc_label "$label")"
 }
+
+# دامنه TLS اگر فاز ۳ نصب شده باشد
+meta_tls_domain(){ [ -f "$ETC_DIR/tls_domain.txt" ] && cat "$ETC_DIR/tls_domain.txt" 2>/dev/null || true; }
+
+# لینک‌ساز TLS برای vless WS/gRPC/HTTPUpgrade
+build_vless_tls(){ # uuid net path label
+  local uuid="$1" net="$2" path="$3" label="$4" dom; dom="$(meta_tls_domain)"
+  [ -z "$dom" ] && return
+  local q="encryption=none&security=tls&sni=${dom}&fp=chrome&host=${dom}&type=${net}"
+  if [ "$net" = "ws" ] || [ "$net" = "httpupgrade" ]; then q="${q}&path=$(printf '%s' "$path" | sed 's:/:%2F:g')"
+  elif [ "$net" = "grpc" ]; then q="${q}&serviceName=${path#/}&mode=gun"; fi
+  printf 'vless://%s@%s:443?%s#%s\n' "$uuid" "$dom" "$q" "$(urlenc_label "$label")"
+}
+# لینک‌ساز TLS برای trojan
+build_trojan_tls(){ # uuid net path label
+  local uuid="$1" net="$2" path="$3" label="$4" dom; dom="$(meta_tls_domain)"
+  [ -z "$dom" ] && return
+  local q="security=tls&sni=${dom}&fp=chrome&host=${dom}&type=${net}"
+  if [ "$net" = "ws" ] || [ "$net" = "httpupgrade" ]; then q="${q}&path=$(printf '%s' "$path" | sed 's:/:%2F:g')"
+  elif [ "$net" = "grpc" ]; then q="${q}&serviceName=${path#/}&mode=gun"; fi
+  printf 'trojan://%s@%s:443?%s#%s\n' "$uuid" "$dom" "$q" "$(urlenc_label "$label")"
+}
+# لینک‌ساز TLS برای vmess (JSON base64 طبق فرمت v2rayN)
+build_vmess_tls(){ # uuid net path label
+  local uuid="$1" net="$2" path="$3" label="$4" dom; dom="$(meta_tls_domain)"
+  [ -z "$dom" ] && return
+  local netv="$net" pathv="$path"
+  [ "$net" = "grpc" ] && pathv="${path#/}"
+  local json
+  json=$(jq -nc --arg ps "$label" --arg add "$dom" --arg id "$uuid" \
+    --arg net "$netv" --arg host "$dom" --arg path "$pathv" --arg sni "$dom" \
+    '{v:"2",ps:$ps,add:$add,port:"443",id:$id,aid:"0",scy:"auto",net:$net,type:"none",host:$host,path:$path,tls:"tls",sni:$sni,alpn:"",fp:"chrome"}')
+  printf 'vmess://%s\n' "$(printf '%s' "$json" | base64 -w0)"
+}
 show_qr(){ command -v qrencode >/dev/null 2>&1 && printf '%s' "$1" | qrencode -t ANSIUTF8 -m 1 2>/dev/null || true; }
 
 # --- بازسازی clientها در reality inbounds از روی users.json + restart -----
 rebuild_and_restart(){
-  local active cfgtmp
-  active="$(jq -c '[.users[]|select(.active==true)|{id:.id,email:.email,flow:"xtls-rprx-vision"}]' "$USERS_FILE")"
+  local active_full active_simple active_trojan cfgtmp
+  # Reality و TLS-vless/vmess: flow + uuid + email
+  active_full="$(jq -c '[.users[]|select(.active==true)|{id:.id,email:.email,flow:"xtls-rprx-vision"}]' "$USERS_FILE")"
+  active_simple="$(jq -c '[.users[]|select(.active==true)|{id:.id,email:.email}]' "$USERS_FILE")"
+  # Trojan: password=uuid (که قبلاً در صفحه همین قرارداد را داشت) + email
+  active_trojan="$(jq -c '[.users[]|select(.active==true)|{password:.id,email:.email}]' "$USERS_FILE")"
   cfgtmp="$(mktemp)"
-  jq --argjson cl "$active" '.inbounds |= map(if ((.tag//"")|startswith("reality-")) then .settings.clients=$cl else . end)' "$CONFIG" > "$cfgtmp" 2>/dev/null
+  # یک jq تمیز که هر سه نوع inbound را همزمان آپدیت می‌کند
+  jq --argjson cf "$active_full" --argjson cs "$active_simple" --argjson ct "$active_trojan" '
+    .inbounds |= map(
+      if   ((.tag//"")|startswith("reality-")) then .settings.clients=$cf
+      elif (.protocol=="vless"  and ((.tag//"")|startswith("tls-"))) then .settings.clients=$cs
+      elif (.protocol=="vmess"  and ((.tag//"")|startswith("tls-"))) then .settings.clients=$cs
+      elif (.protocol=="trojan" and ((.tag//"")|startswith("tls-"))) then .settings.clients=$ct
+      else . end
+    )' "$CONFIG" > "$cfgtmp" 2>/dev/null
   if jq -e . "$cfgtmp" >/dev/null 2>&1; then
     mv "$cfgtmp" "$CONFIG"
     ensure_cfg_perm
@@ -314,6 +360,21 @@ cmd_configs(){
       local l; l="$(build_vless "$uuid" "$port" "$sni" "KIAN-${local_name}-${ch}-${sni}")"
       printf "${C_G}• %s · %s · پورت %s:${C_N}\n%s\n" "$ch" "$sni" "$port" "$l"; show_qr "$l"
     done
+    # کانفیگ‌های TLS (فاز ۳) — اگر دامنه نصب باشد
+    if [ -n "$(meta_tls_domain)" ]; then
+      local tls_tsv
+      tls_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("tls-"))|[.tag,.protocol,(.streamSettings.network//"ws"),(.streamSettings.wsSettings.path // .streamSettings.httpupgradeSettings.path // ("/"+(.streamSettings.grpcSettings.serviceName//"")) // "/")]|@tsv' "$CONFIG" 2>/dev/null)"
+      printf '%s\n' "$tls_tsv" | while IFS=$'\t' read -r t_tag t_proto t_net t_path; do
+        [ -z "$t_tag" ] && continue
+        local lbl="KIAN-${local_name}-${t_tag#tls-}" link=""
+        case "$t_proto" in
+          vless)  link="$(build_vless_tls "$uuid" "$t_net" "$t_path" "$lbl")";;
+          vmess)  link="$(build_vmess_tls "$uuid" "$t_net" "$t_path" "$lbl")";;
+          trojan) link="$(build_trojan_tls "$uuid" "$t_net" "$t_path" "$lbl")";;
+        esac
+        [ -n "$link" ] && { printf "${C_G}• TLS · %s · %s:${C_N}\n%s\n" "$t_proto" "$t_net" "$link"; show_qr "$link"; }
+      done
+    fi
   done
   if [ -n "$ss" ] && { [ -z "$filter" ] || [ "$filter" = "ss" ]; }; then
     read -r sp sm spw <<<"$ss"
@@ -351,6 +412,24 @@ cmd_sub(){
     done <<EOF
 $inbounds_tsv
 EOF
+    # لینک‌های TLS (فاز ۳) — اگر دامنه نصب شده باشد
+    if [ -n "$(meta_tls_domain)" ]; then
+      local tls_tsv
+      tls_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("tls-"))|[.tag,.protocol,(.streamSettings.network//"ws"),(.streamSettings.wsSettings.path // .streamSettings.httpupgradeSettings.path // ("/"+(.streamSettings.grpcSettings.serviceName//"")) // "/")]|@tsv' "$CONFIG" 2>/dev/null)"
+      while IFS=$'\t' read -r t_tag t_proto t_net t_path; do
+        [ -z "$t_tag" ] && continue
+        local tls_label="KIAN-${local_name}-${t_tag#tls-}"
+        local tls_link=""
+        case "$t_proto" in
+          vless)  tls_link="$(build_vless_tls "$uuid" "$t_net" "$t_path" "$tls_label")";;
+          vmess)  tls_link="$(build_vmess_tls "$uuid" "$t_net" "$t_path" "$tls_label")";;
+          trojan) tls_link="$(build_trojan_tls "$uuid" "$t_net" "$t_path" "$tls_label")";;
+        esac
+        [ -n "$tls_link" ] && all="${all}${tls_link}"$'\n'
+      done <<EOF
+$tls_tsv
+EOF
+    fi
     if [ -n "$ss" ]; then
       read -r sp sm spw <<<"$ss"
       all="${all}ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#KIAN-${local_name}-SS"$'\n'
@@ -541,7 +620,37 @@ cmd_uninstall(){
     for one in $(echo "$sp" | tr ',' ' '); do
       [ -n "$one" ] && ufw delete allow "${one}/tcp" >/dev/null 2>&1 || true
     done
+    # پورت‌های TLS (Caddy) اگر فاز ۳ نصب شده بود
+    if [ -f "$ETC_DIR/tls_domain.txt" ]; then
+      ufw delete allow 80/tcp  >/dev/null 2>&1 || true
+      ufw delete allow 443/tcp >/dev/null 2>&1 || true
+    fi
     ufw reload >/dev/null 2>&1 || true
+  fi
+  # پاک‌سازی Caddyfile که ما نوشتیم (فقط اگر مال خودمان است)
+  if [ -f /etc/caddy/Caddyfile ] && [ -f "$ETC_DIR/tls_domain.txt" ]; then
+    local dom; dom="$(cat "$ETC_DIR/tls_domain.txt" 2>/dev/null)"
+    if [ -n "$dom" ] && grep -q "^${dom} {" /etc/caddy/Caddyfile 2>/dev/null; then
+      inf "متوقف کردن Caddy برای این دامنه..."
+      # اگر Caddyfile فقط بلوک ما را دارد، کاملاً پاکش می‌کنیم
+      if [ "$(grep -c '^[a-z0-9.-]\+ {' /etc/caddy/Caddyfile 2>/dev/null)" = "1" ]; then
+        systemctl stop caddy >/dev/null 2>&1 || true
+        systemctl disable caddy >/dev/null 2>&1 || true
+        rm -f /etc/caddy/Caddyfile
+        warn "Caddy متوقف شد. اگر این Caddy فقط برای kian-v2ray بود، می‌تونی با apt remove caddy حذفش کنی."
+      else
+        # کاربر سایت دیگری هم پشت همین Caddy داشته؛ فقط بلوک خودمان را پاک می‌کنیم
+        local tmpcad; tmpcad="$(mktemp)"
+        awk -v d="$dom" '
+          $0 ~ "^"d" {" { skip=1; brace=1; next }
+          skip { for(i=1;i<=length($0);i++){c=substr($0,i,1); if(c=="{") brace++; if(c=="}") brace--}
+                 if(brace<=0){skip=0; brace=0}; next }
+          { print }
+        ' /etc/caddy/Caddyfile > "$tmpcad" && mv "$tmpcad" /etc/caddy/Caddyfile
+        systemctl reload caddy >/dev/null 2>&1 || true
+        say "بلوک مربوط به $dom از Caddyfile حذف شد (Caddy ادامه می‌دهد برای بقیه)"
+      fi
+    fi
   fi
   rm -f /etc/cron.d/kian-v2ray-watchdog /usr/local/bin/kian-v2ray-watchdog.sh
   rm -rf "$ETC_DIR" /opt/kian-v2ray "$LOG_DIR"

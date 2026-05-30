@@ -359,7 +359,11 @@ async function generate(f) {
   const tlsEnabled = f.tls.enabled && isDomain(f.tls.domain) && f.tls.protos.length > 0;
   const tlsProfiles = [];
   if (tlsEnabled) {
-    let ip2 = 20810;
+    // پورت داخلی TLS باید همیشه بعد از همهٔ پورت‌های reality و ss باشد تا تداخل نداشته باشد
+    const realityMax = profiles.length ? Math.max(...profiles.map(p => p.port)) : (f.basePort || BASE_PORT);
+    const ssMax = f.ss.enabled ? f.ss.port : 0;
+    const safeStart = Math.max(20810, realityMax + 100, ssMax + 100);
+    let ip2 = safeStart;
     const rnd = Math.random().toString(36).slice(2, 8);
     f.tls.protos.forEach((kind, i) => {
       if (!TLS_PROTOS[kind]) return;
@@ -370,8 +374,11 @@ async function generate(f) {
   }
 
   // پورت API تصادفی (مشکل ۰.۱): جلوگیری از تداخل با 3x-ui/Marzban که روی 10085 + network=host هستند
+  // و همچنین جلوگیری از تداخل با پورت‌های داخلی TLS (20810+) که روی localhost هستند
   const usedPorts = profiles.map(p => p.port);
   if (f.ss.enabled) usedPorts.push(f.ss.port);
+  tlsProfiles.forEach(t => usedPorts.push(t.intPort));
+  usedPorts.push(40000);  // WARP port
   let apiPort;
   do { apiPort = 20000 + Math.floor(Math.random() * 30000); } while (usedPorts.includes(apiPort));
 

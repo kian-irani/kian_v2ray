@@ -148,7 +148,7 @@ if ! done_step deps; then
   inf "نصب پیش‌نیازها (curl, jq, ufw, ...)"
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -y -q
-  apt-get install -y -q curl jq ca-certificates gnupg lsb-release ufw iproute2 coreutils qrencode
+  apt-get install -y -q curl jq ca-certificates gnupg lsb-release ufw iproute2 coreutils qrencode python3
   mark_step deps; say "پیش‌نیازها نصب شد"
 else inf "پیش‌نیازها از قبل نصب — رد شد"; fi
 
