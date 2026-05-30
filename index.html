@@ -45,6 +45,7 @@
     <button class="tab" data-tab="android">📱 اندروید</button>
     <button class="tab" data-tab="pc">💻 ویندوز / PC</button>
     <button class="tab" data-tab="tips">💡 نکات و عیب‌یابی</button>
+    <button class="tab" data-tab="domain">🌐 دامنه و TLS</button>
     <button class="tab" data-tab="manage">👥 مدیریت کاربر</button>
     <button class="tab" data-tab="about">ℹ️ درباره</button>
   </nav>
@@ -473,6 +474,104 @@
       <li>سیستم هر ۱۰ دقیقه مصرف هر کاربر رو چک می‌کنه و اگه حجمش تموم شد یا منقضی شد، خودکار غیرفعالش می‌کنه.</li>
       <li>برای فعال‌کردن دوباره: <span class="mono">kian-v2ray reset نام</span> یا <span class="mono">renew نام</span>.</li>
     </ul>
+  </div>
+</section>
+
+<!-- ===================== TAB: DOMAIN ===================== -->
+<section class="panel-tab" data-panel="domain">
+  <div class="card prose">
+    <h2>🌐 راهنمای کامل کانفیگ‌های دامنه‌دار (TLS)</h2>
+    <p class="muted">کانفیگ‌های دامنه‌دار (VLESS-WS، VMess-WS، gRPC، Trojan، HTTPUpgrade) از نظر امنیت و پایداری در ایران <b>بهترین گزینه</b> هستند، چون شبیه ترافیک HTTPS معمولی‌اند. ولی به یک <b>دامنه</b> نیاز دارند. اگر دامنه نداری، حالت Reality (پیش‌فرض) همچنان عالی است.</p>
+
+    <h3>🎯 چه دامنه‌ای بگیرم؟</h3>
+    <p>هر دامنه‌ای کار می‌کند، ولی <b>پیشنهادها</b>:</p>
+    <ul>
+      <li><b>دامنه‌های ارزان (~$۲-۱۰ سالانه):</b> <a href="https://www.namecheap.com/" target="_blank">Namecheap</a> · <a href="https://porkbun.com/" target="_blank">Porkbun</a> · <a href="https://www.cloudflare.com/products/registrar/" target="_blank">Cloudflare Registrar</a> (با قیمت اصلی، بدون سود)</li>
+      <li><b>دامنه‌های رایگان:</b> <a href="https://www.duckdns.org/" target="_blank">DuckDNS</a> (ساب‌دامنه رایگان) · <a href="https://eu.org/" target="_blank">EU.org</a> (رایگان، ولی تأیید چند روز طول می‌کشد)</li>
+      <li><b>پسوندهای ارزان:</b> <code>.xyz</code>, <code>.shop</code>, <code>.online</code>, <code>.site</code> — معمولاً سال اول ~$۱-۲</li>
+      <li><b>بپرهیز از:</b> <code>.tk</code>, <code>.ml</code>, <code>.ga</code> (فریمنوم — بسیاری از کلاینت‌ها بلاک می‌کنند)</li>
+    </ul>
+
+    <h3>📡 تنظیم رکورد A — مهم‌ترین قدم</h3>
+    <p>بعد از خرید دامنه، در پنل DNS رجیسترار:</p>
+    <ol>
+      <li>یک رکورد <b>A</b> بساز.</li>
+      <li><b>Name</b> (نام ساب‌دامنه): مثلاً <code>vpn</code> (یعنی <code>vpn.example.com</code>)، یا <code>@</code> برای دامنهٔ اصلی.</li>
+      <li><b>Value / IP Address</b>: <b>IP سرورت</b> (دقیقاً همان که در صفحه وارد کردی).</li>
+      <li><b>TTL</b>: پیش‌فرض (Auto یا 300) خوب است.</li>
+    </ol>
+    <p class="muted small">انتشار DNS معمولاً ۱-۱۰ دقیقه طول می‌کشد. می‌توانی با <code>nslookup vpn.example.com</code> یا سایت <a href="https://dnschecker.org/" target="_blank">dnschecker.org</a> بررسی کنی.</p>
+
+    <h3>☁️ اگر از Cloudflare استفاده می‌کنی</h3>
+    <div class="cf-warn">
+      <p><b>⚠️ مهم:</b> موقع نصب اول، آیکن ابر باید <b>خاکستری (DNS only)</b> باشد، نه نارنجی (Proxied). دلیل: Caddy باید روی پورت ۸۰ گواهی Let's Encrypt بگیرد، که اگر Cloudflare proxy فعال باشد، نمی‌گیرد.</p>
+      <p>بعد از نصب موفق و اطمینان از کار کردن کانفیگ‌ها، می‌توانی Cloudflare proxy را <b>روشن</b> کنی (ابر نارنجی) که مزیت‌های اضافی دارد:</p>
+      <ul>
+        <li>پنهان شدن IP واقعی سرور (در برابر فیلتر شدن)</li>
+        <li>دسترسی از طریق IP‌های Cloudflare که در ایران اغلب باز هستند</li>
+        <li>محدودیت: فقط روی پورت‌های <a href="https://developers.cloudflare.com/fundamentals/reference/network-ports/" target="_blank">۴۴۳، ۲۰۵۳، ۲۰۸۳، ۲۰۸۷، ۲۰۹۶، ۸۴۴۳</a> کار می‌کند. کانفیگ‌های ما روی ۴۴۳ هستند، پس مشکلی نیست.</li>
+      </ul>
+    </div>
+
+    <h3>🔧 پروتکل‌ها — کدام را انتخاب کنم؟</h3>
+    <div class="proto-guide">
+      <div class="proto-item">
+        <b>VLESS-WS</b>
+        <span class="badge-rec">پیشنهاد اول</span>
+        <p>پایدارترین، کم‌سربار، عبور عالی از DPI. اگر گیج هستی، فقط همین را تیک بزن.</p>
+      </div>
+      <div class="proto-item">
+        <b>VMess-WS</b>
+        <p>مشابه VLESS-WS ولی با امضای امنیتی اضافه. سازگار با کلاینت‌های قدیمی‌تر. کمی سربار بیشتر.</p>
+      </div>
+      <div class="proto-item">
+        <b>VLESS-gRPC / VMess-gRPC</b>
+        <p>مالتی‌پلکس روی HTTP/2. روی شبکه‌های پرتاخیر بهتر، ولی تنظیم سخت‌تر و گاهی توسط DPI شناسایی می‌شود.</p>
+      </div>
+      <div class="proto-item">
+        <b>Trojan-WS</b>
+        <p>طراحی‌شده برای شبیه‌بودن کامل به ترافیک HTTPS. خوب در ایران، ولی کمی کندتر از VLESS.</p>
+      </div>
+      <div class="proto-item">
+        <b>VLESS-HTTPUpgrade / VMess-HTTPUpgrade</b>
+        <p>سبک‌تر از WebSocket. عبور خوب از پراکسی‌های شرکتی. نسبتاً جدید، در همهٔ کلاینت‌ها پشتیبانی نمی‌شود.</p>
+      </div>
+    </div>
+    <p class="muted small">می‌توانی همه را تیک بزنی — هیچ ضرری ندارد. هر کاربر برای هر پروتکل یک لینک می‌گیرد و در v2rayNG کدام بهتر کار کرد، همان را نگه می‌دارد.</p>
+
+    <h3>🚀 ترتیب کار</h3>
+    <ol>
+      <li>دامنه بخر و رکورد A را تنظیم کن.</li>
+      <li>صبر کن DNS منتشر شود (~۱-۱۰ دقیقه).</li>
+      <li>برگرد به تب «ساخت کانفیگ»، گزینه «🌐 کانفیگ‌های دامنه‌دار» را باز کن و فعال کن.</li>
+      <li>دامنه و پروتکل‌ها را وارد کن.</li>
+      <li>دستور نصب را روی سرورت اجرا کن.</li>
+      <li>نصب‌کنندهٔ Caddy نصب می‌کند و گواهی Let's Encrypt را خودکار می‌گیرد (~۳۰ ثانیه - ۲ دقیقه).</li>
+      <li>تست کن: <code>curl -I https://vpn.example.com</code> باید HTTP 200 برگرداند.</li>
+    </ol>
+
+    <h3>❗ عیب‌یابی متداول</h3>
+    <details>
+      <summary>Caddy گواهی نگرفت / اتصال نمی‌گیرد</summary>
+      <ul>
+        <li>مطمئن شو رکورد A به IP درست اشاره می‌کند: <code>nslookup vpn.example.com</code></li>
+        <li>پورت‌های ۸۰ و ۴۴۳ سرور آزاد باشند: <code>ss -tlnp | grep -E ':80|:443'</code></li>
+        <li>اگر Cloudflare proxy فعال است، موقتاً خاموش کن.</li>
+        <li>لاگ Caddy: <code>journalctl -u caddy -n 50</code></li>
+      </ul>
+    </details>
+    <details>
+      <summary>کانفیگ TLS وصل می‌شود ولی نت نمی‌آید</summary>
+      <ul>
+        <li>چک کن کانتینر Xray بالا است: <code>docker ps | grep kian-xray</code></li>
+        <li>کانفیگ‌های Reality کار می‌کنند؟ اگر آن‌ها هم نه، مشکل از خروجی سرور است (WARP/Direct).</li>
+        <li>پشت Cloudflare proxy هستی؟ گاهی نیاز است <code>fp=chrome</code> را به <code>fp=ios</code> یا <code>fp=firefox</code> عوض کنی.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>دامنه فیلتر شد</summary>
+      <p>اگر دامنه‌ات از ایران بسته شد، یا Cloudflare proxy را روشن کن (ابر نارنجی) یا یک ساب‌دامنهٔ جدید بساز با همان رکورد A. کانفیگ‌ها همچنان روی همان IP کار می‌کنند، فقط دامنهٔ مرجع عوض می‌شود.</p>
+    </details>
   </div>
 </section>
 

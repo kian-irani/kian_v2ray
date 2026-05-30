@@ -2,15 +2,17 @@
 
 # KIAN ⟶ V2RAY
 
-**سازندهٔ کانفیگ V2Ray روی سرور خودت — VLESS Reality + WARP، با یک دستور.**
+**سازندهٔ کانفیگ V2Ray روی سرور خودت — Reality، WARP، Shadowsocks و حالا کانفیگ‌های دامنه‌دار TLS — با یک دستور.**
 
-![Phase](https://img.shields.io/badge/Phase%202-LIVE-2ee6a6?style=flat-square)
-![Subscription](https://img.shields.io/badge/Subscription-link-22c55e?style=flat-square)
-![Protocol](https://img.shields.io/badge/VLESS-Reality%20%2B%20Vision-22d3ee?style=flat-square)
+![Phase](https://img.shields.io/badge/Phase%203-LIVE-2ee6a6?style=flat-square)
+![Sub](https://img.shields.io/badge/Subscription-HTTPS%20Gist-22c55e?style=flat-square)
+![Reality](https://img.shields.io/badge/VLESS%20Reality-Vision-22d3ee?style=flat-square)
+![TLS](https://img.shields.io/badge/WS%20%2F%20gRPC%20%2F%20HTTPUpgrade-TLS-9333ea?style=flat-square)
 ![Engine](https://img.shields.io/badge/Xray--core-latest-7c5cff?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-9fb6c8?style=flat-square)
 
 **🌐 صفحهٔ تعاملی:** https://kian-irani.github.io/kian_v2ray/
+**📢 کانال:** [@kian_irani_cdn_f](https://t.me/kian_irani_cdn_f) · **💬 پشتیبانی:** [@Kian_irani_t](https://t.me/Kian_irani_t)
 
 </div>
 
@@ -18,129 +20,92 @@
 
 ## این چیه؟
 
-یک ابزار متن‌باز که روی **سرورِ خودت** کانفیگ V2Ray می‌سازد. مشخصات سرور را در صفحهٔ تعاملی وارد می‌کنی، یک دستور می‌گیری، در ترمینال سرور اجرا می‌کنی، و کانفیگ‌های آماده (با QR) تحویل می‌گیری.
+ابزار **متن‌باز و قانونی** برای ساخت کانفیگ V2Ray روی **سرور خودت** (VPS شخصی). هیچ سرور مرکزی، هیچ وابستگی، هیچ اشتراک ماهانه. تو IP سرورت را به صفحه می‌دهی، یک **دستور نصب** می‌گیری، روی سرور می‌زنی، و کانفیگ‌های آماده تحویل می‌گیری.
 
-- 🔐 **کلیدها در مرورگر خودت ساخته می‌شوند** — هیچ کلید/رمزی به هیچ سروری ارسال نمی‌شود.
-- 🧷 **نصب مقاوم در برابر قطعی** — اگر وسط کار SSH قطع شد، نصب در پس‌زمینه ادامه می‌دهد؛ فقط بعد وضعیت می‌گیری.
-- ⚙️ **دو حالت Reality**: مستقیم (سرعت بالا) و WARP (همه‌چیز باز، رفع محدودیت پروایدر).
-- 👥 **مدیریت کاربر**: تعداد کاربر، حجم، مدت اعتبار — با اعمال خودکار محدودیت.
-- 🔗 **لینک Subscription**: برای هر کاربر یک لینک واحد؛ در v2rayNG واردش می‌کنی و همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.
-- 🩹 **پایداری**: WARP با WireGuard/MASQUE + بازگشت خودکار به مستقیم اگر قطع شد؛ خودتشخیصی مشکلات در `status`؛ بهینه‌سازی سرعت (BBR).
-- ♻️ **نصب مجدد امن**: نصب دوباره کاربران قبلی را پاک نمی‌کند (بکاپ + ادغام خودکار).
+## چه چیزهایی دارد؟
 
-> ⚠️ **این روش برای کدام سرورها؟** فقط برای سرورهایی که **از داخل ایران بدون فیلترشکن می‌توان به آن‌ها SSH زد** و آی‌پی/پورتشان از ایران در دسترس است. اتصال با دامنه/CDN برای سرورهای کاملاً بلاک‌شده در فازهای بعدی اضافه می‌شود → [docs/connect-now.md](docs/connect-now.md)
-
----
-
-## شروع سریع
-
-1. صفحهٔ تعاملی را باز کن: **https://kian-irani.github.io/kian_v2ray/**
-2. آی‌پی سرور، SNI، حالت اتصال، پورت‌ها، تعداد/حجم/مدت کاربر را پر کن.
-3. روی **«ساخت کانفیگ و دستور نصب»** بزن.
-4. دستور را کپی و در ترمینال سرور (SSH) اجرا کن:
-
-```bash
-export KIAN_PAYLOAD='...'
-curl -fsSL https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh
-```
-
-5. نصب در پس‌زمینه اجرا می‌شود. بعد از ۲ تا ۵ دقیقه وضعیت بگیر:
-
-```bash
-bash /tmp/kian-v2ray.sh status   #  یا بعد از نصب:  kian-v2ray status
-```
-
-6. لینک‌های کاربر را از همان صفحهٔ تعاملی کپی/پخش کن — یا روی سرور: `kian-v2ray configs`
-7. **ساده‌تر:** به هر کاربر فقط **لینک Subscription** را بده (در صفحهٔ تعاملی برای هر کاربر نمایش داده می‌شود)؛ او همان یک لینک را در v2rayNG وارد می‌کند و همهٔ کانفیگ‌ها خودکار می‌آیند.
-
----
+| ویژگی | توضیح |
+|------|------|
+| 🛡️ **VLESS Reality + Vision** | حالت پیش‌فرض — بدون دامنه کار می‌کند، چند SNI خودکار |
+| ☁️ **WARP outbound** | دور زدن بلاک‌های خروجی سرور (مثلاً پروایدرهای ترکیه) |
+| 🔒 **Shadowsocks** | به‌عنوان پشتیبان یا حالت بدون SNI |
+| 🌐 **TLS با دامنه (فاز ۳)** | VLESS/VMess/Trojan روی WS/gRPC/HTTPUpgrade پشت Caddy روی :443 |
+| ⭐ **Subscription روی HTTPS** | لینک قطعیِ روی `gist.githubusercontent.com` — روی هر پروایدری کار می‌کند |
+| 👥 **مدیریت چند کاربر** | هر کاربر UUID + توکن sub جداگانه، با نام مشخص |
+| 📊 **حجم و انقضا** | برای هر کاربر سهمیه و تاریخ انقضا |
+| 🔧 **مدیر CLI** | `kian-v2ray status/configs/users/add/remove/renew/reset` |
+| 🐾 **Watchdog** | هر ۱۰ دقیقه چک سهمیه و وضعیت |
+| 🚀 **BBR + بهینه‌سازی شبکه** | خودکار در نصب |
 
 ## معماری
 
 ```
-کاربر (کلاینت)
-   │  VLESS Reality + Vision  (TCP)
-   ▼
-Xray-core  (Docker · network host)
-   ├── reality-direct  ──▶ freedom (مستقیم)  ── 🌍 سریع
-   └── reality-warp    ──▶ WARP socks5 :40000 ── 🌍 همه‌چیز باز (رفع بلاک پروایدر)
+کاربر (مرورگر)
+   ↓ کلید X25519 + UUID همان‌جا ساخته می‌شود
+   ↓ صفحه به Cloudflare Worker POST می‌زند → Gist HTTPS Subscription
+سرور کاربر (VPS Ubuntu)
+   ↓ install.sh: Docker + WARP + Xray container + Caddy (اگر TLS)
+Xray (kian-xray, host network)
+   ├─ Reality inbounds (پورت‌های پویا) → direct / warp
+   ├─ Shadowsocks (اختیاری)
+   └─ TLS inbounds روی 127.0.0.1 (پشت Caddy :443، اگر دامنه)
+   ↓
+🌍 اینترنت آزاد
 ```
 
-- **مستقیم**: سریع‌ترین مسیر؛ ولی بعضی دسته‌سایت‌ها را پروایدرِ سرور می‌بندد.
-- **WARP**: تمام ترافیک از WARP (Cloudflare) خارج می‌شود؛ محدودیت‌های پروایدر برداشته می‌شود.
+## شروع سریع
 
----
+1. **سرور Ubuntu بگیر** (هر پروایدر — Hetzner، Netlen، Linode، DigitalOcean، …).
+2. برو به https://kian-irani.github.io/kian_v2ray/
+3. IP سرور + نام کاربر را وارد کن، دکمه را بزن.
+4. دستور نصب را در SSH سرورت Paste کن.
+5. لینک **Subscription** را در v2rayNG (اندروید) یا v2rayN (ویندوز) وارد کن.
 
-## پروتکل‌ها
+## پروتکل‌های پشتیبانی‌شده
 
-| پروتکل | وضعیت |
-|---|---|
-| VLESS + Reality + Vision (مستقیم) | ✅ فاز ۱ |
-| VLESS + Reality + Vision (WARP) | ✅ فاز ۱ |
-| Shadowsocks (chacha20-ietf-poly1305) | ✅ اختیاری |
-| لینک Subscription (تک‌لینک، خودکار-آپدیت) | ✅ فاز ۲ |
-| VLESS/VMess + WS / gRPC / HTTPUpgrade + TLS (دامنه) | 🔜 فاز ۳ |
-| فرانت CDN (Cloudflare) | 🔜 فاز ۴ |
-| Hysteria2 / TUIC | 🔜 فاز ۵+ |
+**بدون دامنه (Reality):**
+- VLESS + Reality + Vision (TCP)
+- Shadowsocks (chacha20-ietf-poly1305)
 
-نقشهٔ کامل: [ROADMAP.md](ROADMAP.md)
-
----
-
-## دستورهای مدیریت (روی سرور)
-
-```bash
-kian-v2ray status                  # وضعیت سرویس، WARP، کاربرها
-kian-v2ray configs [نام]           # نمایش لینک‌ها + QR ترمینالی
-kian-v2ray sub     [نام]           # ساخت فایل لینک Subscription هر کاربر
-kian-v2ray users                   # فهرست کاربرها + مصرف/انقضا
-kian-v2ray add <نام> [حجم_GB] [روز]   # افزودن کاربر (پیش‌فرض 100GB / 30روز)
-kian-v2ray remove <نام>            # حذف کاربر
-kian-v2ray reset  <نام> [حجم_GB]   # صفر کردن مصرف
-kian-v2ray renew  <نام> [روز]      # تمدید اعتبار
-kian-v2ray update                  # آپدیت Xray به آخرین نسخه
-kian-v2ray warp                    # تلاش مجدد/برگرداندن WARP (WireGuard/MASQUE)
-kian-v2ray fixport                 # رفع تداخل پورت آمار با پنل‌های دیگر
-kian-v2ray untune                  # بازگرداندن بهینه‌سازی شبکه (BBR)
-kian-v2ray uninstall               # حذف کامل
-```
-
-یک watchdog هر ۱۰ دقیقه: سلامت Xray و WARP را چک می‌کند، مصرف هر کاربر را می‌خواند و حجم/انقضا را اعمال می‌کند.
-
----
+**با دامنه (TLS، اختیاری):**
+- VLESS + WS + TLS
+- VMess + WS + TLS
+- VLESS + gRPC + TLS
+- VMess + gRPC + TLS
+- Trojan + WS + TLS
+- VLESS + HTTPUpgrade + TLS
+- VMess + HTTPUpgrade + TLS
 
 ## امنیت
 
-- 🚫 **هیچ توکن/رمز/کلیدی در این ریپو نیست.** همه‌چیز عمومی و امن است.
-- 🔑 کلیدهای Reality (X25519) و UUIDها در **مرورگرِ خودت** با کتابخانهٔ رمزنگاری لوکال ساخته می‌شوند.
-- 📄 کلید خصوصی فقط داخل دستور نصب (که خودت اجرا می‌کنی) و در `‎/etc/xray/config.json` روی سرورِ خودت قرار می‌گیرد.
-- جزئیات: [SECURITY.md](SECURITY.md)
+- **هیچ راز روی سرور ما نیست.** کلیدها در مرورگر تو ساخته می‌شوند و فقط روی سرور خودت می‌روند.
+- **توکن Gist** فقط در Cloudflare Worker (secret) است؛ هرگز در صفحه/سرور کاربر دیده نمی‌شود.
+- **Worker واسط** کاربرها را با `install_id` تصادفی ۱۲۸ بیتی ایزوله می‌کند.
+- ریپو پابلیک — هر کس می‌تواند کد را بازبینی کند.
 
----
+## دستورهای مدیر روی سرور
 
-## ساختار ریپو
-
-```
-kian_v2ray/
-├── index.html              صفحهٔ تعاملی (GitHub Pages)
-├── assets/
-│   ├── css/style.css
-│   ├── js/app.js           ساخت کانفیگ/کلید/لینک در مرورگر
-│   └── vendor/             tweetnacl + qrcodejs (لوکال)
-├── install.sh              نصب‌کنندهٔ مقاوم به قطعی (idempotent)
-├── scripts/
-│   ├── kian-v2ray          ابزار مدیریت
-│   └── watchdog.sh         چک سلامت + اعمال حجم/انقضا
-└── docs/connect-now.md
+```bash
+kian-v2ray status              # وضعیت سرویس‌ها
+kian-v2ray configs             # نمایش کانفیگ همهٔ کاربران
+kian-v2ray sub <نام>           # لینک Subscription یک کاربر
+kian-v2ray users               # لیست کاربران + سهمیه
+kian-v2ray add <نام> [GB] [روز]  # افزودن کاربر
+kian-v2ray remove <نام>        # حذف کاربر
+kian-v2ray renew <نام> [روز]   # تمدید
+kian-v2ray reset <نام> [GB]    # ریست سهمیه
+kian-v2ray update              # آپدیت Xray
+kian-v2ray uninstall           # حذف کامل
 ```
 
----
+## نرم‌افزار همراه: Kv2m
 
-## اعتبارها
+برای کسانی که می‌خواهند بدون مرورگر کار کنند، **Kv2m** یک نرم‌افزار PC/اندروید (Python) است که خودش SSH می‌زند و همین کارها را انجام می‌دهد. در پوشهٔ `kv2m/` ریپو.
 
-ساخته‌شده روی شانه‌های این پروژه‌های متن‌باز:
-[Xray-core](https://github.com/XTLS/Xray-core) (REALITY) · [Cloudflare WARP](https://developers.cloudflare.com/warp-client/) · [TweetNaCl.js](https://github.com/dchest/tweetnacl-js) · [qrcodejs](https://github.com/davidshimjs/qrcodejs)
+## مشارکت
 
-## مجوز
+پیشنهاد و گزارش باگ خوش‌آمد است. لطفاً Issue باز کن یا در کانال تلگرام بنویس.
 
-MIT — به [LICENSE](LICENSE) نگاه کن.
+## لایسنس
+
+MIT. این پروژه برای دسترسی آزاد به اطلاعات است.

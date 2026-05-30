@@ -386,3 +386,19 @@ html[dir=rtl] .adv-toggle[aria-expanded="true"] .adv-caret{transform:scaleX(-1) 
 .proto-chk input{margin-top:3px}
 .proto-chk b{display:block;font-size:13.5px}
 .proto-chk small{display:block;font-size:11.5px;color:#9fb3c8;margin-top:2px}
+
+/* راهنمای دامنه و TLS */
+.cf-warn{background:rgba(255,200,87,.06);border:1px solid rgba(255,200,87,.25);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:13.5px;line-height:1.8}
+.cf-warn p{margin:6px 0}
+.cf-warn ul{margin:6px 0 0 18px}
+.proto-guide{display:grid;gap:10px;margin:10px 0}
+.proto-item{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 14px}
+.proto-item b{display:inline-block;font-size:14.5px;color:#fff}
+.proto-item p{margin:6px 0 0;color:#cfe6ff;font-size:13px;line-height:1.7}
+.badge-rec{display:inline-block;background:rgba(76,175,80,.18);color:#9be29b;border:1px solid rgba(76,175,80,.4);padding:1px 8px;border-radius:6px;font-size:11px;margin-right:8px;font-weight:500}
+.prose details{margin:8px 0;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 12px}
+.prose details summary{cursor:pointer;font-weight:500;color:#cfe6ff}
+.prose details ul{margin:8px 0 4px 18px;font-size:13px;line-height:1.8}
+.prose details p{margin:8px 0;font-size:13px;line-height:1.8}
+.prose h3{margin-top:24px;color:#fff;font-size:16px}
+.sub-hint.warn{background:rgba(255,200,87,.08);border-color:rgba(255,200,87,.3);color:#ffd28a}
