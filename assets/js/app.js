@@ -9,6 +9,10 @@
 const RAW_BASE = 'https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main';
 const WARP_PORT = 40000;
 const SUB_PORTS = [80, 8888, 2086]; // سرویس Subscription روی چند پورت همزمان اجرا می‌شود — هر کدام از بیرون باز بود، همان کار می‌کند. کاربر کاری نمی‌کند.
+// واسطهٔ Gist (Cloudflare Worker): سرور کاربر به این endpoint POST می‌زند تا secret gist
+// ساخته/آپدیت شود. توکن گیت‌هاب فقط در env-var همان Worker (سمت ما) ذخیره است،
+// هرگز در ریپوی پابلیک یا روی سرور کاربر دیده نمی‌شود.
+const GIST_PROXY = 'https://kian-sub.kian-mhrv.workers.dev'; // Worker واسط — سرور کاربر اینجا POST می‌زند تا لینک HTTPS Gist بگیرد
 const SS_METHOD = 'chacha20-ietf-poly1305';
 const GIB = 1073741824;
 const BASE_PORT = 8443;        // پورت‌ها از اینجا به‌صورت خودکار اضافه می‌شوند
@@ -291,6 +295,7 @@ function generate(f) {
     reality_pbk: reality.publicKey,   // کلید عمومی (راز نیست) — سرور لینک‌ها را از config نهایی می‌سازد
     reality_sid: reality.shortId,
     ss_password: f.ss.enabled ? f.ss.password : '',
+    gist_proxy: GIST_PROXY,            // endpoint Worker: سرور POST می‌زند، Worker با توکن خصوصی gist می‌سازد
   };
   const payloadB64 = utf8ToB64(JSON.stringify(payload));
 
@@ -424,21 +429,26 @@ function render(out) {
       const card = document.createElement('div');
       card.className = 'usercard';
       card.innerHTML = `<div class="usercard-title">👤 ${u.local}</div>`;
-      // ۱) لینک‌های Subscription (چند پورت — هر کدام کار کرد، همان را در v2rayNG وارد کن)
+      // ۱) راهنمای لینک نهایی Subscription (Gist HTTPS)
+      const subHead = document.createElement('div');
+      subHead.className = 'sub-head';
+      subHead.innerHTML = '⭐ <b>لینک Subscription نهایی (HTTPS — تضمینی)</b>';
+      card.appendChild(subHead);
+      const gistNote = document.createElement('div');
+      gistNote.className = 'sub-hint';
+      gistNote.innerHTML = 'بعد از تمام شدن نصب، روی سرورت این دستور را بزن تا لینک HTTPS قطعی Subscription را بگیری (روی همهٔ پروایدرها کار می‌کند):<br><code class="mono">kian-v2ray sub ' + u.local + '</code>';
+      card.appendChild(gistNote);
+      // ۲) لینک‌های پشتیبان (روی پورت‌های سرور — اگر Gist نشد)
       if (u.subUrls && u.subUrls.length) {
-        const subHead = document.createElement('div');
-        subHead.className = 'sub-head';
-        subHead.innerHTML = '⭐ <b>لینک‌های Subscription</b> — یکی را در v2rayNG → Subscription وارد کن:';
-        card.appendChild(subHead);
+        const fbHead = document.createElement('div');
+        fbHead.className = 'config-sep';
+        fbHead.textContent = 'لینک‌های پشتیبان (اگر Gist نشد):';
+        card.appendChild(fbHead);
         u.subUrls.forEach((url, i) => {
           card.appendChild(linkRow(`گزینهٔ ${i + 1}`, url));
         });
-        const hint = document.createElement('div');
-        hint.className = 'sub-hint';
-        hint.innerHTML = 'سرویس روی <b>چند پورت همزمان</b> روی سرورت اجرا می‌شود — هر پروایدری حداقل یکی را باز می‌گذارد. <b>اگر اولی fail شد، بعدی را امتحان کن.</b> اگر هیچ‌کدام کار نکرد، کانفیگ‌های تکیِ پایین را وارد کن.';
-        card.appendChild(hint);
       }
-      // ۲) کانفیگ‌های تکی (پشتیبان — همیشه کار می‌کنند، حتی اگر sub fail شد)
+      // ۳) کانفیگ‌های تکی (آخرین پشتیبان — همیشه کار می‌کنند)
       const sep = document.createElement('div');
       sep.className = 'config-sep';
       sep.textContent = 'یا کانفیگ‌های تکی (هرکدام وصل شد، همان را نگه دار):';

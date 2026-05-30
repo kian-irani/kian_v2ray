@@ -514,6 +514,18 @@ docker run -d --name "$CONTAINER" --restart unless-stopped \
 sleep 3
 if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
   say "Xray اجرا شد ($XRAY_IMAGE)"
+  # ── همگام‌سازی Subscription با Gist از طریق Worker (لینک HTTPS تضمینی) ──
+  GIST_PROXY_VAL="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.gist_proxy // ""')"
+  if [ -n "$GIST_PROXY_VAL" ] && [ -d "$ETC_DIR/sub" ]; then
+    inf "همگام‌سازی Subscription با گیت‌هاب (از طریق Worker)..."
+    curl -fsSL "$RAW_BASE/scripts/gist_sync.py" -o /usr/local/bin/kian-gist-sync.py 2>/dev/null && chmod +x /usr/local/bin/kian-gist-sync.py
+    printf '%s' "$GIST_PROXY_VAL" > "$ETC_DIR/gist_proxy"; chmod 600 "$ETC_DIR/gist_proxy"
+    if python3 /usr/local/bin/kian-gist-sync.py "$GIST_PROXY_VAL" "$ETC_DIR/install_id" "$ETC_DIR/sub" "$ETC_DIR/gist_map.json" 2>&1; then
+      say "لینک‌های Subscription روی HTTPS گیت‌هاب آماده شد ✅"
+    else
+      warn "همگام‌سازی Gist موفق نبود — sub محلی روی پورت‌ها همچنان فعال است"
+    fi
+  fi
 else
   err "Xray بالا نیامد — در حال تشخیص علت..."
   echo "──────── لاگ Xray ────────"

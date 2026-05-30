@@ -27,6 +27,14 @@ GIB=1073741824
 RAW_BASE="https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 # config.json باید برای کاربر غیر-root کانتینر Xray خواندنی باشد (وگرنه permission denied → کرش‌لوپ)
 ensure_cfg_perm(){ [ -f "$CONFIG" ] && chmod 644 "$CONFIG" 2>/dev/null || true; }
+# همگام‌سازی فایل‌های sub محلی با گیست‌های HTTPS گیت‌هاب (از طریق Worker، در صورت تنظیم)
+gist_sync(){
+  [ -f "$ETC_DIR/gist_proxy" ] || return 0
+  [ -f /usr/local/bin/kian-gist-sync.py ] || return 0
+  local proxy; proxy="$(cat "$ETC_DIR/gist_proxy" 2>/dev/null)"
+  [ -n "$proxy" ] || return 0
+  python3 /usr/local/bin/kian-gist-sync.py "$proxy" "$ETC_DIR/install_id" "$ETC_DIR/sub" "$ETC_DIR/gist_map.json" >/dev/null 2>&1 || true
+}
 ETC_DIR="/etc/kian-v2ray"
 XRAY_DIR="/etc/kian-v2ray"          # config.json ایزوله (به /etc/xray دست نمی‌زند)
 LOG_DIR="/var/log/kian-xray"
@@ -350,18 +358,28 @@ EOF
     # فایل subscription = base64 از مجموعهٔ لینک‌ها (فرمت v2rayNG)
     local outfile="$subdir/${tok}.txt"
     printf '%s' "$all" | base64 -w0 > "$outfile"
+    # همگام‌سازی Gist (فایل عوض شده، گیست هم آپدیت شود)
+    gist_sync
     local subports; subports="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
     local ip; ip="$(meta_ip)"
+    # لینک Gist (HTTPS — تضمینی) را از gist_map پیدا کن
+    local gist_url=""
+    [ -f "$ETC_DIR/gist_map.json" ] && gist_url="$(jq -r --arg t "$tok" '.[$t].url // ""' "$ETC_DIR/gist_map.json" 2>/dev/null)"
     printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
+    if [ -n "$gist_url" ]; then
+      say "⭐ لینک Subscription (HTTPS — توصیه‌شده):"
+      say "  ${C_G}$gist_url${C_N}"
+      inf "این لینک روی همهٔ پروایدرها و فایروال‌ها کار می‌کند."
+    fi
     if systemctl is-active kian-sub >/dev/null 2>&1; then
-      inf "لینک‌های Subscription (هر کدام کار کرد، همان را استفاده کن):"
+      printf "\n"
+      inf "لینک‌های پشتیبان (روی پورت سرور — اگر Gist فلد):"
       for sp in $(echo "$subports" | tr ',' ' '); do
-        [ -n "$sp" ] && say "  http://${ip}:${sp}/sub/${tok}"
+        [ -n "$sp" ] && printf "    http://${ip}:${sp}/sub/${tok}\n"
       done
-      inf "یکی از این لینک‌ها را در v2rayNG → Subscription وارد کن."
-    else
-      warn "سرویس Subscription فعال نیست (systemctl status kian-sub). فایل ساخته شد: $outfile"
-      inf "یا این فایل را جایی با لینک مستقیم (Gist/raw) آپلود کن و URL را در v2rayNG بزن."
+    fi
+    if [ -z "$gist_url" ] && ! systemctl is-active kian-sub >/dev/null 2>&1; then
+      warn "نه Gist و نه سرویس sub فعال است. فایل خام: $outfile"
     fi
   done
 }
@@ -503,9 +521,15 @@ cmd_uninstall(){
   read -rp "برای تأیید بنویس: DELETE  → " ans
   [ "$ans" = "DELETE" ] || { inf "لغو شد."; exit 0; }
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+  # حذف Gistهای ابری از طریق Worker (در صورت وجود)
+  if [ -f "$ETC_DIR/gist_proxy" ] && [ -f /usr/local/bin/kian-gist-sync.py ]; then
+    inf "حذف Gistهای ابری..."
+    proxy_u="$(cat "$ETC_DIR/gist_proxy" 2>/dev/null)"
+    [ -n "$proxy_u" ] && python3 /usr/local/bin/kian-gist-sync.py "$proxy_u" "$ETC_DIR/install_id" "$ETC_DIR/sub" "$ETC_DIR/gist_map.json" --delete >/dev/null 2>&1 || true
+  fi
   # سرویس Subscription را هم متوقف و حذف کن
   systemctl disable --now kian-sub >/dev/null 2>&1 || true
-  rm -f /etc/systemd/system/kian-sub.service /usr/local/bin/kian-sub-server.py
+  rm -f /etc/systemd/system/kian-sub.service /usr/local/bin/kian-sub-server.py /usr/local/bin/kian-gist-sync.py
   systemctl daemon-reload >/dev/null 2>&1 || true
   # بستن پورت‌های سرویس در فایروال (اگر فعال بود)
   if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi '^Status: active'; then
