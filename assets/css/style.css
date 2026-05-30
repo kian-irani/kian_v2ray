@@ -422,3 +422,32 @@ html[dir=rtl] .adv-toggle[aria-expanded="true"] .adv-caret{transform:scaleX(-1) 
   font-size:13px;color:#ffc;
 }
 .ip-warn.hidden{display:none}
+
+/* راهنمای سرور ایده‌آل + تست پورت */
+.server-tips{
+  margin:12px 0 16px;padding:12px 14px;border-radius:10px;
+  background:linear-gradient(135deg, rgba(64,156,255,.06), rgba(34,211,238,.04));
+  border:1px solid rgba(64,156,255,.22);
+}
+.server-tips-head{font-weight:600;color:#7dd3fc;font-size:14px;margin-bottom:6px}
+.server-tips-body p{font-size:13px;line-height:1.85;color:#cfe6ff;margin:6px 0}
+.server-tips-body b{color:#ffe5a8}
+.server-tips-body code{background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px;font-family:monospace;color:#9fefb0;font-size:12.5px}
+.port-check{margin-top:10px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 12px}
+.port-check>summary{cursor:pointer;color:#a5d8ff;font-size:13.5px;line-height:1.8}
+.port-check p{margin:8px 0;font-size:12.5px;line-height:1.8;color:#cfe6ff}
+.codebox{position:relative;background:#0c1224;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px;margin:8px 0;overflow:auto}
+.codebox pre{margin:0;font-family:monospace;font-size:12px;color:#9fefb0;white-space:pre-wrap;word-break:break-all;padding-right:60px}
+.copybtn{position:absolute;top:6px;left:6px;background:rgba(76,175,80,.18);color:#9be29b;border:1px solid rgba(76,175,80,.4);border-radius:6px;padding:4px 10px;font-size:11.5px;cursor:pointer;font-family:inherit}
+.copybtn:hover{background:rgba(76,175,80,.28)}
+
+/* جعبه راهنمای پورت در تنظیمات پیشرفته */
+.port-info{
+  margin:8px 0 10px;padding:10px 12px;border-radius:8px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+}
+.port-info-head{font-weight:600;color:#ffd28a;font-size:13.5px;margin-bottom:6px}
+.port-info-body p{margin:6px 0 2px;font-size:12.5px;line-height:1.8;color:#cfe6ff}
+.port-info-body ul{margin:4px 0 10px 18px;padding:0;font-size:12.5px;line-height:1.85}
+.port-info-body code{background:rgba(0,0,0,.4);padding:1px 6px;border-radius:4px;font-family:monospace;color:#9fefb0;font-size:12px}
+.port-info-body .muted{color:#9fb3c8}

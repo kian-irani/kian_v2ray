@@ -294,7 +294,7 @@ function readForm() {
     sniMode,
     manualSni,
     sniCount:  Math.max(1, Math.min(5, sniCount || 2)),
-    basePort:  Math.max(1, Math.min(65535, parseInt(($('#base-port') && $('#base-port').value) || BASE_PORT, 10) || BASE_PORT)),
+    basePort:  parseInt(($('#base-port') && $('#base-port').value), 10) || 0,   // 0 = خودکار (پول معروف)
     numUsers:  Math.min(50, Math.max(1, parseInt($('#num-users').value, 10) || 1)),
     prefix:   ($('#user-prefix').value.trim()).replace(/[^a-zA-Z0-9_-]/g, ''),
     quotaGb:  parseInt($('#quota').value, 10),        // 0 = نامحدود
@@ -336,19 +336,19 @@ async function generate(f) {
   // (مثل 443، 2083، 8080، 2096 — تقریباً همهٔ پروایدرها باز می‌گذارند).
   // اگر TLS فعال است، 443 و 80 برای Caddy رزرو می‌شوند.
   const profiles = [];
-  const userBasePort = parseInt(($('#base-port') && $('#base-port').value), 10);
+  const userBasePort = f.basePort;  // 0 = خودکار
   const tlsReserves443 = !!(f.tls && f.tls.enabled && isDomain(f.tls.domain) && f.tls.protos.length);
   const wellKnownOpen = [443, 2083, 2087, 2096, 8080, 2052, 2086];
   const reservedByTls = tlsReserves443 ? [443, 80] : [];
   // اگر کاربر basePort سفارشی داده، فقط همان را استفاده کن (رفتار قدیمی)
   // وگرنه، اول پورت‌های معروف بازنشده، بعد از 8443 ادامه بده
   let portPool;
-  if (userBasePort && userBasePort > 0 && userBasePort !== BASE_PORT) {
-    portPool = [];   // فقط ترتیبی از basePort
+  if (userBasePort && userBasePort >= 1 && userBasePort <= 65500) {
+    portPool = [];
     for (let p = userBasePort; p < userBasePort + 50; p++) portPool.push(p);
   } else {
     portPool = wellKnownOpen.filter(p => !reservedByTls.includes(p));
-    for (let p = 8443; p < 8493; p++) portPool.push(p);   // بعد از پورت‌های معروف
+    for (let p = 8443; p < 8493; p++) portPool.push(p);
   }
   // پورت‌های ممنوع: ss و WARP و رزروشده توسط TLS
   const banned = new Set([WARP_PORT, ...reservedByTls]);
@@ -824,6 +824,28 @@ function init() {
   initCopyTrc20();
   initManage();
 
+  // دکمه‌های کپی استاتیک (data-copy)
+  $$('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-copy');
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const txt = el.textContent.trim();
+      const fallback = () => {
+        const ta = document.createElement('textarea');
+        ta.value = txt; document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).catch(fallback);
+      } else { fallback(); }
+      const old = btn.textContent;
+      btn.textContent = '✓ کپی شد';
+      setTimeout(() => { btn.textContent = old; }, 1500);
+    });
+  });
+
   $$('input[name="mode"]').forEach(r => r.addEventListener('change', syncVisibility));
   $('#ss-enabled').addEventListener('change', syncVisibility);
   const tlsEn2 = $('#tls-enabled');
@@ -845,7 +867,7 @@ function init() {
       if (!f.tls.protos.length) { err.textContent = 'حداقل یک پروتکل TLS را تیک بزن (پیشنهاد: VLESS-WS).'; return; }
     }
     if (f.sniMode === 'manual' && !f.manualSni) { err.textContent = 'یک دامنهٔ استتار (SNI) انتخاب یا وارد کن.'; return; }
-    if (f.basePort > 65500) { err.textContent = 'پورت پایه خیلی بالاست؛ عددی کمتر (مثلاً 8443 یا 9443) انتخاب کن.'; return; }
+    if (f.basePort < 0 || f.basePort > 65500) { err.textContent = 'پورت پایه نامعتبر است؛ خالی بگذار یا عددی بین 1 تا 65500 بده.'; return; }
     if (f.ss.enabled && (f.ss.port < 1 || f.ss.port > 65535)) { err.textContent = 'پورت Shadowsocks نامعتبر است.'; return; }
 
     const btn = $('#gen-btn');
