@@ -39,6 +39,11 @@ jobs:
           const dom = new JSDOM(fs.readFileSync('index.html', 'utf8'),
             { runScripts: 'dangerously', url: 'https://x.io/' });
           const {window} = dom;
+          // polyfill: jsdom global سندbox این‌ها را ندارد
+          window.TextEncoder = TextEncoder;
+          window.TextDecoder = TextDecoder;
+          window.btoa = s => Buffer.from(s, 'binary').toString('base64');
+          window.atob = s => Buffer.from(s, 'base64').toString('binary');
           window.crypto = { randomUUID: () => c.randomUUID(),
                             getRandomValues: a => { a.set(c.randomBytes(a.length)); return a; } };
           window.requestAnimationFrame = cb => setTimeout(() => cb(0), 0);
