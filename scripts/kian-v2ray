@@ -14,6 +14,7 @@
 #     kian-v2ray renew <نام> [روز]   تمدید اعتبار از همین لحظه
 #     kian-v2ray update              به‌روزرسانی Xray به آخرین نسخه
 #     kian-v2ray fixport             رفع تداخل پورت API (کرش‌لوپ روی سرور دارای پنل دیگر)
+#     kian-v2ray rebind              بازسازی Xray با اجازهٔ bind روی پورت‌های زیر ۱۰۲۴ (۴۴۳/۸۰)
 #     kian-v2ray warp                تلاش مجدد WARP (WireGuard/MASQUE) و برگرداندن از fallback
 #     kian-v2ray untune              بازگرداندن بهینه‌سازی شبکه (BBR/بافرها)
 #     kian-v2ray uninstall           حذف کامل
@@ -573,7 +574,7 @@ cmd_update(){
   ensure_cfg_perm
   if docker pull "$img" >/dev/null 2>&1; then
     docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-    docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" --cap-add=NET_BIND_SERVICE \
+    docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" --user 0:0 --cap-add=NET_BIND_SERVICE \
       -v "$CONFIG:/etc/xray/config.json:ro" -v "$LOG_DIR:/var/log/xray" \
       "$img" run -c /etc/xray/config.json >/dev/null 2>&1 || true
     sleep 3
@@ -582,7 +583,7 @@ cmd_update(){
     elif [ -n "$prev_img" ]; then
       warn "نسخهٔ جدید بالا نیامد — rollback به $prev_img"
       docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-      docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" --cap-add=NET_BIND_SERVICE \
+      docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" --user 0:0 --cap-add=NET_BIND_SERVICE \
         -v "$CONFIG:/etc/xray/config.json:ro" -v "$LOG_DIR:/var/log/xray" \
         "$prev_img" run -c /etc/xray/config.json >/dev/null 2>&1 || true
       sleep 2
@@ -679,6 +680,40 @@ cmd_fixperm(){
   fi
 }
 
+# rebind: کانتینر را با --user 0:0 و NET_BIND_SERVICE بازسازی می‌کند
+# برای حل مشکل: Xray (نسخهٔ ghcr رسمی) به‌عنوان "nobody" اجرا می‌شود و نمی‌تواند
+# روی پورت‌های زیر 1024 (مثل 443 و 80) bind کند.
+cmd_rebind(){
+  need_root
+  inf "بازسازی کانتینر Xray با اجازهٔ bind روی پورت‌های زیر ۱۰۲۴..."
+  local img
+  img="$(cat "$IMAGE_FILE" 2>/dev/null || echo 'ghcr.io/xtls/xray-core:latest')"
+  docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+  docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" \
+    --user 0:0 --cap-add=NET_BIND_SERVICE \
+    -v "$CONFIG:/etc/xray/config.json:ro" \
+    -v "$LOG_DIR:/var/log/xray" \
+    "$img" run -c /etc/xray/config.json >/dev/null 2>&1
+  sleep 3
+  if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+    say "Xray با --user 0:0 بالا آمد ✅"
+    # تأیید: آیا روی پورت‌های پایین واقعاً bind شد؟
+    sleep 1
+    inf "تست پورت‌های Reality:"
+    jq -r '.inbounds[]|select((.tag//"")|startswith("reality-"))|.port' "$CONFIG" 2>/dev/null | while read p; do
+      [ -z "$p" ] && continue
+      if ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${p}\$"; then
+        say "  ✓ پورت $p در حال گوش دادن"
+      else
+        err "  ✘ پورت $p هنوز bind نشده"
+      fi
+    done
+  else
+    err "Xray بالا نیامد — لاگ: docker logs $CONTAINER --tail 30"
+    docker logs "$CONTAINER" --tail 20 2>&1 || true
+  fi
+}
+
 cmd_openports(){
   need_root
   if ! command -v ufw >/dev/null 2>&1; then inf "ufw نصب نیست — پورت‌ها آزادند"; return 0; fi
@@ -709,6 +744,7 @@ case "${1:-help}" in
   update)    cmd_update ;;
   fixport)   cmd_fixport ;;
   fixperm)   cmd_fixperm ;;
+  rebind)    cmd_rebind ;;
   openports) cmd_openports ;;
   warp)      cmd_warp ;;
   untune)    cmd_untune ;;

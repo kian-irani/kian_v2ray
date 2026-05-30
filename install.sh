@@ -508,6 +508,7 @@ docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 chmod 644 "$XRAY_DIR/config.json"   # تضمین خواندنی بودن برای کاربر غیر-root کانتینر (بعد از تخصیص پورت)
 docker run -d --name "$CONTAINER" --restart unless-stopped \
   --network host --memory="512m" \
+  --user 0:0 \
   --cap-add=NET_BIND_SERVICE \
   -v "$XRAY_DIR/config.json:/etc/xray/config.json:ro" \
   -v "$LOG_DIR:/var/log/xray" \
@@ -652,13 +653,16 @@ WantedBy=multi-user.target
 UNIT
 systemctl daemon-reload >/dev/null 2>&1 || true
 systemctl enable --now kian-sub >/dev/null 2>&1 || true
-sleep 1
-# چک سلامت روی هر پورتی که بالا آمد
+# چک سلامت با ۳ تلاش (سرویس ممکن است چند ثانیه طول بکشد بالا بیاید)
 SUB_OK=""
-for p in $(echo "$SUB_PORTS" | tr ',' ' '); do
-  if curl -fsS --max-time 5 "http://127.0.0.1:${p}/health" 2>/dev/null | grep -q ok; then
-    SUB_OK="${SUB_OK:+$SUB_OK,}$p"
-  fi
+for try in 1 2 3; do
+  sleep 2
+  for p in $(echo "$SUB_PORTS" | tr ',' ' '); do
+    if curl -fsS --max-time 3 "http://127.0.0.1:${p}/health" 2>/dev/null | grep -q ok; then
+      [[ ",$SUB_OK," == *",$p,"* ]] || SUB_OK="${SUB_OK:+$SUB_OK,}$p"
+    fi
+  done
+  [ -n "$SUB_OK" ] && break
 done
 if [ -n "$SUB_OK" ]; then
   say "سرویس Subscription فعال شد (پورت‌ها: $SUB_OK)"
