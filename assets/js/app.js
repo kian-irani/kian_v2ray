@@ -316,7 +316,7 @@ function readForm() {
 const CH_LABEL = { direct: 'سریع', warp: 'WARP' };
 
 /* ------------------------------ generate ------------------------------- */
-function generate(f) {
+async function generate(f) {
   const reality = genReality();
   if (f.mode === 'nosni') f.ss.enabled = true;       // بدون SNI = فقط Shadowsocks
   if (f.ss.enabled) f.ss.password = genPassword();
@@ -402,15 +402,23 @@ function generate(f) {
     // توکن Subscription تصادفی (مثل UUID — همان‌جا در مرورگر ساخته می‌شود)
     const token = randHex(16);
     subTokens[u.email] = token;
-    const subUrls = SUB_PORTS.map(p => `http://${f.serverIp}:${p}/sub/${token}`);
-    return { email: u.email, local, items, tlsLinks, subUrls };
+    // محتوای sub این کاربر: لینک‌های Reality + TLS + SS مشترک (در ادامه اضافه می‌شود)
+    const userLinks = [];
+    items.forEach(it => userLinks.push(it.link));
+    tlsLinks.forEach(t => userLinks.push(t.link));
+    return { email: u.email, local, items, tlsLinks, subToken: token, userLinks };
   });
 
   let ssOut = null;
   if (f.ss.enabled) {
     ssOut = ssLink({ ip: f.serverIp, port: f.ss.port, password: f.ss.password, label: 'KIAN-Shadowsocks' });
     links.push(ssOut);
+    // SS مشترک به محتوای sub همهٔ کاربران اضافه می‌شود
+    perUser.forEach(pu => pu.userLinks.push(ssOut));
   }
+
+  // install_id یکتا برای این نصب (مرورگر می‌سازد، سرور همان را استفاده می‌کند → URL Gist یکسان می‌ماند)
+  const installId = randHex(16);
 
   const ports = profiles.map(p => p.port);
   if (f.ss.enabled) ports.push(f.ss.port);
@@ -429,6 +437,7 @@ function generate(f) {
     reality_sid: reality.shortId,
     ss_password: f.ss.enabled ? f.ss.password : '',
     gist_proxy: GIST_PROXY,            // endpoint Worker: سرور POST می‌زند، Worker با توکن خصوصی gist می‌سازد
+    install_id: installId,             // همان شناسه‌ای که مرورگر استفاده کرده تا URL Gist‌ها یکی بمانند
     tls_domain: tlsProfiles.length ? f.tls.domain : '',
     caddyfile_b64: tlsProfiles.length ? utf8ToB64(buildCaddyfile(f.tls.domain, tlsProfiles)) : '',
   };
@@ -438,7 +447,29 @@ function generate(f) {
     `export KIAN_PAYLOAD='${payloadB64}'\n` +
     `curl -fsSL ${RAW_BASE}/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh`;
 
-  return { f, reality, users, perUser, ssOut, ports, profiles, sniList, config, payloadB64, installCmd };
+  // ساخت gist‌ها همین الان (مرورگر → Worker) تا لینک HTTPS Subscription به کاربر داده شود.
+  // وقتی سرور بعداً نصب شود، با همان install_id و subTokenها به Worker POST می‌زند →
+  // همان gist‌ها آپدیت می‌شوند (gist_id ثابت → URL یکسان می‌ماند).
+  const items = {};
+  perUser.forEach(pu => {
+    const content = pu.userLinks.join('\n');
+    items[pu.subToken] = utf8ToB64(content);   // base64 (فرمت v2rayNG)
+  });
+  let gistUrls = {};
+  try {
+    const resp = await fetch(GIST_PROXY + '/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ install_id: installId, items }),
+    });
+    const data = await resp.json();
+    if (data && data.ok && data.urls) gistUrls = data.urls;
+  } catch (e) {
+    console.warn('gist proxy unreachable:', e);
+  }
+  perUser.forEach(pu => { pu.subUrl = gistUrls[pu.subToken] || ''; });
+
+  return { f, reality, users, perUser, ssOut, ports, profiles, sniList, config, payloadB64, installCmd, gistOk: Object.keys(gistUrls).length > 0 };
 }
 
 /* ------------------------------ rendering ------------------------------ */
@@ -564,43 +595,38 @@ function render(out) {
       const card = document.createElement('div');
       card.className = 'usercard';
       card.innerHTML = `<div class="usercard-title">👤 ${u.local}</div>`;
-      // ۱) راهنمای لینک نهایی Subscription (Gist HTTPS)
-      const subHead = document.createElement('div');
-      subHead.className = 'sub-head';
-      subHead.innerHTML = '⭐ <b>لینک Subscription نهایی (HTTPS — تضمینی)</b>';
-      card.appendChild(subHead);
-      const gistNote = document.createElement('div');
-      gistNote.className = 'sub-hint';
-      gistNote.innerHTML = 'بعد از تمام شدن نصب، روی سرورت این دستور را بزن تا لینک HTTPS قطعی Subscription را بگیری (روی همهٔ پروایدرها کار می‌کند):<br><code class="mono">kian-v2ray sub ' + u.local + '</code>';
-      card.appendChild(gistNote);
-      // ۲) لینک‌های پشتیبان (روی پورت‌های سرور — اگر Gist نشد)
-      if (u.subUrls && u.subUrls.length) {
-        const fbHead = document.createElement('div');
-        fbHead.className = 'config-sep';
-        fbHead.textContent = 'لینک‌های پشتیبان (اگر Gist نشد):';
-        card.appendChild(fbHead);
-        u.subUrls.forEach((url, i) => {
-          card.appendChild(linkRow(`گزینهٔ ${i + 1}`, url));
+      if (u.subUrl) {
+        // حالت موفق: همان لینک HTTPS که سرور هم خواهد داد
+        const subHead = document.createElement('div');
+        subHead.className = 'sub-head';
+        subHead.innerHTML = '⭐ <b>لینک Subscription (HTTPS — یک‌بار برای همیشه)</b>';
+        card.appendChild(subHead);
+        card.appendChild(linkRow('این را در v2rayNG → Subscription وارد کن', u.subUrl));
+        const hint = document.createElement('div');
+        hint.className = 'sub-hint';
+        hint.innerHTML = 'این لینک <b>روی همهٔ پروایدرها</b> و فایروال‌ها کار می‌کند. سرور بعد از نصب همین لینک را آپدیت می‌کند، پس همیشه به‌روز می‌ماند.';
+        card.appendChild(hint);
+      } else {
+        // حالت ناموفق (Worker در دسترس نبود): کانفیگ‌های تکی به‌عنوان پشتیبان
+        const warn = document.createElement('div');
+        warn.className = 'sub-hint warn';
+        warn.innerHTML = '⚠️ ساخت لینک Subscription موفق نبود (احتمالاً به اینترنت نیاز است). کانفیگ‌های تکی پایین را در v2rayNG وارد کن، یا بعد از نصب روی سرورت بزن: <code class="mono">kian-v2ray sub ' + u.local + '</code>';
+        card.appendChild(warn);
+        const sep = document.createElement('div');
+        sep.className = 'config-sep';
+        sep.textContent = 'کانفیگ‌های تکی (پشتیبان):';
+        card.appendChild(sep);
+        u.items.forEach(it => {
+          const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
+          card.appendChild(linkRow(`${tag} · ${it.sni}`, it.link));
         });
-      }
-      // ۳) کانفیگ‌های تکی (آخرین پشتیبان — همیشه کار می‌کنند)
-      const sep = document.createElement('div');
-      sep.className = 'config-sep';
-      sep.textContent = 'یا کانفیگ‌های تکی (هرکدام وصل شد، همان را نگه دار):';
-      card.appendChild(sep);
-      u.items.forEach(it => {
-        const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
-        card.appendChild(linkRow(`${tag} · ${it.sni}`, it.link));
-      });
-      // فاز ۳: کانفیگ‌های دامنه‌دار (TLS) همین کاربر
-      if (u.tlsLinks && u.tlsLinks.length) {
-        const tlsSep = document.createElement('div');
-        tlsSep.className = 'config-sep';
-        tlsSep.textContent = 'کانفیگ‌های دامنه‌دار (TLS — روی :443):';
-        card.appendChild(tlsSep);
-        u.tlsLinks.forEach(t => {
-          card.appendChild(linkRow(`${t.label} — ${t.note}`, t.link));
-        });
+        if (u.tlsLinks && u.tlsLinks.length) {
+          const tlsSep = document.createElement('div');
+          tlsSep.className = 'config-sep';
+          tlsSep.textContent = 'کانفیگ‌های دامنه‌دار (TLS — روی :443):';
+          card.appendChild(tlsSep);
+          u.tlsLinks.forEach(t => card.appendChild(linkRow(`${t.label} — ${t.note}`, t.link)));
+        }
       }
       step3.appendChild(card);
     });
@@ -791,9 +817,9 @@ function init() {
     btn.disabled = true;
     btn.classList.add('busy');
     // اجازه بده UI یک frame رفرش شود، بعد محاسبه‌ی سنگین (QR ها)
-    requestAnimationFrame(() => {
+    requestAnimationFrame(async () => {
       try {
-        const out = generate(f);
+        const out = await generate(f);
         render(out);
       } catch (ex) {
         err.textContent = 'خطا در ساخت کانفیگ: ' + (ex && ex.message ? ex.message : ex);

@@ -46,6 +46,8 @@ jobs:
           window.atob = s => Buffer.from(s, 'base64').toString('binary');
           window.crypto = { randomUUID: () => c.randomUUID(),
                             getRandomValues: a => { a.set(c.randomBytes(a.length)); return a; } };
+          // stub fetch: smoke test نمی‌خواهد به Worker واقعی برود
+          window.fetch = async () => ({ ok: false, json: async () => ({ ok: false }) });
           window.requestAnimationFrame = cb => setTimeout(() => cb(0), 0);
           const inj = p => { const s = window.document.createElement('script');
                              s.textContent = fs.readFileSync(p, 'utf8');
@@ -83,9 +85,9 @@ jobs:
                 console.log('PASS: TLS Caddyfile');
                 console.log('All smoke tests passed.');
                 process.exit(0);
-              }, 600);
-            }, 600);
-          }, 600);
+              }, 1200);
+            }, 1200);
+          }, 1200);
           JS
           node ./smoke_ci.js
           rm -f ./smoke_ci.js

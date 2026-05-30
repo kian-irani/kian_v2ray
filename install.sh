@@ -516,10 +516,15 @@ if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
   say "Xray اجرا شد ($XRAY_IMAGE)"
   # ── همگام‌سازی Subscription با Gist از طریق Worker (لینک HTTPS تضمینی) ──
   GIST_PROXY_VAL="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.gist_proxy // ""')"
+  INSTALL_ID_VAL="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.install_id // ""')"
   if [ -n "$GIST_PROXY_VAL" ] && [ -d "$ETC_DIR/sub" ]; then
     inf "همگام‌سازی Subscription با گیت‌هاب (از طریق Worker)..."
     curl -fsSL "$RAW_BASE/scripts/gist_sync.py" -o /usr/local/bin/kian-gist-sync.py 2>/dev/null && chmod +x /usr/local/bin/kian-gist-sync.py
     printf '%s' "$GIST_PROXY_VAL" > "$ETC_DIR/gist_proxy"; chmod 600 "$ETC_DIR/gist_proxy"
+    # install_id را از payload بنویس تا URL Gist با همانی که صفحه به کاربر داد یکی بماند
+    if [ -n "$INSTALL_ID_VAL" ]; then
+      printf '%s' "$INSTALL_ID_VAL" > "$ETC_DIR/install_id"; chmod 600 "$ETC_DIR/install_id"
+    fi
     if python3 /usr/local/bin/kian-gist-sync.py "$GIST_PROXY_VAL" "$ETC_DIR/install_id" "$ETC_DIR/sub" "$ETC_DIR/gist_map.json" 2>&1; then
       say "لینک‌های Subscription روی HTTPS گیت‌هاب آماده شد ✅"
     else
