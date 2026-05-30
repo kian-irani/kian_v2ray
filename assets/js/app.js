@@ -663,6 +663,10 @@ function syncVisibility() {
   const tlsEn = $('#tls-enabled');
   const tlsOpts = $('#tls-options');
   if (tlsEn && tlsOpts) tlsOpts.hidden = !tlsEn.checked;
+  // وقتی TLS فعال است، هشدار فیلتر IP پنهان می‌شود (چون TLS این مشکل را حل می‌کند)
+  // ولی اگر TLS غیر است، هشدار همیشه دیده می‌شود
+  const ipWarn = $('#ip-blacklist-warn');
+  if (ipWarn) ipWarn.classList.toggle('hidden', !!(tlsEn && tlsEn.checked));
 }
 
 function initTabs() {

@@ -402,3 +402,23 @@ html[dir=rtl] .adv-toggle[aria-expanded="true"] .adv-caret{transform:scaleX(-1) 
 .prose details p{margin:8px 0;font-size:13px;line-height:1.8}
 .prose h3{margin-top:24px;color:#fff;font-size:16px}
 .sub-hint.warn{background:rgba(255,200,87,.08);border-color:rgba(255,200,87,.3);color:#ffd28a}
+
+/* هشدار فیلتر شدن IP در حالت بدون دامنه */
+.ip-warn{
+  margin:14px 0;padding:14px 16px;border-radius:10px;
+  background:linear-gradient(135deg, rgba(255,80,80,.08), rgba(255,140,0,.05));
+  border:1px solid rgba(255,80,80,.35);
+}
+.ip-warn-head{
+  font-weight:600;color:#ff8a8a;font-size:14.5px;margin-bottom:8px;
+}
+.ip-warn-body{
+  font-size:13.5px;line-height:1.85;color:#ffd7d7;
+}
+.ip-warn-body b{color:#ffe5a8}
+.ip-warn-rule{
+  display:block;margin-top:4px;padding:8px 10px;
+  background:rgba(255,255,255,.04);border-radius:6px;
+  font-size:13px;color:#ffc;
+}
+.ip-warn.hidden{display:none}
