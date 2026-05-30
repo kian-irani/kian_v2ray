@@ -242,6 +242,9 @@ def generate(opts: dict) -> dict:
         "api_port": api_port,
         "sub_port": sub_port,
         "sub_tokens": sub_tokens,
+        "reality_pbk": reality["publicKey"],   # کلید عمومی (راز نیست؛ در هر لینک هست) — سرور لینک‌ها را از config می‌سازد
+        "reality_sid": reality["shortId"],
+        "ss_password": ss["password"] if ss["enabled"] else "",
     }
     payload_b64 = _b64(json.dumps(payload))
     install_cmd = (f"export KIAN_PAYLOAD='{payload_b64}'\n"

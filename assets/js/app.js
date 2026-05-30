@@ -288,6 +288,9 @@ function generate(f) {
     api_port: apiPort,
     sub_port: SUB_PORT,
     sub_tokens: subTokens,
+    reality_pbk: reality.publicKey,   // کلید عمومی (راز نیست) — سرور لینک‌ها را از config نهایی می‌سازد
+    reality_sid: reality.shortId,
+    ss_password: f.ss.enabled ? f.ss.password : '',
   };
   const payloadB64 = utf8ToB64(JSON.stringify(payload));
 

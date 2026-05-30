@@ -393,49 +393,119 @@ SCRIPT_VER="$(curl -fsSL "$RAW_BASE/VERSION" 2>/dev/null | grep '^SCRIPT_VERSION
 [ -n "$SCRIPT_VER" ] && echo "$SCRIPT_VER" > "$ETC_DIR/script_version.txt"
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 sleep 1
-# جلوگیری از تداخل با Xray/پنل دیگری که از قبل روی همین پورت‌ها فعال است.
-# به‌جای توقف، پورت‌های اشغال را خودکار با پورت آزاد جایگزین می‌کنیم (auto-fix)
-# هم در config.json، هم در links.txt، هم در فایل‌های Subscription.
+# ─────────────────────────────────────────────────────────────────────────────
+# تخصیص پورت مقاوم و عمومی (مستقل از مشکلاتِ هر سرورِ خاص):
+#   • همهٔ پورت‌های در حال استفاده روی سرور را می‌بینیم.
+#   • اگر هر کدام از پورت‌های انتخابی (reality + ss) اشغال بود، *همهٔ* پورت‌های
+#     reality را یکجا به یک بازهٔ آزادِ پشت‌سرهم منتقل می‌کنیم تا با هیچ نصب/پنل
+#     دیگری روی این سرور قاطی نشوند (نه تک‌تک — که نیمه‌قاطی می‌شد).
+#   • سپس links.txt و فایل‌های Subscription را *از روی config نهایی* بازمی‌سازیم
+#     (نه با جایگزینی رشته‌ایِ لینک‌های از-پیش-ساخته). این کار را قطعی می‌کند.
+# ─────────────────────────────────────────────────────────────────────────────
 port_busy(){ ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${1}\$"; }
-free_port(){ # یک پورت آزاد که با هیچ‌کدام از پورت‌های استفاده‌شده تداخل ندارد
-  local cand used="$1"
-  for _ in $(seq 1 300); do
-    cand=$(( (RANDOM % 20000) + 20000 ))
-    port_busy "$cand" && continue
-    printf '%s\n' $used | grep -qx "$cand" && continue
-    echo "$cand"; return 0
+
+PBK="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.reality_pbk // ""')"
+SID_FALLBACK="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.reality_sid // ""')"
+SS_PASS="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.ss_password // ""')"
+
+# پورت‌های فعلیِ reality (به‌ترتیب tag) و پورت ss
+REALITY_PORTS="$(jq -r '.inbounds[]|select((.tag//"")|startswith("reality-"))|.port' "$XRAY_DIR/config.json" 2>/dev/null)"
+SS_PORT_CUR="$(jq -r '.inbounds[]|select(.tag=="shadowsocks")|.port' "$XRAY_DIR/config.json" 2>/dev/null)"
+N_REALITY="$(printf '%s\n' $REALITY_PORTS | grep -c . || echo 0)"
+
+# آیا تداخلی وجود دارد؟ (هر پورت reality یا ss که اشغال باشد)
+COLLISION=0
+for p in $REALITY_PORTS; do port_busy "$p" && COLLISION=1; done
+[ -n "$SS_PORT_CUR" ] && port_busy "$SS_PORT_CUR" && COLLISION=1
+
+if [ "$COLLISION" = 1 ]; then
+  warn "تداخل پورت با سرویس دیگری روی این سرور تشخیص داده شد — انتقال همهٔ پورت‌ها به بازهٔ آزاد"
+  # یک بازهٔ پشت‌سرهمِ آزاد به طول N_REALITY پیدا کن (به‌علاوهٔ یک پورت برای ss)
+  NEED=$(( N_REALITY + 1 ))
+  BASE_NEW=""
+  for _try in $(seq 1 400); do
+    start=$(( (RANDOM % 20000) + 20000 ))
+    ok=1
+    i=0
+    while [ "$i" -lt "$NEED" ]; do
+      port_busy $(( start + i )) && { ok=0; break; }
+      i=$(( i + 1 ))
+    done
+    [ "$ok" = 1 ] && { BASE_NEW="$start"; break; }
   done
-  echo ""; return 1
-}
-ALL_PORTS="$(jq -r '.inbounds[]|select(((.tag//"")|startswith("reality-")) or (.tag=="shadowsocks"))|.port' "$XRAY_DIR/config.json" 2>/dev/null)"
-FIXED=""
-for p in $ALL_PORTS; do
-  if port_busy "$p"; then
-    np="$(free_port "$ALL_PORTS $FIXED")"
-    if [ -n "$np" ]; then
-      inf "پورت $p اشغال بود → جایگزین با $np (auto-fix)"
-      tmpc="$(mktemp)"
-      jq --argjson o "$p" --argjson n "$np" '(.inbounds[]|select(.port==$o)|.port)=$n' "$XRAY_DIR/config.json" > "$tmpc" && jq -e . "$tmpc" >/dev/null 2>&1 && mv "$tmpc" "$XRAY_DIR/config.json" || rm -f "$tmpc"
-      # در links.txt و فایل‌های sub هم پورت را اصلاح کن (الگوی :port در URL یا base64)
-      sed -i "s/:${p}?/:${np}?/g; s/:${p}#/:${np}#/g" "$ETC_DIR/links.txt" 2>/dev/null || true
-      FIXED="$FIXED $np"
-    else
-      err "پورت $p اشغال است و پورت آزاد پیدا نشد."; exit 1
-    fi
+  if [ -z "$BASE_NEW" ]; then err "بازهٔ پورت آزاد پیدا نشد."; exit 1; fi
+
+  # نگاشت پورت‌های قدیمی reality → پورت‌های جدیدِ پشت‌سرهم، و اعمال در config
+  NEW_REALITY=""
+  idx=0
+  for oldp in $REALITY_PORTS; do
+    newp=$(( BASE_NEW + idx ))
+    tmpc="$(mktemp)"
+    jq --argjson o "$oldp" --argjson n "$newp" '(.inbounds[]|select(.port==$o)|.port)=$n' "$XRAY_DIR/config.json" > "$tmpc" && jq -e . "$tmpc" >/dev/null 2>&1 && mv "$tmpc" "$XRAY_DIR/config.json" || rm -f "$tmpc"
+    NEW_REALITY="$NEW_REALITY $newp"
+    idx=$(( idx + 1 ))
+  done
+  # پورت ss = آخرین پورتِ بازه
+  if [ -n "$SS_PORT_CUR" ]; then
+    SS_NEW=$(( BASE_NEW + N_REALITY ))
+    tmpc="$(mktemp)"
+    jq --argjson o "$SS_PORT_CUR" --argjson n "$SS_NEW" '(.inbounds[]|select(.tag=="shadowsocks")|.port)=$n' "$XRAY_DIR/config.json" > "$tmpc" && jq -e . "$tmpc" >/dev/null 2>&1 && mv "$tmpc" "$XRAY_DIR/config.json" || rm -f "$tmpc"
   fi
-done
-# اگر links.txt تغییر کرد، فایل‌های Subscription را از نو بساز
-if [ -n "$FIXED" ] && [ -d "$ETC_DIR/sub" ] && [ -f "$ETC_DIR/sub_tokens.json" ]; then
-  jq -r 'to_entries[]|.key+"\t"+.value' "$ETC_DIR/sub_tokens.json" | while IFS=$'\t' read -r email token; do
-    ln="${email%@*}"
-    ul="$(grep -E "#KIAN-${ln}-" "$ETC_DIR/links.txt" 2>/dev/null; grep -iE 'KIAN-Shadowsocks|KIAN-SS' "$ETC_DIR/links.txt" 2>/dev/null)"
-    [ -z "$ul" ] && ul="$(cat "$ETC_DIR/links.txt")"
-    printf '%s' "$ul" | sed '/^$/d' | base64 -w0 > "$ETC_DIR/sub/${token}.txt"
+  inf "پورت‌های جدید reality:$NEW_REALITY${SS_PORT_CUR:+ | ss: $SS_NEW}"
+fi
+
+# ── بازسازی links.txt و فایل‌های Subscription از روی config نهایی (قطعی) ──
+# (به‌جای جایگزینی رشته‌ای؛ همیشه با پورت‌های واقعیِ در حال اجرا هماهنگ است)
+rebuild_links_from_config(){
+  [ -z "$PBK" ] && return 1   # اگر pbk نداریم (payload قدیمی)، بازسازی نکن
+  : > "$ETC_DIR/links.txt"
+  # برای هر کاربر (از روی clientهای اولین inbound reality) × هر inbound reality
+  local emails
+  emails="$(jq -r '[.inbounds[]|select((.tag//"")|startswith("reality-"))][0].settings.clients[].email' "$XRAY_DIR/config.json" 2>/dev/null)"
+  # نگاشت email→uuid از همان inbound
+  jq -r '
+    ([.inbounds[]|select((.tag//"")|startswith("reality-"))]) as $ri
+    | $ri[0].settings.clients[] as $c
+    | $ri[] as $ib
+    | "\($c.id)|\($c.email)|\($ib.port)|\($ib.streamSettings.realitySettings.serverNames[0])|\($ib.streamSettings.realitySettings.shortIds[0])|\($ib.tag)"
+  ' "$XRAY_DIR/config.json" 2>/dev/null | while IFS='|' read -r uuid email port sni sid tag; do
+    local label_ch local_name
+    case "$tag" in
+      *warp*) label_ch="WARP" ;;
+      *) label_ch="سریع" ;;
+    esac
+    local_name="${email%@*}"
+    printf 'vless://%s@%s:%s?encryption=none&flow=xtls-rprx-vision&security=reality&sni=%s&fp=chrome&pbk=%s&sid=%s&type=tcp#KIAN-%s-%s-%s\n' \
+      "$uuid" "$SERVER_IP" "$port" "$sni" "$PBK" "$sid" "$local_name" "$label_ch" "$sni" >> "$ETC_DIR/links.txt"
   done
-  warn "پورت‌ها به‌خاطر تداخل تغییر کردند — لینک‌های نمایش‌داده‌شده در صفحه ممکن است پورت قدیمی داشته باشند؛ از «kian-v2ray configs» یا «kian-v2ray sub» لینک به‌روز را بگیر."
+  # Shadowsocks (در صورت وجود)
+  local ssport
+  ssport="$(jq -r '.inbounds[]|select(.tag=="shadowsocks")|.port' "$XRAY_DIR/config.json" 2>/dev/null)"
+  if [ -n "$ssport" ] && [ -n "$SS_PASS" ]; then
+    local ssb64
+    ssb64="$(printf 'chacha20-ietf-poly1305:%s' "$SS_PASS" | base64 -w0)"
+    printf 'ss://%s@%s:%s#KIAN-Shadowsocks\n' "$ssb64" "$SERVER_IP" "$ssport" >> "$ETC_DIR/links.txt"
+  fi
+  return 0
+}
+
+# فقط اگر تداخل بود و pbk داریم، links.txt را از config بازبساز؛ وگرنه همان لینک‌های payload می‌مانند
+if [ "$COLLISION" = 1 ] && [ -n "$PBK" ]; then
+  if rebuild_links_from_config; then
+    # فایل‌های Subscription را از links.txt جدید بازبساز (هر کاربر = خطوط KIAN-<name>- + SS)
+    if [ -d "$ETC_DIR/sub" ] && [ -f "$ETC_DIR/sub_tokens.json" ]; then
+      jq -r 'to_entries[]|.key+"\t"+.value' "$ETC_DIR/sub_tokens.json" | while IFS=$'\t' read -r email token; do
+        ln="${email%@*}"
+        ul="$( { grep -E "#KIAN-${ln}-" "$ETC_DIR/links.txt"; grep -iE 'KIAN-Shadowsocks' "$ETC_DIR/links.txt"; } 2>/dev/null )"
+        [ -z "$ul" ] && ul="$(cat "$ETC_DIR/links.txt")"
+        printf '%s' "$ul" | sed '/^$/d' | base64 -w0 > "$ETC_DIR/sub/${token}.txt"
+      done
+    fi
+    warn "پورت‌ها تغییر کردند؛ links.txt و Subscription از config بازسازی شد. لینک صفحه ممکن است قدیمی باشد — از «kian-v2ray sub <نام>» لینک به‌روز را بگیر."
+  fi
 fi
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-chmod 644 "$XRAY_DIR/config.json"   # تضمین خواندنی بودن برای کاربر غیر-root کانتینر (بعد از auto-fixها)
+chmod 644 "$XRAY_DIR/config.json"   # تضمین خواندنی بودن برای کاربر غیر-root کانتینر (بعد از تخصیص پورت)
 docker run -d --name "$CONTAINER" --restart unless-stopped \
   --network host --memory="512m" \
   -v "$XRAY_DIR/config.json:/etc/xray/config.json:ro" \
