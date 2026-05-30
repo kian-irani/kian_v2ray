@@ -8,7 +8,7 @@
 
 const RAW_BASE = 'https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main';
 const WARP_PORT = 40000;
-const SUB_PORT = 8765;          // سرویس Subscription روی سرور کاربر — پورت غیرمرسوم (۸۰۸۰ با tunnel-node MHRV تداخل دارد)
+const SUB_PORT = 80;            // سرویس Subscription روی پورت استاندارد ۸۰ (پروایدرها همیشه بازش می‌گذارند). باید روی سرور خالی باشد.
 const SS_METHOD = 'chacha20-ietf-poly1305';
 const GIB = 1073741824;
 const BASE_PORT = 8443;        // پورت‌ها از اینجا به‌صورت خودکار اضافه می‌شوند
@@ -408,7 +408,7 @@ function render(out) {
   } else {
     step3.innerHTML = `<div class="panel-title">۳) لینک Subscription کاربرها (${out.users.length} کاربر)</div>
       <p class="muted small">برای هر کاربر <b>یک لینک Subscription</b> ساخته شد که همهٔ کانفیگ‌ها (SNIها و کانال‌های مختلف) را خودکار از سرور می‌آورد.</p>
-      <div class="sub-port-note">⚠️ <b>مهم:</b> لینک Subscription روی پورت <b>${SUB_PORT}</b> سرورت کار می‌کند. این پورت باید باز بماند (نصب‌کننده خودش در فایروال بازش می‌کند). کانفیگ‌ها از همین پورت به کلاینت داده می‌شوند و همیشه با سرور هماهنگ‌اند.</div>
+      <div class="sub-port-note">⚠️ <b>خیلی مهم:</b> لینک Subscription روی <b>پورت ۸۰</b> سرورت کار می‌کند. این پورت باید روی سرورت <b>کاملاً خالی باشد</b> (نباید Caddy/Nginx/Apache یا وب‌سرور دیگری رویش باشد). اگر پورت ۸۰ اشغال باشد، نصب‌کننده یک پورت دیگر انتخاب می‌کند ولی ممکن است پروایدرت آن را از بیرون باز نگذارد. پورت ۸۰ استاندارد است و تقریباً همیشه از بیرون باز است.</div>
       <div class="badges">
         <span class="badge">${modeLabel}</span>
         <span class="badge">حجم: ${quotaLabel}</span>

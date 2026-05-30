@@ -349,7 +349,7 @@ EOF
     # فایل subscription = base64 از مجموعهٔ لینک‌ها (فرمت v2rayNG)
     local outfile="$subdir/${tok}.txt"
     printf '%s' "$all" | base64 -w0 > "$outfile"
-    local subport; subport="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8765)"
+    local subport; subport="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
     local ip; ip="$(meta_ip)"
     printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
     if systemctl is-active kian-sub >/dev/null 2>&1; then
@@ -509,7 +509,7 @@ cmd_uninstall(){
       ufw delete allow "${p}/tcp" >/dev/null 2>&1 || true
       ufw delete allow "${p}/udp" >/dev/null 2>&1 || true
     done
-    sp="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8765)"
+    sp="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
     ufw delete allow "${sp}/tcp" >/dev/null 2>&1 || true
     ufw reload >/dev/null 2>&1 || true
   fi
@@ -547,7 +547,7 @@ cmd_openports(){
   for p in $ports; do
     ufw allow "${p}/tcp" >/dev/null 2>&1 && ufw allow "${p}/udp" >/dev/null 2>&1 && say "باز شد: $p"
   done
-  sub="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 8765)"
+  sub="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
   ufw allow "${sub}/tcp" >/dev/null 2>&1 && say "باز شد: $sub (Subscription)"
   ufw reload >/dev/null 2>&1 || true
   say "پورت‌های سرویس در فایروال باز شدند"

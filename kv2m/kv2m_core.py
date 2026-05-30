@@ -210,7 +210,7 @@ def generate(opts: dict) -> dict:
     links = []
     per_user = []
     sub_tokens = {}
-    sub_port = 8765
+    sub_port = 80
     ip = opts["server_ip"]
     for u in users:
         local = u["email"].split("@")[0]
