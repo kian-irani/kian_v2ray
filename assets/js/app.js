@@ -17,6 +17,18 @@ const SS_METHOD = 'chacha20-ietf-poly1305';
 const GIB = 1073741824;
 const BASE_PORT = 8443;        // پورت‌ها از اینجا به‌صورت خودکار اضافه می‌شوند
 
+// فاز ۳: پروتکل‌های TLS پشت دامنه (Caddy روی :443 → Xray داخلی). هر کدام یک path یکتا دارد.
+// internalBase: پورت داخلی localhost که Caddy به آن reverse proxy می‌کند (از 20810 به بعد خودکار).
+const TLS_PROTOS = {
+  'vless-ws':   { proto: 'vless',  net: 'ws',          label: 'VLESS-WS',   note: 'پایدارترین برای عبور از DPI و CDN' },
+  'vmess-ws':   { proto: 'vmess',  net: 'ws',          label: 'VMess-WS',   note: 'سازگاری بالا با کلاینت‌های قدیمی' },
+  'vless-grpc': { proto: 'vless',  net: 'grpc',        label: 'VLESS-gRPC', note: 'مالتی‌پلکس، خوب روی شبکه‌های پرتاخیر' },
+  'vmess-grpc': { proto: 'vmess',  net: 'grpc',        label: 'VMess-gRPC', note: 'gRPC با VMess' },
+  'trojan-ws':  { proto: 'trojan', net: 'ws',          label: 'Trojan-WS',  note: 'شبیه ترافیک HTTPS معمولی' },
+  'vless-httpupgrade': { proto: 'vless', net: 'httpupgrade', label: 'VLESS-HTTPUpgrade', note: 'سبک‌تر از WS، عبور خوب از پراکسی‌ها' },
+  'vmess-httpupgrade': { proto: 'vmess', net: 'httpupgrade', label: 'VMess-HTTPUpgrade', note: 'HTTPUpgrade با VMess' },
+};
+
 // دامنه‌های استتار (SNI) — TLS 1.3 و معمولاً در ایران در دسترس‌اند (yahoo حذف شد)
 const SNI_POOL = [
   // تست‌شده روی شبکهٔ ایران (TLS1.3، در دسترس) — مه ۲۰۲۶
@@ -86,7 +98,8 @@ function genReality() {
 // o.profiles: [{ tag, port, sni, channel:'direct'|'warp' }]
 function buildConfig(o) {
   const clients = o.users.map(u => ({ id: u.id, email: u.email, flow: 'xtls-rprx-vision' }));
-  const anyWarp = o.profiles.some(p => p.channel === 'warp');
+  const tlsWantsWarp = !!(o.tls && o.tls.enabled && o.tls.domain && o.tls.channel === 'warp' && (o.tlsProfiles || []).length);
+  const anyWarp = o.profiles.some(p => p.channel === 'warp') || tlsWantsWarp;
 
   const realityInbound = (p) => ({
     listen: '0.0.0.0',
@@ -114,6 +127,24 @@ function buildConfig(o) {
     { listen: '127.0.0.1', port: apiPort, protocol: 'dokodemo-door', settings: { address: '127.0.0.1' }, tag: 'api' },
   ];
   o.profiles.forEach(p => inbounds.push(realityInbound(p)));
+
+  // فاز ۳: inboundهای TLS (پشت Caddy روی :443). هر کدام روی localhost با یک path یکتا.
+  const tlsItems = (o.tls && o.tls.enabled && o.tls.domain) ? (o.tlsProfiles || []) : [];
+  tlsItems.forEach(t => {
+    const stream = { network: t.net, security: 'none' };
+    if (t.net === 'ws')          stream.wsSettings = { path: t.path };
+    else if (t.net === 'grpc')   stream.grpcSettings = { serviceName: t.path.replace(/^\//, '') };
+    else if (t.net === 'httpupgrade') stream.httpupgradeSettings = { path: t.path };
+    let settings;
+    if (t.proto === 'vless')      settings = { clients: o.users.map(u => ({ id: u.id, email: u.email })), decryption: 'none' };
+    else if (t.proto === 'vmess') settings = { clients: o.users.map(u => ({ id: u.id, email: u.email })) };
+    else if (t.proto === 'trojan')settings = { clients: o.users.map(u => ({ password: u.id, email: u.email })) };
+    inbounds.push({
+      listen: '127.0.0.1', port: t.intPort, protocol: t.proto, tag: t.tag,
+      settings, streamSettings: stream,
+      sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] },
+    });
+  });
   if (o.ss.enabled) {
     inbounds.push({
       listen: '0.0.0.0',
@@ -142,6 +173,12 @@ function buildConfig(o) {
   if (warpTags.length)   rules.push({ type: 'field', inboundTag: warpTags,   outboundTag: 'warp' });
   if (directTags.length) rules.push({ type: 'field', inboundTag: directTags, outboundTag: 'direct' });
   if (o.ss.enabled)      rules.push({ type: 'field', inboundTag: ['shadowsocks'], outboundTag: ssOut });
+  // TLS inboundها: طبق کانال انتخابی کاربر (مستقیم یا WARP)
+  const tlsTags = tlsItems.map(t => t.tag);
+  if (tlsTags.length) {
+    const tlsOut = (o.tls && o.tls.channel === 'warp' && anyWarp) ? 'warp' : 'direct';
+    rules.push({ type: 'field', inboundTag: tlsTags, outboundTag: tlsOut });
+  }
 
   return {
     log: { loglevel: 'warning', access: '/var/log/xray/access.log', error: '/var/log/xray/error.log' },
@@ -176,6 +213,74 @@ function ssLink({ ip, port, password, label }) {
   return `ss://${btoa(`${SS_METHOD}:${password}`)}@${ip}:${port}#${encodeURIComponent(label)}`;
 }
 
+/* لینک‌های TLS (پشت دامنه، روی :443) */
+function tlsVlessLink({ uuid, domain, net, path, label }) {
+  const q = new URLSearchParams({ encryption: 'none', security: 'tls', sni: domain, fp: 'chrome', type: net, host: domain });
+  if (net === 'ws' || net === 'httpupgrade') q.set('path', path);
+  if (net === 'grpc') { q.set('serviceName', path.replace(/^\//, '')); q.set('mode', 'gun'); }
+  return `vless://${uuid}@${domain}:443?${q.toString()}#${encodeURIComponent(label)}`;
+}
+function tlsTrojanLink({ uuid, domain, net, path, label }) {
+  const q = new URLSearchParams({ security: 'tls', sni: domain, fp: 'chrome', type: net, host: domain });
+  if (net === 'ws' || net === 'httpupgrade') q.set('path', path);
+  if (net === 'grpc') { q.set('serviceName', path.replace(/^\//, '')); q.set('mode', 'gun'); }
+  return `trojan://${uuid}@${domain}:443?${q.toString()}#${encodeURIComponent(label)}`;
+}
+function tlsVmessLink({ uuid, domain, net, path, label }) {
+  // VMess = JSON بیس64شده (فرمت v2rayN)
+  const v = {
+    v: '2', ps: label, add: domain, port: '443', id: uuid, aid: '0', scy: 'auto',
+    net: net === 'httpupgrade' ? 'httpupgrade' : net, type: 'none',
+    host: domain, path: (net === 'grpc' ? path.replace(/^\//, '') : path),
+    tls: 'tls', sni: domain, alpn: '', fp: 'chrome',
+  };
+  if (net === 'grpc') { v.path = path.replace(/^\//, ''); }
+  return 'vmess://' + btoa(unescape(encodeURIComponent(JSON.stringify(v))));
+}
+function tlsLink(item, user, domain) {
+  const base = { uuid: user.id, domain, net: TLS_PROTOS[item.kind].net, path: item.path, label: item.label };
+  const proto = TLS_PROTOS[item.kind].proto;
+  if (proto === 'vmess')  return tlsVmessLink(base);
+  if (proto === 'trojan') return tlsTrojanLink(base);
+  return tlsVlessLink(base);
+}
+function isDomain(d) {
+  return typeof d === 'string' && /^(?=.{4,253}$)([a-z0-9](-?[a-z0-9])*\.)+[a-z]{2,}$/.test(d);
+}
+function tlsWantsWarp(f, tlsProfiles) {
+  return !!(f.tls && f.tls.enabled && f.tls.channel === 'warp' && tlsProfiles && tlsProfiles.length);
+}
+// Caddyfile: TLS واقعی روی :443، path-based reverse_proxy به Xray داخلی
+function buildCaddyfile(domain, tlsProfiles) {
+  const lines = [];
+  lines.push(`${domain} {`);
+  lines.push(`\tencode gzip`);
+  tlsProfiles.forEach(t => {
+    if (t.net === 'grpc') {
+      const svc = t.path.replace(/^\//, '');
+      lines.push(`\t@${t.tag} {`);
+      lines.push(`\t\tpath /${svc}/*`);
+      lines.push(`\t}`);
+      lines.push(`\thandle @${t.tag} {`);
+      lines.push(`\t\treverse_proxy h2c://127.0.0.1:${t.intPort}`);
+      lines.push(`\t}`);
+    } else {
+      lines.push(`\t@${t.tag} {`);
+      lines.push(`\t\tpath ${t.path}`);
+      lines.push(`\t}`);
+      lines.push(`\thandle @${t.tag} {`);
+      lines.push(`\t\treverse_proxy 127.0.0.1:${t.intPort}`);
+      lines.push(`\t}`);
+    }
+  });
+  // صفحهٔ طعمه برای بقیهٔ مسیرها (شبیه یک سایت معمولی)
+  lines.push(`\thandle {`);
+  lines.push(`\t\trespond "It works!" 200`);
+  lines.push(`\t}`);
+  lines.push(`}`);
+  return lines.join('\n');
+}
+
 /* --------------------------- read the form ----------------------------- */
 function readForm() {
   const mode      = ($('input[name="mode"]:checked') || {}).value || 'both';
@@ -191,13 +296,19 @@ function readForm() {
     sniCount:  Math.max(1, Math.min(5, sniCount || 2)),
     basePort:  Math.max(1, Math.min(65535, parseInt(($('#base-port') && $('#base-port').value) || BASE_PORT, 10) || BASE_PORT)),
     numUsers:  Math.min(50, Math.max(1, parseInt($('#num-users').value, 10) || 1)),
-    prefix:   ($('#user-prefix').value.trim() || 'user').replace(/[^a-zA-Z0-9_-]/g, ''),
+    prefix:   ($('#user-prefix').value.trim()).replace(/[^a-zA-Z0-9_-]/g, ''),
     quotaGb:  parseInt($('#quota').value, 10),        // 0 = نامحدود
     days:     parseInt($('#days').value, 10),         // 0 = دائمی
     ss: {
       enabled: ssEnabled,
       port: parseInt($('#ss-port').value, 10) || 8388,
       password: '',
+    },
+    tls: {
+      enabled: !!($('#tls-enabled') && $('#tls-enabled').checked),
+      domain: ($('#tls-domain') && $('#tls-domain').value.trim().toLowerCase()) || '',
+      channel: ($('input[name="tls-channel"]:checked') || {}).value || 'direct',
+      protos: $$('input[name="tls-proto"]:checked').map(el => el.value),
     },
   };
 }
@@ -244,13 +355,28 @@ function generate(f) {
     });
   }
 
+  // فاز ۳: پروفایل‌های TLS (پشت دامنه). هر پروتکل یک پورت داخلی و path یکتا.
+  const tlsEnabled = f.tls.enabled && isDomain(f.tls.domain) && f.tls.protos.length > 0;
+  const tlsProfiles = [];
+  if (tlsEnabled) {
+    let ip2 = 20810;
+    const rnd = Math.random().toString(36).slice(2, 8);
+    f.tls.protos.forEach((kind, i) => {
+      if (!TLS_PROTOS[kind]) return;
+      const net = TLS_PROTOS[kind].net;
+      const path = `/${rnd}${i}${net === 'grpc' ? 'grpc' : ''}`;
+      tlsProfiles.push({ kind, tag: `tls-${kind}`, intPort: ip2++, net, proto: TLS_PROTOS[kind].proto, path });
+    });
+  }
+
   // پورت API تصادفی (مشکل ۰.۱): جلوگیری از تداخل با 3x-ui/Marzban که روی 10085 + network=host هستند
   const usedPorts = profiles.map(p => p.port);
   if (f.ss.enabled) usedPorts.push(f.ss.port);
   let apiPort;
   do { apiPort = 20000 + Math.floor(Math.random() * 30000); } while (usedPorts.includes(apiPort));
 
-  const config = buildConfig({ profiles, reality, users, ss: f.ss, apiPort });
+  const config = buildConfig({ profiles, reality, users, ss: f.ss, apiPort,
+    tls: f.tls, tlsProfiles });
 
   // لینک‌ها: برای هر کاربر، یک لینک به‌ازای هر پروفایل + یک لینک Subscription
   const links = [];
@@ -266,11 +392,18 @@ function generate(f) {
       links.push(link);
       return { channel: p.channel, sni: p.sni, port: p.port, link };
     });
+    // فاز ۳: لینک‌های TLS این کاربر
+    const tlsLinks = tlsProfiles.map(t => {
+      const label = `KIAN-${local}-${TLS_PROTOS[t.kind].label}`;
+      const link = tlsLink({ kind: t.kind, path: t.path, label }, u, f.tls.domain);
+      links.push(link);
+      return { kind: t.kind, label: TLS_PROTOS[t.kind].label, note: TLS_PROTOS[t.kind].note, link };
+    });
     // توکن Subscription تصادفی (مثل UUID — همان‌جا در مرورگر ساخته می‌شود)
     const token = randHex(16);
     subTokens[u.email] = token;
     const subUrls = SUB_PORTS.map(p => `http://${f.serverIp}:${p}/sub/${token}`);
-    return { email: u.email, local, items, subUrls };
+    return { email: u.email, local, items, tlsLinks, subUrls };
   });
 
   let ssOut = null;
@@ -283,7 +416,7 @@ function generate(f) {
   if (f.ss.enabled) ports.push(f.ss.port);
 
   const payload = {
-    warp_needed: channels.includes('warp'),
+    warp_needed: channels.includes('warp') || tlsWantsWarp(f, tlsProfiles),
     server_ip: f.serverIp,
     config_b64: utf8ToB64(JSON.stringify(config)),
     users_b64:  utf8ToB64(JSON.stringify({ users })),
@@ -296,6 +429,8 @@ function generate(f) {
     reality_sid: reality.shortId,
     ss_password: f.ss.enabled ? f.ss.password : '',
     gist_proxy: GIST_PROXY,            // endpoint Worker: سرور POST می‌زند، Worker با توکن خصوصی gist می‌سازد
+    tls_domain: tlsProfiles.length ? f.tls.domain : '',
+    caddyfile_b64: tlsProfiles.length ? utf8ToB64(buildCaddyfile(f.tls.domain, tlsProfiles)) : '',
   };
   const payloadB64 = utf8ToB64(JSON.stringify(payload));
 
@@ -457,6 +592,16 @@ function render(out) {
         const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
         card.appendChild(linkRow(`${tag} · ${it.sni}`, it.link));
       });
+      // فاز ۳: کانفیگ‌های دامنه‌دار (TLS) همین کاربر
+      if (u.tlsLinks && u.tlsLinks.length) {
+        const tlsSep = document.createElement('div');
+        tlsSep.className = 'config-sep';
+        tlsSep.textContent = 'کانفیگ‌های دامنه‌دار (TLS — روی :443):';
+        card.appendChild(tlsSep);
+        u.tlsLinks.forEach(t => {
+          card.appendChild(linkRow(`${t.label} — ${t.note}`, t.link));
+        });
+      }
       step3.appendChild(card);
     });
   }
@@ -489,6 +634,9 @@ function syncVisibility() {
   $('#field-sni').classList.toggle('hidden', noSni || !isManual);
   $('#field-sni-custom').classList.toggle('hidden', noSni || !(isManual && $('#sni').value === '__custom__'));
   $('#field-ss-port').classList.toggle('hidden', !$('#ss-enabled').checked);
+  const tlsEn = $('#tls-enabled');
+  const tlsOpts = $('#tls-options');
+  if (tlsEn && tlsOpts) tlsOpts.hidden = !tlsEn.checked;
 }
 
 function initTabs() {
@@ -617,6 +765,8 @@ function init() {
 
   $$('input[name="mode"]').forEach(r => r.addEventListener('change', syncVisibility));
   $('#ss-enabled').addEventListener('change', syncVisibility);
+  const tlsEn2 = $('#tls-enabled');
+  if (tlsEn2) tlsEn2.addEventListener('change', syncVisibility);
   $('#sni-mode') && $('#sni-mode').addEventListener('change', syncVisibility);
   $('#sni') && $('#sni').addEventListener('change', syncVisibility);
   syncVisibility();
@@ -628,6 +778,11 @@ function init() {
     err.textContent = '';
 
     if (!isIPv4(f.serverIp)) { err.textContent = 'آی‌پی سرور معتبر نیست (نمونه: 203.0.113.10).'; $('#server-ip').focus(); return; }
+    if (!f.prefix) { err.textContent = 'یک نام کاربر (انگلیسی) وارد کن — این نام لینک‌های هر کاربر را از هم جدا می‌کند.'; $('#user-prefix').focus(); return; }
+    if (f.tls && f.tls.enabled) {
+      if (!isDomain(f.tls.domain)) { err.textContent = 'دامنهٔ TLS معتبر نیست (نمونه: vpn.example.com). یک رکورد A این دامنه باید به IP سرورت اشاره کند.'; $('#tls-domain').focus(); return; }
+      if (!f.tls.protos.length) { err.textContent = 'حداقل یک پروتکل TLS را تیک بزن (پیشنهاد: VLESS-WS).'; return; }
+    }
     if (f.sniMode === 'manual' && !f.manualSni) { err.textContent = 'یک دامنهٔ استتار (SNI) انتخاب یا وارد کن.'; return; }
     if (f.basePort > 65500) { err.textContent = 'پورت پایه خیلی بالاست؛ عددی کمتر (مثلاً 8443 یا 9443) انتخاب کن.'; return; }
     if (f.ss.enabled && (f.ss.port < 1 || f.ss.port > 65535)) { err.textContent = 'پورت Shadowsocks نامعتبر است.'; return; }

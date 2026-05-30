@@ -556,6 +556,59 @@ CRON
 say "مدیر و watchdog نصب شد"
 mark_step manager
 
+# --- مرحله ۶.۲: کانفیگ‌های دامنه‌دار (TLS) — فاز ۳ ---------------------------
+# اگر کاربر در صفحه TLS را فعال کرده باشد، Caddy نصب می‌شود و روی :443 با گواهی
+# واقعی Let's Encrypt به Xrayِ داخلی reverse proxy می‌کند.
+TLS_DOMAIN_VAL="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.tls_domain // ""')"
+CADDYFILE_B64="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.caddyfile_b64 // ""')"
+if [ -n "$TLS_DOMAIN_VAL" ] && [ -n "$CADDYFILE_B64" ]; then
+  inf "راه‌اندازی کانفیگ‌های دامنه‌دار برای: $TLS_DOMAIN_VAL"
+  # بررسی DNS: آیا دامنه به IP این سرور اشاره می‌کند؟
+  RESOLVED_IP="$(getent hosts "$TLS_DOMAIN_VAL" 2>/dev/null | awk '{print $1}' | head -1)"
+  if [ -n "$RESOLVED_IP" ] && [ "$RESOLVED_IP" != "$SERVER_IP" ]; then
+    warn "دامنه ($TLS_DOMAIN_VAL → $RESOLVED_IP) به IP این سرور ($SERVER_IP) اشاره نمی‌کند."
+    warn "گواهی TLS احتمالاً گرفته نمی‌شود تا رکورد A را درست کنی. (نصب ادامه پیدا می‌کند)"
+  elif [ -z "$RESOLVED_IP" ]; then
+    warn "DNS دامنه قابل resolve نیست. مطمئن شو رکورد A تنظیم شده باشد."
+  fi
+  # نصب Caddy (اگر نبود)
+  if ! command -v caddy >/dev/null 2>&1; then
+    inf "نصب Caddy..."
+    apt-get install -y debian-keyring debian-archive-keyring apt-transport-https >/dev/null 2>&1 || true
+    curl -fsSL "https://dl.cloudsmith.io/public/caddy/stable/gpg.key" | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg 2>/dev/null
+    curl -fsSL "https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt" > /etc/apt/sources.list.d/caddy-stable.list
+    apt-get update -qq >/dev/null 2>&1 || true
+    apt-get install -y caddy >/dev/null 2>&1 || warn "نصب Caddy ناموفق — کانفیگ‌های TLS کار نخواهند کرد"
+  fi
+  # نوشتن Caddyfile
+  if command -v caddy >/dev/null 2>&1; then
+    # بررسی پورت ۸۰ و ۴۴۳ — اگر اشغال بود هشدار
+    if ss -tln 2>/dev/null | awk '{print $4}' | grep -qE '[:.]80$'; then
+      warn "پورت ۸۰ اشغال است — Caddy نمی‌تواند گواهی ACME بگیرد. اگر سرویس دیگری روی ۸۰ هست، خاموشش کن."
+    fi
+    if ss -tln 2>/dev/null | awk '{print $4}' | grep -qE '[:.]443$'; then
+      warn "پورت ۴۴۳ اشغال است — Caddy نمی‌تواند روی :443 bind کند."
+    fi
+    mkdir -p /etc/caddy
+    printf '%s' "$CADDYFILE_B64" | base64 -d > /etc/caddy/Caddyfile
+    chmod 644 /etc/caddy/Caddyfile
+    systemctl enable caddy >/dev/null 2>&1 || true
+    if systemctl reload caddy >/dev/null 2>&1 || systemctl restart caddy >/dev/null 2>&1; then
+      sleep 3
+      if systemctl is-active caddy >/dev/null 2>&1; then
+        say "Caddy فعال شد. گواهی TLS به‌صورت خودکار گرفته می‌شود (ممکن است ۱-۲ دقیقه طول بکشد)."
+        inf "تست HTTPS: curl -I https://$TLS_DOMAIN_VAL"
+      else
+        err "Caddy بالا نیامد — بررسی: systemctl status caddy ; journalctl -u caddy -n 30"
+      fi
+    else
+      err "بارگذاری Caddy ناموفق — بررسی: caddy validate --config /etc/caddy/Caddyfile"
+    fi
+    echo "$TLS_DOMAIN_VAL" > "$ETC_DIR/tls_domain.txt"
+  fi
+  mark_step tls
+fi
+
 # --- مرحله ۶.۵: سرویس Subscription (فاز ۲) ---------------------------------
 inf "نصب سرویس Subscription"
 curl -fsSL "$RAW_BASE/scripts/sub-server.py" -o /usr/local/bin/kian-sub-server.py && chmod +x /usr/local/bin/kian-sub-server.py
@@ -629,6 +682,11 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi '^Status:
   for sp in $(echo "$SUB_PORTS_FW" | tr ',' ' '); do
     [ -n "$sp" ] && ufw allow "${sp}/tcp" >/dev/null 2>&1 || true
   done
+  # پورت‌های TLS (Caddy) — اگر فاز ۳ فعال است
+  if [ -f "$ETC_DIR/tls_domain.txt" ]; then
+    ufw allow 80/tcp >/dev/null 2>&1 || true
+    ufw allow 443/tcp >/dev/null 2>&1 || true
+  fi
   ufw reload >/dev/null 2>&1 || true
   say "پورت‌ها در فایروال باز شد (SSH: $(echo $SSH_PORTS | tr '\n' ' '))"
 else

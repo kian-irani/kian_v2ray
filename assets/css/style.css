@@ -368,3 +368,21 @@ html[dir=rtl] .adv-toggle[aria-expanded="true"] .adv-caret{transform:scaleX(-1) 
 .sub-port-note{margin:10px 0;padding:10px 12px;border-radius:10px;background:rgba(245,196,81,.08);border:1px solid rgba(245,196,81,.3);font-size:12.5px;line-height:1.7;color:#f5d98a}
 .sub-head{margin:10px 0 6px;font-size:13.5px;color:#cfe6ff}
 .config-sep{margin:14px 0 6px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.08);font-size:12.5px;color:#9fb3c8}
+
+/* فاز ۳: کانفیگ‌های دامنه‌دار */
+.tls-block{margin-top:14px}
+.tls-block>summary{cursor:pointer;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;font-weight:600}
+.tls-intro{font-size:13px;line-height:1.8;color:#cfe6ff;background:rgba(64,156,255,.06);border:1px solid rgba(64,156,255,.18);padding:10px 12px;border-radius:8px;margin:10px 0}
+.tls-req{margin:8px 0 4px;color:#ffd28a}
+.tls-req-list{margin:4px 0 0 18px;padding:0;color:#cfe6ff}
+.tls-req-list li{margin:3px 0}
+.tls-req-list code{background:rgba(0,0,0,.3);padding:1px 5px;border-radius:4px;font-family:monospace;color:#9fefb0}
+.tls-toggle{margin:10px 0}
+.switch-row{display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500}
+.tls-options{margin-top:8px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.08)}
+.tls-protos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:6px 0}
+.proto-chk{display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.02);transition:background .15s}
+.proto-chk:hover{background:rgba(255,255,255,.05)}
+.proto-chk input{margin-top:3px}
+.proto-chk b{display:block;font-size:13.5px}
+.proto-chk small{display:block;font-size:11.5px;color:#9fb3c8;margin-top:2px}

@@ -110,6 +110,12 @@
         <small class="hint">همون آی‌پی که با اون به سرور وصل می‌شی (SSH). بعد از خرید سرور بهت داده می‌شه.</small>
       </div>
 
+      <div class="field big">
+        <label for="user-prefix">👤 نام کاربر</label>
+        <input id="user-prefix" type="text" placeholder="مثلاً ali یا reza" autocomplete="off" spellcheck="false" maxlength="32">
+        <small class="hint">یک نام انگلیسی برای این کاربر بذار (حروف/عدد). <b>این نام مهمه:</b> لینک Subscription و کانفیگ‌های هر کاربر با همین نام از هم جدا می‌شن تا قاطی نشن. برای چند کاربر، خودکار شماره می‌خوره (مثلاً ali-1, ali-2).</small>
+      </div>
+
       <!-- حالت: کارت‌های ساده و درشت -->
       <div class="field">
         <label>🌐 حالت اتصال</label>
@@ -235,12 +241,63 @@
             </select>
           </div>
         </div>
-        <div class="field">
-          <label for="user-prefix">نام پایهٔ کاربر</label>
-          <input id="user-prefix" type="text" value="user" placeholder="user" autocomplete="off" spellcheck="false">
-        </div>
         <p class="muted small">پورت‌ها خودکار انتخاب می‌شن (از ۸۴۴۳ به بعد) — لازم نیست کاری بکنی.</p>
       </div>
+
+      <!-- فاز ۳: کانفیگ‌های دامنه‌دار (TLS) -->
+      <details class="adv tls-block">
+        <summary>🌐 کانفیگ‌های دامنه‌دار (WS / gRPC / HTTPUpgrade + TLS) — پیشرفته</summary>
+        <div class="adv-body">
+          <div class="tls-intro">
+            <p>این کانفیگ‌ها به‌جای IP، روی <b>دامنه + گواهی TLS واقعی</b> کار می‌کنند و پشت <b>Caddy</b> روی پورت ۴۴۳ سرو می‌شوند. مزیت: عبور بهتر از DPI، امکان استفاده پشت CDN (مثل Cloudflare)، و شبیه‌بودن کامل به ترافیک HTTPS معمولی.</p>
+            <p class="tls-req"><b>پیش‌نیازها (مهم):</b></p>
+            <ul class="tls-req-list">
+              <li>یک <b>دامنه</b> داشته باش (مثلاً از Namecheap، Cloudflare، Freenom).</li>
+              <li>یک رکورد <b>A</b> بساز که دامنه (یا یک ساب‌دامنه مثل <code>vpn.example.com</code>) به <b>IP سرورت</b> اشاره کند.</li>
+              <li>اگر از Cloudflare استفاده می‌کنی، موقع نصب اول ابر را <b>خاکستری (DNS only)</b> کن تا گواهی گرفته شود؛ بعد می‌تونی نارنجی (Proxied) کنی.</li>
+              <li>پورت‌های <b>۴۴۳</b> و <b>۸۰</b> سرور باید آزاد باشند (برای گرفتن گواهی Let's Encrypt).</li>
+            </ul>
+          </div>
+
+          <div class="field tls-toggle">
+            <label class="switch-row">
+              <input type="checkbox" id="tls-enabled">
+              <span>کانفیگ‌های دامنه‌دار را فعال کن</span>
+            </label>
+          </div>
+
+          <div id="tls-options" class="tls-options" hidden>
+            <div class="field">
+              <label for="tls-domain">دامنه (که به IP سرور اشاره می‌کند)</label>
+              <input id="tls-domain" type="text" placeholder="مثلاً vpn.example.com" autocomplete="off" spellcheck="false">
+              <small class="hint">حتماً رکورد A این دامنه باید روی IP همین سرور تنظیم شده باشد، وگرنه گواهی TLS گرفته نمی‌شود.</small>
+            </div>
+
+            <div class="field">
+              <label>پروتکل‌ها (هرکدام را می‌خواهی تیک بزن)</label>
+              <div class="tls-protos">
+                <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vless-ws" checked> <b>VLESS-WS</b><small>پایدارترین، عبور خوب از DPI و CDN</small></label>
+                <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vmess-ws"> <b>VMess-WS</b><small>سازگاری بالا با کلاینت‌های قدیمی</small></label>
+                <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vless-grpc"> <b>VLESS-gRPC</b><small>مالتی‌پلکس، خوب روی شبکهٔ پرتاخیر</small></label>
+                <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vmess-grpc"> <b>VMess-gRPC</b><small>gRPC با VMess</small></label>
+                <label class="proto-chk"><input type="checkbox" name="tls-proto" value="trojan-ws"> <b>Trojan-WS</b><small>شبیه HTTPS معمولی</small></label>
+                <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vless-httpupgrade"> <b>VLESS-HTTPUpgrade</b><small>سبک‌تر از WS</small></label>
+                <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vmess-httpupgrade"> <b>VMess-HTTPUpgrade</b><small>HTTPUpgrade با VMess</small></label>
+              </div>
+              <small class="hint">پیشنهاد: اگر مطمئن نیستی، فقط <b>VLESS-WS</b> را بگذار — برای اکثر موارد بهترین است.</small>
+            </div>
+
+            <div class="field">
+              <label>مسیر خروجی این کانفیگ‌ها</label>
+              <div class="seg">
+                <label><input type="radio" name="tls-channel" value="direct" checked> سریع (مستقیم)</label>
+                <label><input type="radio" name="tls-channel" value="warp"> از WARP (دور زدن بلاک خروجی سرور)</label>
+              </div>
+              <small class="hint">اگر سرورت سایت‌هایی را بلاک می‌کند (مثل بعضی پروایدرهای ترکیه)، WARP را انتخاب کن.</small>
+            </div>
+          </div>
+        </div>
+      </details>
 
       <div id="form-error" class="form-error" role="alert"></div>
 
