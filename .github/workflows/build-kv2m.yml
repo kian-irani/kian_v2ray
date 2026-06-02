@@ -19,10 +19,11 @@ jobs:
           python-version: '3.11'
           architecture: 'x64'
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install customtkinter paramiko cryptography "qrcode[pil]" Pillow rich pyinstaller
+      - name: Install Python dependencies
+        run: pip install customtkinter paramiko cryptography "qrcode[pil]" Pillow rich pyinstaller
+
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
 
       - name: Build Portable .exe
         shell: pwsh
@@ -38,56 +39,42 @@ jobs:
             --hidden-import PIL `
             --exclude-module matplotlib `
             --exclude-module numpy `
-            --exclude-module pandas `
-            --exclude-module scipy `
             kv2m/kv2m.py
-          echo "Portable built: $(dir dist\Kv2m-Portable-x64.exe)"
+          echo "✅ Portable: $(Get-Item dist\Kv2m-Portable-x64.exe | Select -Expand Length) bytes"
 
       - name: Build Setup .exe (NSIS)
         shell: pwsh
         run: |
-          # کپی portable به کنار nsi
           Copy-Item dist\Kv2m-Portable-x64.exe kv2m\Kv2m.exe
-          # ساخت آیکون پیش‌فرض اگر نبود
-          if (-not (Test-Path kv2m\kv2m_icon.ico)) {
-            Copy-Item dist\Kv2m-Portable-x64.exe kv2m\kv2m_icon.ico
-          }
+          $nsis = "C:\Program Files (x86)\NSIS\makensis.exe"
+          if (-not (Test-Path $nsis)) { $nsis = (Get-Command makensis -ErrorAction SilentlyContinue).Source }
+          echo "NSIS: $nsis"
           cd kv2m
-          & "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
+          & $nsis installer.nsi
           Move-Item Kv2m-Setup-x64.exe ..\dist\
           cd ..
-          echo "Setup built: $(dir dist\Kv2m-Setup-x64.exe)"
+          echo "✅ Setup: $(Get-Item dist\Kv2m-Setup-x64.exe | Select -Expand Length) bytes"
 
-      - name: Get version from tag
+      - name: Get version
         shell: pwsh
         run: |
           $ver = "${{ github.ref_name }}" -replace "kv2m-v",""
           echo "VER=$ver" >> $env:GITHUB_ENV
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           name: "Kv2m v${{ env.VER }} — Windows x64"
           tag_name: ${{ github.ref_name }}
           body: |
-            ## Kv2m v${{ env.VER }} — مدیریت سرور Kian V2Ray
+            ## Kv2m v${{ env.VER }}
 
             | فایل | توضیح |
             |------|-------|
             | `Kv2m-Setup-x64.exe` | نصب کامل — Start Menu + Desktop shortcut |
-            | `Kv2m-Portable-x64.exe` | بدون نیاز به نصب — مستقیم اجرا کن |
+            | `Kv2m-Portable-x64.exe` | بدون نصب — مستقیم اجرا کن |
 
-            **سیستم مورد نیاز:** ویندوز ۱۰/۱۱  — ۶۴ بیتی  
-            **نیاز به Python:** ❌ نه — همه‌چیز داخل فایل است
-
-            ### قابلیت‌ها
-            - ساخت کانفیگ Reality + Shadowsocks
-            - اتصال SSH و نصب خودکار روی سرور
-            - مدیریت کاربر (افزودن/حذف/تمدید/ریست)
-            - نمایش لینک‌ها + QR Code + Subscription URL
-            - ذخیره پروفایل‌های سرور
+            **نیاز به Python ندارد. ویندوز ۱۰/۱۱ — ۶۴ بیتی**
           files: |
             dist/Kv2m-Setup-x64.exe
             dist/Kv2m-Portable-x64.exe
-          draft: false
-          prerelease: false
