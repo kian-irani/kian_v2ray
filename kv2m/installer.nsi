@@ -12,10 +12,6 @@ SetCompressor /SOLID lzma
 Unicode True
 
 !include "MUI2.nsh"
-!define MUI_ICON "kv2m_icon.ico"
-!define MUI_UNICON "kv2m_icon.ico"
-!define MUI_WELCOMEPAGE_TITLE "نصب Kv2m ${APP_VERSION}"
-!define MUI_WELCOMEPAGE_TEXT "مدیریت سرور Kian V2Ray$\r$\nبدون نیاز به Python"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
@@ -27,24 +23,17 @@ Unicode True
 Section "Main"
   SetOutPath "${INST_DIR}"
   File "${APP_EXE}"
-
-  ; Start Menu
   CreateDirectory "$SMPROGRAMS\Kv2m"
-  CreateShortcut "$SMPROGRAMS\Kv2m\Kv2m.lnk" "${INST_DIR}\${APP_EXE}"
-  CreateShortcut "$SMPROGRAMS\Kv2m\Uninstall.lnk" "${INST_DIR}\Uninstall.exe"
-
-  ; Desktop shortcut
-  CreateShortcut "$DESKTOP\Kv2m.lnk" "${INST_DIR}\${APP_EXE}"
-
-  ; Registry (Add/Remove Programs)
-  WriteRegStr HKLM "${UNINST_KEY}" "DisplayName"     "Kv2m ${APP_VERSION}"
-  WriteRegStr HKLM "${UNINST_KEY}" "DisplayVersion"  "${APP_VERSION}"
-  WriteRegStr HKLM "${UNINST_KEY}" "Publisher"       "KIAN-IRANI"
-  WriteRegStr HKLM "${UNINST_KEY}" "UninstallString" '"${INST_DIR}\Uninstall.exe"'
-  WriteRegStr HKLM "${UNINST_KEY}" "InstallLocation" "${INST_DIR}"
+  CreateShortcut "$SMPROGRAMS\Kv2m\Kv2m.lnk"        "${INST_DIR}\${APP_EXE}"
+  CreateShortcut "$SMPROGRAMS\Kv2m\Uninstall.lnk"   "${INST_DIR}\Uninstall.exe"
+  CreateShortcut "$DESKTOP\Kv2m.lnk"                "${INST_DIR}\${APP_EXE}"
+  WriteRegStr   HKLM "${UNINST_KEY}" "DisplayName"     "Kv2m ${APP_VERSION}"
+  WriteRegStr   HKLM "${UNINST_KEY}" "DisplayVersion"  "${APP_VERSION}"
+  WriteRegStr   HKLM "${UNINST_KEY}" "Publisher"       "KIAN-IRANI"
+  WriteRegStr   HKLM "${UNINST_KEY}" "UninstallString" '"${INST_DIR}\Uninstall.exe"'
+  WriteRegStr   HKLM "${UNINST_KEY}" "InstallLocation" "${INST_DIR}"
   WriteRegDWORD HKLM "${UNINST_KEY}" "NoModify" 1
   WriteRegDWORD HKLM "${UNINST_KEY}" "NoRepair"  1
-
   WriteUninstaller "${INST_DIR}\Uninstall.exe"
 SectionEnd
 
