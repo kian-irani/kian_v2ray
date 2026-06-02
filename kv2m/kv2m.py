@@ -23,7 +23,7 @@ for _s in ("stdout","stderr"):
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "2.3"
+APP_VERSION = "2.4"
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 WARP_PORT   = 40000
 SUB_PORTS   = [80, 8888, 2086]
@@ -90,7 +90,7 @@ def build_config(profiles,reality,users,ss,api_port=10085):
         inbounds.append({"listen":"0.0.0.0","port":ss["port"],"protocol":"shadowsocks","tag":"shadowsocks",
                          "settings":{"method":SS_METHOD,"password":ss["password"],"network":"tcp,udp"},
                          "sniffing":{"enabled":True,"destOverride":["http","tls","quic"]}})
-    outbounds=[{"tag":"direct","protocol":"freedom","settings":{"domainStrategy":"UseIP"}}]
+    outbounds=[{"tag":"direct","protocol":"freedom","settings":{"domainStrategy":"UseIP"},"streamSettings":{"sockopt":{"tcpFastOpen":True,"tcpcongestion":"bbr","tcpKeepAliveIdle":100}}}]
     if any_warp: outbounds.append({"tag":"warp","protocol":"socks","settings":{"servers":[{"address":"127.0.0.1","port":WARP_PORT}]}})
     outbounds.append({"tag":"block","protocol":"blackhole","settings":{}})
     direct_tags=[p["tag"] for p in profiles if p["channel"]=="direct"]
