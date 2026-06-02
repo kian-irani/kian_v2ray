@@ -5,6 +5,13 @@
 
 ---
 
+## [kv2m 2.5] — 2026-06-02
+
+### افزوده شد
+- **کانفیگ‌های دامنه‌دار (TLS) در اپ دسکتاپ:** اپ kv2m حالا مثل صفحهٔ وب، کانفیگ‌های پشت دامنه می‌سازد — VLESS-WS، VMess-WS، VLESS/VMess-gRPC، Trojan-WS، VLESS/VMess-HTTPUpgrade. شامل ساخت Caddyfile، inboundهای داخلی روی localhost، انتخاب کانال (direct/warp)، و لینک‌های کلاینت. payload شامل `tls_domain` و `caddyfile_b64` شد تا install.sh خودکار Caddy + گواهی Let's Encrypt را راه بیندازد. (قبلاً فقط Reality/WARP/Shadowsocks بود.)
+
+---
+
 ## [kv2m 2.4] — 2026-06-02
 
 ### بهبود یافت
