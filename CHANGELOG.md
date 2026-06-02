@@ -5,6 +5,17 @@
 
 ---
 
+## [kv2m 2.3] — 2026-06-02
+
+### رفع شد
+- **خطای ساخت/انتشار اپ ویندوزی (kv2m):** مرحلهٔ `Create Release` با خطای `403 Resource not accessible by integration` شکست می‌خورد چون `GITHUB_TOKEN` فقط مجوز `contents: read` داشت. با افزودن `permissions: contents: write` به workflow رفع شد. اپ از قبل سالم build می‌شد، فقط انتشار release ناموفق بود.
+- **سه باگ NameError در kv2m.py:** متغیر `e` در بلوک‌های `except ... as e:` پس از خروج از بلوک حذف می‌شود، اما داخل `lambda`های async (`self._ui(...)`) فراخوانی می‌شد. با bind کردن `e=e` به‌عنوان آرگومان پیش‌فرض lambda رفع شد.
+
+### تغییر کرد
+- نسخهٔ اپ kv2m به `2.3` رسید (هماهنگ با tag انتشار).
+
+---
+
 ## [2.0.0] — 2026-05-29
 
 ### افزوده شد

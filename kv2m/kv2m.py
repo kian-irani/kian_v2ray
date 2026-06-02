@@ -23,7 +23,7 @@ for _s in ("stdout","stderr"):
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "2.0"
+APP_VERSION = "2.3"
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 WARP_PORT   = 40000
 SUB_PORTS   = [80, 8888, 2086]
@@ -648,7 +648,7 @@ def _run_gui():
             self._inst_prog.start()
             def work():
                 try: self._ssh.run_stream(cmd,lambda l:self._ui(lambda x=l:self._inst_log.append(x)))
-                except Exception as e: self._ui(lambda:self._inst_log.append(f"\nخطا: {e}"))
+                except Exception as e: self._ui(lambda e=e:self._inst_log.append(f"\nخطا: {e}"))
                 def done():
                     self._inst_prog.stop(); self._inst_prog.set(1); self._inst_btn.configure(state="normal")
                     self._inst_log.append("\n✅ نصب اجرا شد. لینک‌ها:\n")
@@ -802,7 +802,7 @@ def _run_gui():
                         self._dt.configure(text="—",text_color=MUT); self._da.configure(text="—",text_color=MUT)
                         self._dash_tbl.load(rows); self._mg_tbl.load(rows)
                     self._ui(upd)
-                except Exception as e: self._ui(lambda:self._toast(f"خطا: {e}",True))
+                except Exception as e: self._ui(lambda e=e:self._toast(f"خطا: {e}",True))
             threading.Thread(target=work,daemon=True).start()
 
         # ══════════════════════════════════════════════════
@@ -850,7 +850,7 @@ def _run_gui():
                 except Exception as e:
                     self._ui(lambda:self._setstatus("disconnected"))
                     self._ui(lambda:self._bc.configure(state="normal",text="اتصال SSH"))
-                    self._ui(lambda:self._toast(f"خطای اتصال:\n{e}",True))
+                    self._ui(lambda e=e:self._toast(f"خطای اتصال:\n{e}",True))
             threading.Thread(target=work,daemon=True).start()
 
         def _disconnect(self):
