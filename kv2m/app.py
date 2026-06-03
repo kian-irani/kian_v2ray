@@ -241,6 +241,19 @@ class MainWindow(QWidget):
         except Exception as e: return self._toast(f"{tr('toast.err')}: {e}", True)
         self._last = g
         self._render_gen(g)
+        self._sync_gists(g)
+
+    def _sync_gists(self, g):
+        iid = g.get("install_id"); items = g.get("sub_items") or {}
+        if not iid or not items: return
+        def job(): return core.sync_gists(iid, items)
+        w = Worker(job)
+        def on_ok(urls):
+            if urls:
+                g["_gist"] = urls
+                if self._last is g: self._render_gen(g)
+        w.ok.connect(on_ok); w.fail.connect(lambda e: None)
+        self._workers.append(w); w.start()
 
     def _render_gen(self, g):
         self._clear_layout(self.gen_result)
@@ -267,10 +280,12 @@ class MainWindow(QWidget):
             uh.addWidget(ca); ul.addLayout(uh)
             for it in pu["items"]: ul.addWidget(self._link_row(it["link"], f"{tr('ch.'+it['channel'])} · {it['sni']}"))
             for x in pu.get("tlsLinks",[]): ul.addWidget(self._link_row(x["link"], f"🌐 {x['label']}"))
-            if pu.get("subUrls"):
-                sub = QHBoxLayout(); sl = QLabel(tr("gen.sublink")); sl.setObjectName("muted")
-                su = QLabel(pu["subUrls"][0]); su.setStyleSheet("color:#E3B341")
-                cpy = QPushButton("📋"); cpy.setObjectName("mini"); cpy.clicked.connect(lambda _,u=pu["subUrls"][0]: self._copy(u))
+            gist = (g.get("_gist") or {}).get(pu["subToken"])
+            sub_url = gist or (pu.get("subUrls") or [""])[0]
+            if sub_url:
+                sub = QHBoxLayout(); sl = QLabel(("🔗 HTTPS " if gist else "") + tr("gen.sublink")); sl.setObjectName("muted")
+                su = QLabel(sub_url); su.setStyleSheet("color:#76B900" if gist else "color:#E3B341")
+                cpy = QPushButton("📋"); cpy.setObjectName("mini"); cpy.clicked.connect(lambda _,u=sub_url: self._copy(u))
                 sub.addWidget(sl); sub.addWidget(su); sub.addStretch(1); sub.addWidget(cpy); ul.addLayout(sub)
             self.gen_result.addWidget(uc)
 

@@ -4,8 +4,9 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "3.0.0"
+APP_VERSION = "3.0.1"
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
+GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
 SUB_PORTS   = [80, 8888, 2086]
 SS_METHOD   = "chacha20-ietf-poly1305"
@@ -95,7 +96,7 @@ def tls_link(item,user,domain):
     return tls_vless_link(user["id"],domain,net,item["path"],item["label"])
 
 def build_caddyfile(domain,tls_profiles):
-    lines=[f"{domain} {{","\tencode gzip"]
+    lines=[f"{domain} {{"]
     for t in tls_profiles:
         if t["net"]=="grpc":
             svc=t["path"].lstrip("/")
@@ -231,13 +232,18 @@ def generate(opts):
                                     "link":tls_link({"kind":t["kind"],"path":t["path"],"label":lbl},u,tls_domain)})
         token=secrets.token_hex(16); sub_tokens[u["email"]]=token
         sub_urls=[f"http://{ip}:{sp}/sub/{token}" for sp in SUB_PORTS]
+        user_links=[it["link"] for it in items]+[t["link"] for t in tls_items_links]
         per_user.append({"email":u["email"],"local":local,"items":items,
-                         "tlsLinks":tls_items_links,
+                         "tlsLinks":tls_items_links,"userLinks":user_links,
                          "subUrls":sub_urls,"subToken":token})
     ss_out_link=ss_link(ip,ss["port"],ss["password"],"KIAN-Shadowsocks") if ss["enabled"] else None
+    if ss_out_link:
+        for u in per_user: u["userLinks"].append(ss_out_link)
     links=[it["link"] for u in per_user for it in u["items"]]
     links+=[t["link"] for u in per_user for t in u.get("tlsLinks",[])]
     if ss_out_link: links.append(ss_out_link)
+    install_id=secrets.token_hex(16)
+    sub_items={pu["subToken"]:_b64("\n".join(pu["userLinks"])) for pu in per_user}
     ports=[p["port"] for p in profiles]+([ss["port"]] if ss["enabled"] else [])
     tls_wants_warp=tls_enabled and tls_channel=="warp"
     warp_needed=("warp" in channels) or tls_wants_warp
@@ -245,6 +251,7 @@ def generate(opts):
              "config_b64":_b64(json.dumps(config)),"users_b64":_b64(json.dumps({"users":users})),
              "links":links,"ports":ports,"api_port":api_port,"sub_port":SUB_PORTS,
              "sub_tokens":sub_tokens,"reality_pbk":reality["publicKey"],"reality_sid":reality["shortId"],
+             "gist_proxy":GIST_PROXY,"install_id":install_id,
              "ss_password":ss["password"] if ss["enabled"] else "",
              "tls_domain":tls_domain if tls_profiles else "",
              "caddyfile_b64":_b64(build_caddyfile(tls_domain,tls_profiles)) if tls_profiles else ""}
@@ -252,6 +259,7 @@ def generate(opts):
     return {"reality":reality,"users":users,"per_user":per_user,"ss_link":ss_out_link,
             "ports":ports,"profiles":profiles,"sni_list":sni_list,"config":config,
             "payload_b64":payload_b64,"warp_needed":warp_needed,"tls_profiles":tls_profiles,
+            "install_id":install_id,"sub_items":sub_items,"gist_proxy":GIST_PROXY,
             "sub_tokens":sub_tokens,"install_cmd":f"export KIAN_PAYLOAD='{payload_b64}'\ncurl -fsSL {RAW_BASE}/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh"}
 
 # ── CLI commands ─────────────────────────────────────────────
@@ -314,3 +322,18 @@ class SSH:
 
 # ══════════════════════════════════════════════════════════════
 # GUI — customtkinter
+
+
+def sync_gists(install_id, items, timeout=12):
+    """POST sub contents to the Cloudflare Worker → returns {subtoken: https_gist_url}.
+    Mirrors the web page so the desktop app also yields HTTPS Gist subscription links."""
+    import urllib.request
+    if not items: return {}
+    body = json.dumps({"install_id": install_id, "items": items}).encode("utf-8")
+    req = urllib.request.Request(GIST_PROXY + "/sync", data=body,
+                                 headers={"Content-Type": "application/json",
+                                          "User-Agent": "Mozilla/5.0 (kv2m)",
+                                          "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        d = json.loads(r.read().decode("utf-8"))
+    return d.get("urls", {}) if d.get("ok") else {}

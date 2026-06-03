@@ -254,7 +254,7 @@ function tlsWantsWarp(f, tlsProfiles) {
 function buildCaddyfile(domain, tlsProfiles) {
   const lines = [];
   lines.push(`${domain} {`);
-  lines.push(`\tencode gzip`);
+
   tlsProfiles.forEach(t => {
     if (t.net === 'grpc') {
       const svc = t.path.replace(/^\//, '');

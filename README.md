@@ -1,85 +1,110 @@
 <div align="center">
 
-# ⚡ KIAN V2Ray
+# ⚡ KIAN ⟶ V2RAY
 
-**نصب خودکار و مدیریت سرور V2Ray — فقط با کپی-پِیست، بدون دانش فنی**
+**سازندهٔ کانفیگ V2Ray روی سرور خودت — Reality · WARP · Shadowsocks · کانفیگ‌های دامنه‌دار TLS — با یک دستور.**
 
-VLESS Reality · WARP · Shadowsocks · کانفیگ‌های دامنه‌دار (TLS/Caddy) · لینک Subscription
-
-<br>
-
-[![Release](https://img.shields.io/github/v/release/kian-irani/kian_v2ray?style=for-the-badge&logo=github&color=76B900&label=Kv2m%20App)](https://github.com/kian-irani/kian_v2ray/releases/latest)
-[![License](https://img.shields.io/github/license/kian-irani/kian_v2ray?style=for-the-badge&color=1f6feb)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/kian-irani/kian_v2ray?style=for-the-badge&logo=github&color=e3b341)](https://github.com/kian-irani/kian_v2ray/stargazers)
+[![Kv2m App](https://img.shields.io/github/v/release/kian-irani/kian_v2ray?style=for-the-badge&logo=github&color=76B900&label=Kv2m%20App)](https://github.com/kian-irani/kian_v2ray/releases/latest)
+[![Subscription](https://img.shields.io/badge/Subscription-HTTPS%20Gist-1f6feb?style=for-the-badge)](#)
+[![License](https://img.shields.io/github/license/kian-irani/kian_v2ray?style=for-the-badge&color=e3b341)](LICENSE)
 [![Xray](https://img.shields.io/badge/Xray--core-REALITY-76B900?style=for-the-badge&logo=v&logoColor=white)](https://github.com/XTLS/Xray-core)
 
-[🌐 صفحهٔ تعاملی (ساخت کانفیگ)](https://kian-irani.github.io/kian_v2ray/) ·
-[💻 دانلود نرم‌افزار Kv2m](https://github.com/kian-irani/kian_v2ray/releases/latest) ·
-[📦 ریلیزها](https://github.com/kian-irani/kian_v2ray/releases) ·
-[🆘 پشتیبانی](https://t.me/Kian_irani_t)
+[🌐 صفحهٔ تعاملی](https://kian-irani.github.io/kian_v2ray/) ·
+[💻 دانلود Kv2m](https://github.com/kian-irani/kian_v2ray/releases/latest) ·
+[📢 کانال](https://t.me/kian_irani_cdn_f) ·
+[💬 پشتیبانی](https://t.me/Kian_irani_t)
 
 </div>
 
 ---
 
-## ✨ چیست؟
+## این چیه؟
 
-KIAN V2Ray یک ابزار **رایگان و متن‌باز** است که روی **سرورِ خودت** کانفیگ V2Ray می‌سازد.
-کلیدها در مرورگر/دستگاهِ خودت ساخته می‌شوند و **هیچ‌جا ذخیره نمی‌شوند**. هدف: کار کردن فقط با **یک کپی-پِیست**.
+ابزار **متن‌باز و قانونی** برای ساخت کانفیگ V2Ray روی **سرور خودت** (VPS شخصی). هیچ سرور مرکزی، هیچ وابستگی، هیچ اشتراک ماهانه. IP سرورت را می‌دهی، یک **دستور نصب** می‌گیری، روی سرور می‌زنی، و کانفیگ‌های آماده + **لینک Subscription** تحویل می‌گیری. کلیدها در مرورگر/دستگاهِ خودت ساخته می‌شوند و **هیچ‌جا ذخیره نمی‌شوند**.
 
-دو راهِ استفاده:
+## چه چیزهایی دارد؟
 
-| راه | برای چه کسی |
-|-----|-------------|
-| 🌐 **صفحهٔ تعاملی** (مرورگر) | بدون نصب چیزی — آی‌پی را وارد کن، دستور نصب و لینک‌ها را بگیر |
-| 💻 **نرم‌افزار Kv2m** (ویندوز) | مدیریت حرفه‌ای: خودش SSH می‌زند، نصب/ساخت/مدیریت کاربر را انجام می‌دهد |
+| ویژگی | توضیح |
+|------|------|
+| 🛡️ **VLESS Reality + Vision** | حالت پیش‌فرض — بدون دامنه کار می‌کند، چند SNI خودکار |
+| ☁️ **WARP outbound** | دور زدن بلاک‌های خروجی سرور (WireGuard/MASQUE + بازگشت خودکار) |
+| 🔒 **Shadowsocks** | پشتیبان یا حالت بدون SNI (chacha20-ietf-poly1305) |
+| 🌐 **TLS با دامنه** | VLESS/VMess/Trojan روی WS/gRPC/HTTPUpgrade پشت Caddy روی :443 (+ گواهی خودکار Let's Encrypt) |
+| ⭐ **Subscription روی HTTPS** | لینک قطعیِ روی `gist.githubusercontent.com` از طریق Cloudflare Worker — روی هر پروایدری کار می‌کند |
+| 👥 **مدیریت چند کاربر** | هر کاربر UUID + توکن sub جداگانه + نام |
+| 📊 **حجم و انقضا** | سهمیه و تاریخ انقضا برای هر کاربر، watchdog هر ۱۰ دقیقه |
+| 🚀 **BBR + بهینه‌سازی شبکه** | خودکار در نصب |
 
-## 🚀 شروع سریع (سرور)
+## معماری
 
-```bash
-# دستور دقیق را از صفحهٔ تعاملی یا نرم‌افزار Kv2m بگیر (شامل کلیدهای یکتای تو):
-export KIAN_PAYLOAD='...'
-curl -fsSL https://raw.githubusercontent.com/kian-irani/kian_v2ray/main/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh
 ```
+کاربر (مرورگر یا نرم‌افزار Kv2m)
+   ↓ کلید X25519 + UUID همان‌جا ساخته می‌شود (هیچ‌چیز به ما نمی‌رسد)
+   ↓ POST به Cloudflare Worker → Gist HTTPS Subscription
+سرور کاربر (VPS Ubuntu)
+   ↓ install.sh: Docker + WARP + Xray container + Caddy (اگر TLS)
+Xray (kian-xray, host network)
+   ├─ Reality inbounds (پورت پویا) → direct / warp
+   ├─ Shadowsocks (اختیاری)
+   └─ TLS inbounds روی 127.0.0.1 (پشت Caddy :443، اگر دامنه)
+   ↓
+🌍 اینترنت آزاد
+```
+
+## شروع سریع
+
+1. سرور **Ubuntu** بگیر (هر پروایدر).
+2. برو به [صفحهٔ تعاملی](https://kian-irani.github.io/kian_v2ray/) یا نرم‌افزار **Kv2m** را باز کن.
+3. IP سرور (+ نام کاربر) را وارد کن.
+4. دستور نصب را در SSH سرورت Paste کن (یا در Kv2m دکمهٔ «اجرا روی سرور»).
+5. لینک **Subscription** را در v2rayNG (اندروید) یا v2rayN (ویندوز) وارد کن.
 
 ## 💻 نرم‌افزار Kv2m (v3.0)
 
-رابط کاربری مدرن با **PySide6/Qt** (سبک Termius + سبز NVIDIA)، **دو-زبانه** (English/فارسی با انتخاب در اولین اجرا).
-خودش به سرور SSH می‌زند و همه‌چیز را مدیریت می‌کند — نصب، ساخت کانفیگ، مدیریت کاربر، QR.
+رابط مدرن با **PySide6/Qt** (سبک Termius + سبز NVIDIA)، **دو-زبانه** (English/فارسی، انتخاب در اولین اجرا). خودش به سرور SSH می‌زند: نصب، ساخت کانفیگ (Reality/WARP/SS/TLS)، مدیریت کاربر، QR، و لینک Subscription روی HTTPS.
 
 | فایل | توضیح |
 |------|-------|
 | `Kv2m-Setup-x64.exe` | نصب کامل (Start Menu + Desktop) |
 | `Kv2m-Portable-x64.exe` | بدون نصب — مستقیم اجرا |
 
-> ویندوز ۱۰/۱۱ ۶۴-بیتی · نیازی به Python ندارد · [دانلود آخرین نسخه](https://github.com/kian-irani/kian_v2ray/releases/latest)
+> ویندوز ۱۰/۱۱ ۶۴-بیتی · بدون نیاز به Python · [دانلود آخرین نسخه](https://github.com/kian-irani/kian_v2ray/releases/latest)
 
-## 🧩 امکانات
+## پروتکل‌های پشتیبانی‌شده
 
-- **VLESS Reality** سریع (xtls-rprx-vision) + استتار SNI خودکار
-- **WARP** پایدار (WireGuard/MASQUE + بازگشت خودکار به مستقیم)
-- **Shadowsocks** (chacha20-ietf-poly1305)
-- **کانفیگ‌های دامنه‌دار TLS:** VLESS/VMess-WS، gRPC، Trojan، HTTPUpgrade پشت Caddy + گواهی خودکار Let's Encrypt
-- **لینک Subscription** واحد برای هر کاربر (خودکار به‌روز)
-- مدیریت **حجم و انقضا**، رفع تداخل پورت، بهینه‌سازی شبکه (BBR + fq)، نصب مجدد امن
+**بدون دامنه (Reality):** VLESS + Reality + Vision (TCP) · Shadowsocks
+**با دامنه (TLS):** VLESS-WS · VMess-WS · VLESS-gRPC · VMess-gRPC · Trojan-WS · VLESS-HTTPUpgrade · VMess-HTTPUpgrade
 
-## 🔐 امنیت
+## دستورهای مدیر روی سرور
 
-کلیدها سمتِ کلاینت ساخته می‌شوند و ذخیره نمی‌شوند. برای جزئیات: [SECURITY.md](SECURITY.md).
+```bash
+kian-v2ray status              # وضعیت سرویس‌ها
+kian-v2ray configs             # کانفیگ همهٔ کاربران
+kian-v2ray sub <نام>           # لینک Subscription یک کاربر
+kian-v2ray users               # لیست کاربران + سهمیه
+kian-v2ray add <نام> [GB] [روز]  # افزودن کاربر
+kian-v2ray remove <نام>        # حذف کاربر
+kian-v2ray renew <نام> [روز]   # تمدید
+kian-v2ray reset <نام> [GB]    # ریست سهمیه
+kian-v2ray update              # آپدیت Xray
+kian-v2ray uninstall           # حذف کامل
+```
 
-> یادآوری: کانفیگ‌های دامنه/CDN خروجی را از **IP سرورِ تو** می‌فرستند؛ Cloudflare فقط مسیر ورودی را پنهان می‌کند. باز نشدن بعضی سایت‌ها به IP/کشورِ سرور بستگی دارد، نه به نوع کانفیگ.
+## امنیت
 
-## 📡 کانال‌ها
+- **هیچ راز روی سرور ما نیست** — کلیدها در مرورگر/دستگاه تو ساخته می‌شوند و فقط روی سرور خودت می‌روند.
+- **توکن Gist** فقط در Cloudflare Worker (secret) است؛ هرگز در صفحه/سرور کاربر دیده نمی‌شود.
+- Worker واسط، کاربرها را با `install_id` تصادفی ۱۲۸-بیتی ایزوله می‌کند.
+- ریپو پابلیک — کد قابل بازبینی.
 
-[![Telegram](https://img.shields.io/badge/کانال_آموزش-0088cc?style=flat&logo=telegram&logoColor=white)](https://t.me/kian_irani_cdn_f)
-[![Support](https://img.shields.io/badge/پشتیبانی-0088cc?style=flat&logo=telegram&logoColor=white)](https://t.me/Kian_irani_t)
+> ℹ️ کانفیگ‌های دامنه/CDN خروجی را از **IP سرورِ تو** می‌فرستند؛ Cloudflare فقط مسیر ورودی را پنهان می‌کند. باز نشدن بعضی سایت‌ها به IP/کشورِ سرور بستگی دارد، نه به نوع کانفیگ. **برای گرفتن گواهی TLS موقع نصب، ابر Cloudflare باید خاکستری (DNS-only) باشد؛ بعد از نصب می‌توانی نارنجی کنی.**
 
-## 🙏 ساخته‌شده با
+## مشارکت و لایسنس
 
-[Xray-core (REALITY)](https://github.com/XTLS/Xray-core) · [Cloudflare WARP](https://developers.cloudflare.com/warp-client/) · [Caddy](https://caddyserver.com) · PySide6 · qrcode
+پیشنهاد و گزارش باگ خوش‌آمد است — Issue باز کن یا در [کانال](https://t.me/kian_irani_cdn_f) بنویس. لایسنس: **MIT**.
 
 <div align="center">
 
-ساخته شده با ❤️ توسط **Kian Irani** · [GitHub](https://github.com/kian-irani)
+ساخته شده با ❤️ توسط **[Kian Irani](https://github.com/kian-irani)** برای دسترسی آزاد به اینترنت
 
 </div>
