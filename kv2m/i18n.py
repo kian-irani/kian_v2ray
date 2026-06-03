@@ -43,6 +43,12 @@ STRINGS = {
   "about.title":"About","about.desc":"KIAN V2Ray — free & open-source. Builds V2Ray configs on your own server. Keys are generated locally and never stored.",
   "toast.copied":"Copied","toast.noip":"Enter the server IP.","toast.connected":"Connected","toast.err":"Error",
   "common.min":"Minimize","common.close":"Close",
+  "sni.mode":"SNI mode","sni.auto":"Auto","sni.manual":"Manual","sni.count":"SNI count","sni.custom":"SNI domain (optional)",
+  "ch.both":"Fast + WARP",
+  "gen.tlshelp":"Domain configs (WS/gRPC/Trojan) look like normal HTTPS — best for hard filtering. Needs a domain with an A record to your server. Keep Cloudflare cloud GREY (DNS-only) during install so Caddy can get a TLS certificate; turn it orange afterward.",
+  "set.section.general":"General","set.section.paths":"Paths & info","set.config":"Server config","set.langhint":"Choose the app language (applies live).",
+  "set.channels":"Channels","about.features":"Features","about.donate":"Support (optional)","about.tip":"Tip: domain/CDN configs exit from YOUR server IP — Cloudflare only hides the inbound path.",
+  "nav.connectfirst":"Connect to your server (top bar) before Run-on-server actions.",
  },
  "fa": {
   "app.title":"Kv2m — مدیریت Kian V2Ray",
@@ -64,6 +70,12 @@ STRINGS = {
   "about.title":"درباره","about.desc":"KIAN V2Ray رایگان و متن‌باز است. روی سرور خودت کانفیگ V2Ray می‌سازد. کلیدها در دستگاه تو ساخته می‌شوند و هیچ‌جا ذخیره نمی‌شوند.",
   "toast.copied":"کپی شد","toast.noip":"آی‌پی سرور را وارد کن.","toast.connected":"متصل شد","toast.err":"خطا",
   "common.min":"کوچک کردن","common.close":"بستن",
+  "sni.mode":"حالت SNI","sni.auto":"خودکار","sni.manual":"دستی","sni.count":"تعداد SNI","sni.custom":"دامنهٔ SNI (اختیاری)",
+  "ch.both":"سریع + WARP",
+  "gen.tlshelp":"کانفیگ‌های دامنه‌دار (WS/gRPC/Trojan) شبیه HTTPS معمولی‌اند — بهترین گزینه در فیلترینگ شدید. نیاز به یک دامنه با رکورد A به سرورت دارند. موقع نصب ابر Cloudflare را خاکستری (DNS-only) نگه دار تا Caddy گواهی TLS بگیرد؛ بعد نارنجی کن.",
+  "set.section.general":"عمومی","set.section.paths":"مسیرها و اطلاعات","set.config":"کانفیگ سرور","set.langhint":"زبان نرم‌افزار را انتخاب کن (زنده اعمال می‌شود).",
+  "set.channels":"کانال‌ها","about.features":"امکانات","about.donate":"حمایت (اختیاری)","about.tip":"نکته: کانفیگ‌های دامنه/CDN خروجی را از IP سرورِ خودت می‌فرستند — Cloudflare فقط مسیر ورودی را پنهان می‌کند.",
+  "nav.connectfirst":"قبل از «اجرا روی سرور» از نوار بالا به سرورت وصل شو.",
  },
 }
 

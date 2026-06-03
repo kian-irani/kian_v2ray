@@ -181,11 +181,25 @@ class MainWindow(QWidget):
         ab.addWidget(self.a_ss,0,0,1,2)
         ab.addWidget(mut(tr("gen.ssport")),0,2); ab.addWidget(self.a_ssport,0,3)
         ab.addWidget(mut(tr("gen.baseport")),1,0); ab.addWidget(self.a_base,1,1)
+        # SNI selection (parity with web page)
+        self.a_snimode = QComboBox(); self.a_snimode.addItem(tr("sni.auto"),"auto"); self.a_snimode.addItem(tr("sni.manual"),"manual")
+        self.a_snicount = QComboBox(); [self.a_snicount.addItem(str(n),n) for n in (1,2,3)]; self.a_snicount.setCurrentIndex(1)
+        self.a_snicustom = QLineEdit(); self.a_snicustom.setPlaceholderText("www.icloud.com"); self.a_snicustom.setEnabled(False)
+        ab.addWidget(mut(tr("sni.mode")),1,2); ab.addWidget(self.a_snimode,1,3)
+        ab.addWidget(mut(tr("sni.count")),2,0); ab.addWidget(self.a_snicount,2,1)
+        ab.addWidget(mut(tr("sni.custom")),2,2); ab.addWidget(self.a_snicustom,2,3)
+        def _sni_sync():
+            man = self.a_snimode.currentData()=="manual"
+            self.a_snicustom.setEnabled(man); self.a_snicount.setEnabled(not man)
+        self.a_snimode.currentIndexChanged.connect(lambda _: _sni_sync())
         # TLS
-        self.a_tls = QCheckBox(tr("gen.tls")); ab.addWidget(self.a_tls,2,0,1,4)
+        self.a_tls = QCheckBox(tr("gen.tls")); ab.addWidget(self.a_tls,3,0,1,4)
+        tlshelp = QLabel(tr("gen.tlshelp")); tlshelp.setObjectName("muted"); tlshelp.setWordWrap(True)
+        ab.addWidget(tlshelp,4,0,1,4)
         self.a_domain = QLineEdit(); self.a_domain.setPlaceholderText("vpn.example.com")
-        self.a_chan = QComboBox(); self.a_chan.addItem(tr("ch.direct"),"direct"); self.a_chan.addItem(tr("ch.warp"),"warp")
-        ab.addWidget(mut(tr("gen.domain")),3,0); ab.addWidget(self.a_domain,3,1,1,2); ab.addWidget(self.a_chan,3,3)
+        self.a_chan = QComboBox()
+        self.a_chan.addItem(tr("ch.direct"),"direct"); self.a_chan.addItem(tr("ch.warp"),"warp"); self.a_chan.addItem(tr("ch.both"),"both")
+        ab.addWidget(mut(tr("gen.domain")),5,0); ab.addWidget(self.a_domain,5,1,1,2); ab.addWidget(self.a_chan,5,3)
         protrow = QWidget(); pr = QGridLayout(protrow); pr.setContentsMargins(0,0,0,0); pr.setSpacing(6)
         pr.addWidget(mut(tr("gen.protocols")),0,0,1,4)
         self.a_protos = {}
@@ -193,7 +207,7 @@ class MainWindow(QWidget):
             cb = QCheckBox(core.TLS_PROTOS[k]["label"]); self.a_protos[k]=cb
             if k=="vless-ws": cb.setChecked(True)
             pr.addWidget(cb, 1+i//4, i%4)
-        ab.addWidget(protrow,4,0,1,4)
+        ab.addWidget(protrow,6,0,1,4)
         av.addWidget(self.adv_btn); av.addWidget(self.adv_body)
         self.adv_btn.clicked.connect(self._toggle_adv)
         v.addWidget(adv)
@@ -230,7 +244,9 @@ class MainWindow(QWidget):
             "server_ip": ip, "mode": self.g_mode.currentData(),
             "num_users": max(1,min(50,num(self.g_users,1))), "prefix": (self.g_prefix.text().strip() or "user"),
             "quota_gb": num(self.g_quota,0), "days": num(self.g_days,0),
-            "sni_mode":"auto", "sni_count":2,
+            "sni_mode": self.a_snimode.currentData(),
+            "sni_count": self.a_snicount.currentData(),
+            "sni_manual": self.a_snicustom.text().strip(),
             "ss_enabled": self.a_ss.isChecked(), "ss_port": num(self.a_ssport,8388),
             "base_port": num(self.a_base,8443) if self.a_base.text().strip() else None,
             "tls_enabled": self.a_tls.isChecked(), "tls_domain": self.a_domain.text().strip().lower(),
@@ -384,13 +400,37 @@ class MainWindow(QWidget):
     def _page_settings(self):
         page = QWidget(); v = QVBoxLayout(page); v.setContentsMargins(22,18,22,18); v.setSpacing(12)
         v.addWidget(self._h1(tr("settings.title")))
+        # General
         c = card(); g = QGridLayout(c); g.setContentsMargins(16,14,16,14); g.setSpacing(12)
+        g.addWidget(self._h2(tr("set.section.general")),0,0,1,2)
         lab = QLabel(tr("settings.language")); lab.setObjectName("muted")
         self.s_lang = QComboBox(); self.s_lang.addItem("English","en"); self.s_lang.addItem("فارسی","fa")
         self.s_lang.setCurrentIndex(0 if get_lang()=="en" else 1)
         self.s_lang.currentIndexChanged.connect(self._change_lang)
-        g.addWidget(lab,0,0); g.addWidget(self.s_lang,0,1); g.setColumnStretch(2,1)
-        v.addWidget(c); v.addStretch(1)
+        g.addWidget(lab,1,0); g.addWidget(self.s_lang,1,1); g.setColumnStretch(2,1)
+        hint = QLabel(tr("set.langhint")); hint.setObjectName("muted"); hint.setWordWrap(True)
+        g.addWidget(hint,2,0,1,3)
+        v.addWidget(c)
+        # Paths & info
+        c2 = card(); g2 = QVBoxLayout(c2); g2.setContentsMargins(16,14,16,14); g2.setSpacing(6)
+        g2.addWidget(self._h2(tr("set.section.paths")))
+        for txt in [f"📦 {tr('set.config')}: /etc/kian-v2ray/config.json",
+                    "🐳 Xray: docker (kian-xray, --network host)",
+                    "🌐 Caddy (TLS): /etc/caddy/Caddyfile",
+                    "⚙ kv2m settings: %APPDATA%/kv2m/settings.json"]:
+            l=QLabel(txt); l.setObjectName("muted"); l.setStyleSheet("font-family:'Cascadia Code',monospace;font-size:11px"); g2.addWidget(l)
+        v.addWidget(c2)
+        # Channels
+        c3 = card(); g3 = QVBoxLayout(c3); g3.setContentsMargins(16,14,16,14); g3.setSpacing(8)
+        g3.addWidget(self._h2(tr("set.channels")))
+        row = QHBoxLayout()
+        for label,url in [("📢 @kian_irani_cdn_f","https://t.me/kian_irani_cdn_f"),
+                          ("💬 @Kian_irani_t","https://t.me/Kian_irani_t"),
+                          ("⭐ GitHub","https://github.com/kian-irani/kian_v2ray")]:
+            b=QPushButton(label); b.setObjectName("ghost"); b.clicked.connect(lambda _,u=url: self._copy(u)); row.addWidget(b)
+        row.addStretch(1); g3.addLayout(row)
+        tip=QLabel(tr("about.tip")); tip.setObjectName("muted"); tip.setWordWrap(True); g3.addWidget(tip)
+        v.addWidget(c3); v.addStretch(1)
         return page
 
     def _change_lang(self):
@@ -401,13 +441,35 @@ class MainWindow(QWidget):
 
     # ---- about page ----
     def _page_about(self):
-        page = QWidget(); v = QVBoxLayout(page); v.setContentsMargins(22,18,22,18); v.setSpacing(12)
+        page = QScrollArea(); page.setWidgetResizable(True)
+        host = QWidget(); v = QVBoxLayout(host); v.setContentsMargins(22,18,22,18); v.setSpacing(12); page.setWidget(host)
         v.addWidget(self._h1(tr("about.title")))
         c = card(); cl = QVBoxLayout(c); cl.setContentsMargins(18,16,18,16); cl.setSpacing(8)
         d = QLabel(tr("about.desc")); d.setObjectName("muted"); d.setWordWrap(True); cl.addWidget(d)
-        ver = QLabel(f"Kv2m v{core.APP_VERSION}  ·  github.com/kian-irani/kian_v2ray"); ver.setStyleSheet("color:#76B900;font-weight:600")
+        ver = QLabel(f"⚡ Kv2m v{core.APP_VERSION}  ·  github.com/kian-irani/kian_v2ray"); ver.setStyleSheet("color:#76B900;font-weight:700")
         cl.addWidget(ver)
-        v.addWidget(c); v.addStretch(1)
+        v.addWidget(c)
+        # Features
+        cf = card(); fl = QVBoxLayout(cf); fl.setContentsMargins(18,14,18,14); fl.setSpacing(5)
+        fl.addWidget(self._h2(tr("about.features")))
+        for f in ["🛡️ VLESS Reality + Vision (well-known ports, auto SNI)",
+                  "☁️ WARP outbound (WireGuard/MASQUE + auto fallback)",
+                  "🔒 Shadowsocks (chacha20-ietf-poly1305)",
+                  "🌐 Domain TLS: WS/gRPC/Trojan/HTTPUpgrade behind Caddy (direct/WARP/both)",
+                  "⭐ HTTPS Subscription link (Cloudflare Worker + Gist)",
+                  "👥 Multi-user, quota & expiry, QR codes"]:
+            l=QLabel(f); l.setObjectName("muted"); l.setWordWrap(True); fl.addWidget(l)
+        v.addWidget(cf)
+        # Donate
+        cd = card(); dl = QVBoxLayout(cd); dl.setContentsMargins(18,14,18,14); dl.setSpacing(6)
+        dl.addWidget(self._h2("💝 "+tr("about.donate")))
+        trc = QLabel("Tron (TRC20) — USDT/TRX:"); trc.setObjectName("muted"); dl.addWidget(trc)
+        addr = "TEVuoZ7574341zbc8pc5jrrBrgqGGMys5q"
+        arow = QHBoxLayout()
+        al = QLabel(addr); al.setStyleSheet("font-family:'Cascadia Code',monospace;color:#E3B341"); al.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        ab2 = QPushButton("📋"); ab2.setObjectName("mini"); ab2.clicked.connect(lambda: self._copy(addr))
+        arow.addWidget(al); arow.addStretch(1); arow.addWidget(ab2); dl.addLayout(arow)
+        v.addWidget(cd); v.addStretch(1)
         return page
 
     # ---- helpers ----

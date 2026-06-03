@@ -157,7 +157,7 @@ function buildConfig(o) {
     });
   }
 
-  const outbounds = [{ tag: 'direct', protocol: 'freedom', settings: { domainStrategy: 'UseIP' }, streamSettings: { sockopt: { tcpFastOpen: true, tcpcongestion: 'bbr', tcpKeepAliveIdle: 100 } } }];
+  const outbounds = [{ tag: 'direct', protocol: 'freedom', settings: { domainStrategy: 'UseIP' } }];
   if (anyWarp) outbounds.push({ tag: 'warp', protocol: 'socks', settings: { servers: [{ address: '127.0.0.1', port: WARP_PORT }] } });
   outbounds.push({ tag: 'block', protocol: 'blackhole', settings: {} });
 

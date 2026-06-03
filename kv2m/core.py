@@ -4,7 +4,7 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "3.0.1"
+APP_VERSION = "3.0.2"
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
@@ -111,7 +111,8 @@ def build_caddyfile(domain,tls_profiles):
 def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=None):
     clients=[{"id":u["id"],"email":u["email"],"flow":"xtls-rprx-vision"} for u in users]
     tls_items=tls_profiles or []
-    tls_wants_warp=bool(tls and tls.get("channel")=="warp" and tls_items)
+    def _tls_ch(t): return t.get("channel") or (tls.get("channel") if tls else "direct")
+    tls_wants_warp=any(_tls_ch(t)=="warp" for t in tls_items)
     any_warp=any(p["channel"]=="warp" for p in profiles) or tls_wants_warp
     def ri(p):
         return {"listen":"0.0.0.0","port":p["port"],"protocol":"vless","tag":p["tag"],
@@ -140,7 +141,7 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
         inbounds.append({"listen":"127.0.0.1","port":t["intPort"],"protocol":t["proto"],"tag":t["tag"],
                          "settings":st,"streamSettings":stream,
                          "sniffing":{"enabled":True,"destOverride":["http","tls","quic"]}})
-    outbounds=[{"tag":"direct","protocol":"freedom","settings":{"domainStrategy":"UseIP"},"streamSettings":{"sockopt":{"tcpFastOpen":True,"tcpcongestion":"bbr","tcpKeepAliveIdle":100}}}]
+    outbounds=[{"tag":"direct","protocol":"freedom","settings":{"domainStrategy":"UseIP"}}]
     if any_warp: outbounds.append({"tag":"warp","protocol":"socks","settings":{"servers":[{"address":"127.0.0.1","port":WARP_PORT}]}})
     outbounds.append({"tag":"block","protocol":"blackhole","settings":{}})
     direct_tags=[p["tag"] for p in profiles if p["channel"]=="direct"]
@@ -151,10 +152,11 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
     if warp_tags:   rules.append({"type":"field","inboundTag":warp_tags,  "outboundTag":"warp"})
     if direct_tags: rules.append({"type":"field","inboundTag":direct_tags,"outboundTag":"direct"})
     if ss.get("enabled"): rules.append({"type":"field","inboundTag":["shadowsocks"],"outboundTag":ss_out})
-    tls_tags=[t["tag"] for t in tls_items]
-    if tls_tags:
-        tls_out="warp" if (tls and tls.get("channel")=="warp" and any_warp) else "direct"
-        rules.append({"type":"field","inboundTag":tls_tags,"outboundTag":tls_out})
+    for _ch in ("direct","warp"):
+        _tags=[t["tag"] for t in tls_items if _tls_ch(t)==_ch]
+        if _tags:
+            _out="warp" if (_ch=="warp" and any_warp) else "direct"
+            rules.append({"type":"field","inboundTag":_tags,"outboundTag":_out})
     return {"log":{"loglevel":"warning","access":"/var/log/xray/access.log","error":"/var/log/xray/error.log"},
             "dns":{"servers":["1.1.1.1","8.8.8.8"]},"api":{"tag":"api","services":["HandlerService","StatsService"]},
             "stats":{},"policy":{"levels":{"0":{"statsUserUplink":True,"statsUserDownlink":True}},
@@ -175,11 +177,23 @@ def generate(opts):
         sni_list=pick_snis(int(opts.get("sni_count") or 2))
     else:
         sni_list=[]
-    profiles,port=[],int(opts.get("base_port") or BASE_PORT)
+    # تخصیص پورت مثل صفحهٔ تعاملی: اول پورت‌های «تقریباً همیشه باز» (443/2083/...) بعد 8443+.
+    # اگر TLS فعال است 443 و 80 برای Caddy رزرو می‌شوند.
+    _tlsd=(opts.get("tls_domain") or "").strip().lower()
+    _tls_on=bool(opts.get("tls_enabled") and is_domain(_tlsd) and [k for k in (opts.get("tls_protos") or []) if k in TLS_PROTOS])
+    _reserved=[443,80] if _tls_on else []
+    _ub=int(opts.get("base_port") or 0)
+    if 1<=_ub<=65500:
+        port_pool=list(range(_ub,_ub+50))
+    else:
+        port_pool=[p for p in WELL_KNOWN if p not in _reserved]+list(range(8443,8493))
+    _banned=set([WARP_PORT]+_reserved)
+    if ss["enabled"]: _banned.add(ss["port"])
+    profiles=[]; _pi=[0]
     def next_port():
-        nonlocal port
-        while ss["enabled"] and port==ss["port"]: port+=1
-        p=port; port+=1; return p
+        while _pi[0]<len(port_pool) and port_pool[_pi[0]] in _banned: _pi[0]+=1
+        if _pi[0]>=len(port_pool): raise RuntimeError("پورت کافی پیدا نشد — base_port را عوض کن")
+        v=port_pool[_pi[0]]; _pi[0]+=1; return v
     for ch in channels:
         for i,sni in enumerate(sni_list):
             profiles.append({"tag":f"reality-{ch}-{i+1}","port":next_port(),"sni":sni,"channel":ch})
@@ -193,7 +207,8 @@ def generate(opts):
            for i in range(1,num_users+1)]
     # TLS/دامنه (فاز ۳): پروفایل‌های پشت Caddy روی :443 — هر پروتکل پورت داخلی و path یکتا
     tls_domain=(opts.get("tls_domain") or "").strip().lower()
-    tls_channel=opts.get("tls_channel","direct")
+    tls_channel=opts.get("tls_channel","direct")   # direct | warp | both
+    tls_channels=["direct","warp"] if tls_channel=="both" else [tls_channel]
     tls_protos=[k for k in (opts.get("tls_protos") or []) if k in TLS_PROTOS]
     tls_enabled=bool(opts.get("tls_enabled") and is_domain(tls_domain) and tls_protos)
     tls_profiles=[]
@@ -203,12 +218,15 @@ def generate(opts):
         ip2=max(20810, reality_max+100, ss_max+100)
         import random as _r2
         rnd="".join(_r2.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(6))
-        for i,kind in enumerate(tls_protos):
-            net=TLS_PROTOS[kind]["net"]
-            path=f"/{rnd}{i}{'grpc' if net=='grpc' else ''}"
-            tls_profiles.append({"kind":kind,"tag":f"tls-{kind}","intPort":ip2,
-                                 "net":net,"proto":TLS_PROTOS[kind]["proto"],"path":path})
-            ip2+=1
+        _idx=0
+        for ch in tls_channels:
+            for kind in tls_protos:
+                net=TLS_PROTOS[kind]["net"]
+                path=f"/{rnd}{_idx}{ch[0]}{'grpc' if net=='grpc' else ''}"
+                tag=f"tls-{kind}-{ch}" if len(tls_channels)>1 else f"tls-{kind}"
+                tls_profiles.append({"kind":kind,"tag":tag,"intPort":ip2,
+                                     "net":net,"proto":TLS_PROTOS[kind]["proto"],"path":path,"channel":ch})
+                ip2+=1; _idx+=1
     import random as _rnd
     used=[p["port"] for p in profiles]+([ss["port"]] if ss["enabled"] else [])+[t["intPort"] for t in tls_profiles]
     api_port=_rnd.randint(20000,49999)
@@ -226,8 +244,10 @@ def generate(opts):
                for p in profiles]
         tls_items_links=[]
         for t in tls_profiles:
-            lbl=f"KIAN-{local}-{TLS_PROTOS[t['kind']]['label']}"
-            tls_items_links.append({"kind":t["kind"],"label":TLS_PROTOS[t["kind"]]["label"],
+            _chs=("-"+("سریع" if t.get("channel")=="direct" else "WARP")) if len(tls_channels)>1 else ""
+            _disp=TLS_PROTOS[t["kind"]]["label"]+_chs
+            lbl=f"KIAN-{local}-{_disp}"
+            tls_items_links.append({"kind":t["kind"],"label":_disp,
                                     "note":TLS_PROTOS[t["kind"]]["note"],
                                     "link":tls_link({"kind":t["kind"],"path":t["path"],"label":lbl},u,tls_domain)})
         token=secrets.token_hex(16); sub_tokens[u["email"]]=token
@@ -245,7 +265,7 @@ def generate(opts):
     install_id=secrets.token_hex(16)
     sub_items={pu["subToken"]:_b64("\n".join(pu["userLinks"])) for pu in per_user}
     ports=[p["port"] for p in profiles]+([ss["port"]] if ss["enabled"] else [])
-    tls_wants_warp=tls_enabled and tls_channel=="warp"
+    tls_wants_warp=tls_enabled and ("warp" in tls_channels)
     warp_needed=("warp" in channels) or tls_wants_warp
     payload={"warp_needed":warp_needed,"server_ip":ip,
              "config_b64":_b64(json.dumps(config)),"users_b64":_b64(json.dumps({"users":users})),
@@ -273,7 +293,7 @@ def cmd_reset(n,gb=None):  n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return (f"kia
 def cmd_sub(n=""):         n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return f"kian-v2ray sub {n}".strip()
 def cmd_installed():       return "command -v kian-v2ray >/dev/null 2>&1 && echo KV2M_OK || echo KV2M_MISSING"
 def cmd_update():          return "kian-v2ray update"
-def cmd_uninstall():       return "kian-v2ray uninstall"
+def cmd_uninstall():       return "echo DELETE | kian-v2ray uninstall"
 
 def parse_users(text):
     rows=[]
