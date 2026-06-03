@@ -1,0 +1,316 @@
+#!/usr/bin/env python3
+"""kv2m core — pure logic + SSH. No GUI imports. Headless-testable."""
+import base64, json, re, secrets, uuid
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+from cryptography.hazmat.primitives import serialization
+
+APP_VERSION = "3.0.0"
+RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
+WARP_PORT   = 40000
+SUB_PORTS   = [80, 8888, 2086]
+SS_METHOD   = "chacha20-ietf-poly1305"
+GIB         = 1_073_741_824
+BASE_PORT   = 8443
+WELL_KNOWN  = [443,2083,2087,2096,8080,2052,2086]
+
+SNI_POOL = [
+    "www.icloud.com","cloudflare.com","s3.amazonaws.com",
+    "fonts.gstatic.com","speedtest.net","www.amazon.com",
+]
+SNI_MANUAL_OPTIONS = [
+    "speedtest.net","bing.com","microsoft.com","apple.com",
+    "icloud.com","samsung.com","nvidia.com","cloudflare.com",
+]
+CH_LABEL = {"direct":"سریع","warp":"WARP"}
+
+TLS_PROTOS = {
+    "vless-ws":          {"proto":"vless", "net":"ws",          "label":"VLESS-WS",          "note":"پایدارترین برای عبور از DPI و CDN"},
+    "vmess-ws":          {"proto":"vmess", "net":"ws",          "label":"VMess-WS",          "note":"سازگاری بالا با کلاینت‌های قدیمی"},
+    "vless-grpc":        {"proto":"vless", "net":"grpc",        "label":"VLESS-gRPC",        "note":"مالتی‌پلکس، خوب روی شبکه‌های پرتاخیر"},
+    "vmess-grpc":        {"proto":"vmess", "net":"grpc",        "label":"VMess-gRPC",        "note":"gRPC با VMess"},
+    "trojan-ws":         {"proto":"trojan","net":"ws",          "label":"Trojan-WS",         "note":"شبیه ترافیک HTTPS معمولی"},
+    "vless-httpupgrade": {"proto":"vless", "net":"httpupgrade", "label":"VLESS-HTTPUpgrade", "note":"سبک‌تر از WS، عبور خوب از پراکسی"},
+    "vmess-httpupgrade": {"proto":"vmess", "net":"httpupgrade", "label":"VMess-HTTPUpgrade", "note":"HTTPUpgrade با VMess"},
+}
+
+def _b64url(raw): return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+def _b64(s):      return base64.b64encode(s.encode()).decode()
+def _quote(s):
+    safe=set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()")
+    return "".join(c if c in safe else f"%{ord(c):02X}" for c in s)
+
+def gen_reality():
+    priv=X25519PrivateKey.generate()
+    priv_raw=priv.private_bytes(serialization.Encoding.Raw,serialization.PrivateFormat.Raw,serialization.NoEncryption())
+    pub_raw =priv.public_key().public_bytes(serialization.Encoding.Raw,serialization.PublicFormat.Raw)
+    return {"privateKey":_b64url(priv_raw),"publicKey":_b64url(pub_raw),"shortId":secrets.token_hex(8)}
+
+def gen_password(n=16): return _b64url(secrets.token_bytes(n))[:22]
+
+def pick_snis(n):
+    import random; pool=SNI_POOL[:]; random.shuffle(pool); return pool[:max(1,min(n,len(pool)))]
+
+def re_expiry(days):
+    if not days or days<=0: return None
+    from datetime import datetime,timedelta,timezone
+    return (datetime.now(timezone.utc)+timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+def vless_link(uuid_,ip,port,sni,pubkey,short_id,label):
+    q=f"encryption=none&flow=xtls-rprx-vision&security=reality&sni={sni}&fp=chrome&pbk={pubkey}&sid={short_id}&type=tcp"
+    return f"vless://{uuid_}@{ip}:{port}?{q}#{_quote(label)}"
+
+def ss_link(ip,port,password,label):
+    creds=base64.b64encode(f"{SS_METHOD}:{password}".encode()).decode()
+    return f"ss://{creds}@{ip}:{port}#{_quote(label)}"
+
+def is_domain(d):
+    return bool(d) and bool(re.match(r"^(?=.{4,253}$)([a-z0-9](-?[a-z0-9])*\.)+[a-z]{2,}$", d))
+
+def _tls_query(d):  # like URLSearchParams.toString()
+    return "&".join(f"{k}={_quote(str(v))}" for k,v in d.items())
+
+def tls_vless_link(uuid_,domain,net,path,label):
+    q={"encryption":"none","security":"tls","sni":domain,"fp":"chrome","type":net,"host":domain}
+    if net in ("ws","httpupgrade"): q["path"]=path
+    if net=="grpc": q["serviceName"]=path.lstrip("/"); q["mode"]="gun"
+    return f"vless://{uuid_}@{domain}:443?{_tls_query(q)}#{_quote(label)}"
+
+def tls_trojan_link(uuid_,domain,net,path,label):
+    q={"security":"tls","sni":domain,"fp":"chrome","type":net,"host":domain}
+    if net in ("ws","httpupgrade"): q["path"]=path
+    if net=="grpc": q["serviceName"]=path.lstrip("/"); q["mode"]="gun"
+    return f"trojan://{uuid_}@{domain}:443?{_tls_query(q)}#{_quote(label)}"
+
+def tls_vmess_link(uuid_,domain,net,path,label):
+    v={"v":"2","ps":label,"add":domain,"port":"443","id":uuid_,"aid":"0","scy":"auto",
+       "net":net,"type":"none","host":domain,
+       "path":(path.lstrip("/") if net=="grpc" else path),
+       "tls":"tls","sni":domain,"alpn":"","fp":"chrome"}
+    return "vmess://"+base64.b64encode(json.dumps(v,ensure_ascii=False).encode()).decode()
+
+def tls_link(item,user,domain):
+    kind=item["kind"]; net=TLS_PROTOS[kind]["net"]; proto=TLS_PROTOS[kind]["proto"]
+    if proto=="vmess":  return tls_vmess_link(user["id"],domain,net,item["path"],item["label"])
+    if proto=="trojan": return tls_trojan_link(user["id"],domain,net,item["path"],item["label"])
+    return tls_vless_link(user["id"],domain,net,item["path"],item["label"])
+
+def build_caddyfile(domain,tls_profiles):
+    lines=[f"{domain} {{","\tencode gzip"]
+    for t in tls_profiles:
+        if t["net"]=="grpc":
+            svc=t["path"].lstrip("/")
+            lines+=[f"\t@{t['tag']} {{",f"\t\tpath /{svc}/*","\t}",
+                    f"\thandle @{t['tag']} {{",f"\t\treverse_proxy h2c://127.0.0.1:{t['intPort']}","\t}"]
+        else:
+            lines+=[f"\t@{t['tag']} {{",f"\t\tpath {t['path']}","\t}",
+                    f"\thandle @{t['tag']} {{",f"\t\treverse_proxy 127.0.0.1:{t['intPort']}","\t}"]
+    lines+=["\thandle {","\t\trespond \"It works!\" 200","\t}","}"]
+    return "\n".join(lines)
+
+def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=None):
+    clients=[{"id":u["id"],"email":u["email"],"flow":"xtls-rprx-vision"} for u in users]
+    tls_items=tls_profiles or []
+    tls_wants_warp=bool(tls and tls.get("channel")=="warp" and tls_items)
+    any_warp=any(p["channel"]=="warp" for p in profiles) or tls_wants_warp
+    def ri(p):
+        return {"listen":"0.0.0.0","port":p["port"],"protocol":"vless","tag":p["tag"],
+                "settings":{"clients":[dict(c) for c in clients],"decryption":"none"},
+                "streamSettings":{"network":"tcp","security":"reality","realitySettings":{
+                    "show":False,"dest":f'{p["sni"]}:443',"xver":0,
+                    "serverNames":[p["sni"]],"privateKey":reality["privateKey"],
+                    "shortIds":[reality["shortId"]]}},
+                "sniffing":{"enabled":True,"destOverride":["http","tls","quic"]}}
+    inbounds=[{"listen":"127.0.0.1","port":api_port,"protocol":"dokodemo-door",
+               "settings":{"address":"127.0.0.1"},"tag":"api"}]
+    for p in profiles: inbounds.append(ri(p))
+    if ss.get("enabled"):
+        inbounds.append({"listen":"0.0.0.0","port":ss["port"],"protocol":"shadowsocks","tag":"shadowsocks",
+                         "settings":{"method":SS_METHOD,"password":ss["password"],"network":"tcp,udp"},
+                         "sniffing":{"enabled":True,"destOverride":["http","tls","quic"]}})
+    for t in tls_items:
+        net=t["net"]
+        if net=="ws":            stream={"network":"ws","security":"none","wsSettings":{"path":t["path"]}}
+        elif net=="grpc":        stream={"network":"grpc","security":"none","grpcSettings":{"serviceName":t["path"].lstrip("/")}}
+        elif net=="httpupgrade": stream={"network":"httpupgrade","security":"none","httpupgradeSettings":{"path":t["path"]}}
+        else:                    stream={"network":net,"security":"none"}
+        if t["proto"]=="vless":    st={"clients":[{"id":u["id"],"email":u["email"]} for u in users],"decryption":"none"}
+        elif t["proto"]=="vmess":  st={"clients":[{"id":u["id"],"email":u["email"]} for u in users]}
+        else:                      st={"clients":[{"password":u["id"],"email":u["email"]} for u in users]}
+        inbounds.append({"listen":"127.0.0.1","port":t["intPort"],"protocol":t["proto"],"tag":t["tag"],
+                         "settings":st,"streamSettings":stream,
+                         "sniffing":{"enabled":True,"destOverride":["http","tls","quic"]}})
+    outbounds=[{"tag":"direct","protocol":"freedom","settings":{"domainStrategy":"UseIP"},"streamSettings":{"sockopt":{"tcpFastOpen":True,"tcpcongestion":"bbr","tcpKeepAliveIdle":100}}}]
+    if any_warp: outbounds.append({"tag":"warp","protocol":"socks","settings":{"servers":[{"address":"127.0.0.1","port":WARP_PORT}]}})
+    outbounds.append({"tag":"block","protocol":"blackhole","settings":{}})
+    direct_tags=[p["tag"] for p in profiles if p["channel"]=="direct"]
+    warp_tags  =[p["tag"] for p in profiles if p["channel"]=="warp"]
+    ss_out="direct" if (direct_tags or not any_warp) else "warp"
+    rules=[{"type":"field","inboundTag":["api"],"outboundTag":"api"},
+           {"type":"field","ip":["geoip:private"],"outboundTag":"block"}]
+    if warp_tags:   rules.append({"type":"field","inboundTag":warp_tags,  "outboundTag":"warp"})
+    if direct_tags: rules.append({"type":"field","inboundTag":direct_tags,"outboundTag":"direct"})
+    if ss.get("enabled"): rules.append({"type":"field","inboundTag":["shadowsocks"],"outboundTag":ss_out})
+    tls_tags=[t["tag"] for t in tls_items]
+    if tls_tags:
+        tls_out="warp" if (tls and tls.get("channel")=="warp" and any_warp) else "direct"
+        rules.append({"type":"field","inboundTag":tls_tags,"outboundTag":tls_out})
+    return {"log":{"loglevel":"warning","access":"/var/log/xray/access.log","error":"/var/log/xray/error.log"},
+            "dns":{"servers":["1.1.1.1","8.8.8.8"]},"api":{"tag":"api","services":["HandlerService","StatsService"]},
+            "stats":{},"policy":{"levels":{"0":{"statsUserUplink":True,"statsUserDownlink":True}},
+            "system":{"statsInboundUplink":True,"statsInboundDownlink":True}},
+            "inbounds":inbounds,"outbounds":outbounds,
+            "routing":{"domainStrategy":"IPIfNonMatch","rules":rules}}
+
+def generate(opts):
+    reality=gen_reality()
+    ss={"enabled":bool(opts.get("ss_enabled")),"port":int(opts.get("ss_port") or 8388),"password":""}
+    mode=opts.get("mode","both")
+    if mode=="nosni": ss["enabled"]=True
+    if ss["enabled"]:  ss["password"]=gen_password()
+    channels=["direct","warp"] if mode=="both" else ([] if mode=="nosni" else [mode])
+    if opts.get("sni_mode")=="manual" and opts.get("sni_manual"):
+        sni_list=[opts["sni_manual"]]
+    elif mode!="nosni":
+        sni_list=pick_snis(int(opts.get("sni_count") or 2))
+    else:
+        sni_list=[]
+    profiles,port=[],int(opts.get("base_port") or BASE_PORT)
+    def next_port():
+        nonlocal port
+        while ss["enabled"] and port==ss["port"]: port+=1
+        p=port; port+=1; return p
+    for ch in channels:
+        for i,sni in enumerate(sni_list):
+            profiles.append({"tag":f"reality-{ch}-{i+1}","port":next_port(),"sni":sni,"channel":ch})
+    prefix=re.sub(r"[^a-zA-Z0-9_-]","",opts.get("prefix") or "user") or "user"
+    quota_gb=int(opts.get("quota_gb") or 0)
+    days=int(opts.get("days") or 0)
+    num_users=max(1,min(50,int(opts.get("num_users") or 1)))
+    users=[{"id":str(uuid.uuid4()),"email":f"{prefix}-{i}@kian",
+            "quota_bytes":quota_gb*GIB if quota_gb>0 else 0,
+            "used_bytes":0,"expires_at":re_expiry(days),"active":True,"note":""}
+           for i in range(1,num_users+1)]
+    # TLS/دامنه (فاز ۳): پروفایل‌های پشت Caddy روی :443 — هر پروتکل پورت داخلی و path یکتا
+    tls_domain=(opts.get("tls_domain") or "").strip().lower()
+    tls_channel=opts.get("tls_channel","direct")
+    tls_protos=[k for k in (opts.get("tls_protos") or []) if k in TLS_PROTOS]
+    tls_enabled=bool(opts.get("tls_enabled") and is_domain(tls_domain) and tls_protos)
+    tls_profiles=[]
+    if tls_enabled:
+        reality_max=max([p["port"] for p in profiles], default=int(opts.get("base_port") or BASE_PORT))
+        ss_max=ss["port"] if ss["enabled"] else 0
+        ip2=max(20810, reality_max+100, ss_max+100)
+        import random as _r2
+        rnd="".join(_r2.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(6))
+        for i,kind in enumerate(tls_protos):
+            net=TLS_PROTOS[kind]["net"]
+            path=f"/{rnd}{i}{'grpc' if net=='grpc' else ''}"
+            tls_profiles.append({"kind":kind,"tag":f"tls-{kind}","intPort":ip2,
+                                 "net":net,"proto":TLS_PROTOS[kind]["proto"],"path":path})
+            ip2+=1
+    import random as _rnd
+    used=[p["port"] for p in profiles]+([ss["port"]] if ss["enabled"] else [])+[t["intPort"] for t in tls_profiles]
+    api_port=_rnd.randint(20000,49999)
+    while api_port in used: api_port=_rnd.randint(20000,49999)
+    config=build_config(profiles,reality,users,ss,api_port,
+                        tls={"enabled":tls_enabled,"domain":tls_domain,"channel":tls_channel},
+                        tls_profiles=tls_profiles)
+    sub_tokens,per_user={},[]
+    ip=opts["server_ip"]
+    for u in users:
+        local=u["email"].split("@")[0]
+        items=[{"channel":p["channel"],"sni":p["sni"],"port":p["port"],
+                "link":vless_link(u["id"],ip,p["port"],p["sni"],reality["publicKey"],
+                                  reality["shortId"],f'KIAN-{local}-{CH_LABEL[p["channel"]]}-{p["sni"]}')}
+               for p in profiles]
+        tls_items_links=[]
+        for t in tls_profiles:
+            lbl=f"KIAN-{local}-{TLS_PROTOS[t['kind']]['label']}"
+            tls_items_links.append({"kind":t["kind"],"label":TLS_PROTOS[t["kind"]]["label"],
+                                    "note":TLS_PROTOS[t["kind"]]["note"],
+                                    "link":tls_link({"kind":t["kind"],"path":t["path"],"label":lbl},u,tls_domain)})
+        token=secrets.token_hex(16); sub_tokens[u["email"]]=token
+        sub_urls=[f"http://{ip}:{sp}/sub/{token}" for sp in SUB_PORTS]
+        per_user.append({"email":u["email"],"local":local,"items":items,
+                         "tlsLinks":tls_items_links,
+                         "subUrls":sub_urls,"subToken":token})
+    ss_out_link=ss_link(ip,ss["port"],ss["password"],"KIAN-Shadowsocks") if ss["enabled"] else None
+    links=[it["link"] for u in per_user for it in u["items"]]
+    links+=[t["link"] for u in per_user for t in u.get("tlsLinks",[])]
+    if ss_out_link: links.append(ss_out_link)
+    ports=[p["port"] for p in profiles]+([ss["port"]] if ss["enabled"] else [])
+    tls_wants_warp=tls_enabled and tls_channel=="warp"
+    warp_needed=("warp" in channels) or tls_wants_warp
+    payload={"warp_needed":warp_needed,"server_ip":ip,
+             "config_b64":_b64(json.dumps(config)),"users_b64":_b64(json.dumps({"users":users})),
+             "links":links,"ports":ports,"api_port":api_port,"sub_port":SUB_PORTS,
+             "sub_tokens":sub_tokens,"reality_pbk":reality["publicKey"],"reality_sid":reality["shortId"],
+             "ss_password":ss["password"] if ss["enabled"] else "",
+             "tls_domain":tls_domain if tls_profiles else "",
+             "caddyfile_b64":_b64(build_caddyfile(tls_domain,tls_profiles)) if tls_profiles else ""}
+    payload_b64=_b64(json.dumps(payload))
+    return {"reality":reality,"users":users,"per_user":per_user,"ss_link":ss_out_link,
+            "ports":ports,"profiles":profiles,"sni_list":sni_list,"config":config,
+            "payload_b64":payload_b64,"warp_needed":warp_needed,"tls_profiles":tls_profiles,
+            "sub_tokens":sub_tokens,"install_cmd":f"export KIAN_PAYLOAD='{payload_b64}'\ncurl -fsSL {RAW_BASE}/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh"}
+
+# ── CLI commands ─────────────────────────────────────────────
+def cmd_status():          return "kian-v2ray status"
+def cmd_users():           return "kian-v2ray users"
+def cmd_configs(name=""):  return f"kian-v2ray configs {re.sub(r'[^a-zA-Z0-9_-]','',name or '')}".strip()
+def cmd_add(n,gb=100,d=30):n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return f"kian-v2ray add {n} {int(gb)} {int(d)} && kian-v2ray configs {n}"
+def cmd_remove(n):         n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return f"kian-v2ray remove {n}"
+def cmd_renew(n,d=30):     n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return f"kian-v2ray renew {n} {int(d)}"
+def cmd_reset(n,gb=None):  n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return (f"kian-v2ray reset {n} {int(gb)}" if gb not in (None,"") else f"kian-v2ray reset {n}")
+def cmd_sub(n=""):         n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return f"kian-v2ray sub {n}".strip()
+def cmd_installed():       return "command -v kian-v2ray >/dev/null 2>&1 && echo KV2M_OK || echo KV2M_MISSING"
+def cmd_update():          return "kian-v2ray update"
+def cmd_uninstall():       return "kian-v2ray uninstall"
+
+def parse_users(text):
+    rows=[]
+    for line in text.splitlines():
+        s=line.strip()
+        if not s or "ایمیل" in s or set(s)<=set("─-"): continue
+        if "@" not in (s.split() or [""])[0]: continue
+        parts=re.split(r"\s+",s)
+        if len(parts)>=5:
+            rows.append({"email":parts[0],"active":parts[1],"used":parts[2],"quota":parts[3],"expiry":" ".join(parts[4:])})
+    return rows
+
+def parse_links(text):
+    return [ln.strip() for ln in text.splitlines() if ln.strip().startswith(("vless://","ss://"))]
+
+class SSH:
+    def __init__(self): self.client=None; self.host=None
+    def connect(self,host,port=22,username="root",password=None,key_path=None,timeout=15):
+        import paramiko
+        c=paramiko.SSHClient(); c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        kw=dict(hostname=host,port=int(port),username=username,timeout=timeout,allow_agent=False,look_for_keys=False)
+        if key_path: kw["key_filename"]=key_path
+        if password:  kw["password"]=password
+        c.connect(**kw); self.client=c; self.host=host; return self
+    def run(self,command,timeout=180):
+        if not self.client: raise RuntimeError("SSH قطع است")
+        _,out,err=self.client.exec_command(command,timeout=timeout,get_pty=False)
+        o=out.read().decode("utf-8","replace"); e=err.read().decode("utf-8","replace")
+        return out.channel.recv_exit_status(),o,e
+    def run_stream(self,command,on_line,timeout=600):
+        if not self.client: raise RuntimeError("SSH قطع است")
+        chan=self.client.get_transport().open_session()
+        chan.settimeout(timeout); chan.exec_command(command); buf=b""
+        while True:
+            if chan.recv_ready():
+                buf+=chan.recv(4096); *lines,buf=buf.split(b"\n")
+                for ln in lines: on_line(ln.decode("utf-8","replace"))
+            if chan.exit_status_ready() and not chan.recv_ready(): break
+        if buf: on_line(buf.decode("utf-8","replace"))
+        return chan.recv_exit_status()
+    def close(self):
+        if self.client:
+            try: self.client.close()
+            except: pass
+            self.client=None
+
+# ══════════════════════════════════════════════════════════════
+# GUI — customtkinter

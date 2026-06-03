@@ -23,7 +23,7 @@ jobs:
           architecture: 'x64'
 
       - name: Install Python dependencies
-        run: pip install customtkinter paramiko cryptography "qrcode[pil]" Pillow rich pyinstaller
+        run: pip install PySide6-Essentials paramiko cryptography "qrcode[pil]" Pillow pyinstaller
 
       - name: Install NSIS
         run: choco install nsis -y --no-progress
@@ -31,17 +31,14 @@ jobs:
       - name: Build Portable .exe
         shell: pwsh
         run: |
-          $ctk = python -c "import customtkinter,os; print(os.path.dirname(customtkinter.__file__))"
           pyinstaller --onefile --noconsole `
             --name "Kv2m-Portable-x64" `
-            --add-data "$ctk;customtkinter" `
-            --hidden-import customtkinter `
-            --hidden-import paramiko `
-            --hidden-import cryptography `
-            --hidden-import qrcode `
-            --hidden-import PIL `
-            --exclude-module matplotlib `
-            --exclude-module numpy `
+            --paths kv2m `
+            --hidden-import app --hidden-import core --hidden-import theme `
+            --hidden-import i18n --hidden-import cli `
+            --hidden-import paramiko --hidden-import cryptography `
+            --hidden-import qrcode --hidden-import PIL `
+            --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy `
             kv2m/kv2m.py
           echo "✅ Portable: $(Get-Item dist\Kv2m-Portable-x64.exe | Select -Expand Length) bytes"
 

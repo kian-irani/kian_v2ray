@@ -18,7 +18,7 @@ jobs:
       - name: Python syntax (py_compile)
         run: |
           python3 -m py_compile scripts/sub-server.py scripts/sync_upstream.py scripts/gist_sync.py
-          python3 -m py_compile kv2m/kv2m_core.py kv2m/kv2m_cli.py kv2m/kv2m_gui.py kv2m/kv2m.py
+          python3 -m py_compile kv2m/core.py kv2m/i18n.py kv2m/theme.py kv2m/app.py kv2m/cli.py kv2m/kv2m.py
       - name: No secrets committed
         run: |
           ! grep -rEn 'ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{40,}|cfut_[A-Za-z0-9]{20,}|cfat_[A-Za-z0-9]{20,}|[0-9]{8,10}:AA[A-Za-z0-9_-]{30,}' \
