@@ -5,6 +5,20 @@
 
 ---
 
+## [panel-ui] — 2026-06-20  (فاز ۲: فرانت‌اندِ پنل — auto-rp)
+
+### افزوده شد
+- **داشبوردِ پنل (`panel/web/`):** تک‌فایلِ HTML + JS وانیلا، طراحیِ Dark/Glass (طبقِ `ui-ux-pro-max`:
+  OLED dark، اکسنتِ سبزِ #22C55E، فوکوسِ واضح، آیکنِ SVG نه ایموجی، کنتراست AA)، **دوزبانه FA/EN + RTL/LTR**.
+  - لاگین + refreshِ خودکارِ توکن، کارت‌های آمار، جدولِ کاربر با toggle/edit/delete، **bulk actions**، جستجو،
+    مودالِ ساخت/ویرایش (quota/expiry/IP/speed)، **نمودارِ canvas** (پرمصرف‌ترین‌ها)، **تبِ Audit**، **System Monitor** (load/RAM)، خروجیِ CSV.
+- **endpointهای جدیدِ بک‌اند:** `/api/audit` (viewer) و `/api/system` (CPU/RAM از `/proc`). UI روی `/app` mount شد.
+
+### تأیید
+- `node --check panel/web/app.js` سبز · توازنِ HTML · ۳۹/۳۹ کلیدِ i18n تعریف‌شده · `py_compile`+`pytest` (۱۵) سبز.
+
+---
+
 ## [panel] — 2026-06-20  (فاز ۲: بک‌اندِ پنلِ وب — auto-rp)
 
 ### افزوده شد

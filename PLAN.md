@@ -51,8 +51,8 @@ project: kian-v2ray
 - [x] ۲.۴ WebSocket آمارِ زنده (`/ws/stats` با احرازِ توکن).
 - [x] ۲.۵ محدودیتِ IP/Speed/HWID + Auto-Disable + Bulk Actions (`panel/repo.py` + endpointها).
 - [x] ۲.۶ Export (JSON/CSV) + Session Management (`/auth/sessions`) + Password Recovery (`/auth/password`).
-- [ ] ۲.۷ Frontend پنل: UI Dark/Glass دوزبانه (RTL/LTR) + CRUD + نمودار (`panel/web/`).
-- [ ] ۲.۸ System Monitor (CPU/RAM/Net) + Backup/Restore + Audit Log Viewer در UI.
+- [x] ۲.۷ Frontend پنل (`panel/web/index.html` + `app.js`): UI Dark/Glass (OLED، اکسنتِ سبزِ #22C55E، طبق ui-ux-pro-max)، دوزبانه FA/EN + RTL/LTR، لاگین+refreshِ توکن، جدولِ CRUD + bulk + جستجو + toggle، مودالِ ساخت/ویرایش، نمودارِ canvas، آیکنِ SVG (نه ایموجی). در FastAPI روی `/app` mount شد.
+- [x] ۲.۸ System Monitor (CPU load + RAM از `/proc` → `/api/system` + pill) + Audit Log Viewer (`/api/audit` + تبِ گزارش) + Export CSV. (Backup/Restore از UI = follow-on؛ اسکریپتِ `kian-backup.py` موجود.)
 - [~] ۲.۹ امنیت: ✅ Rate-Limit + Security Headers (nosniff/DENY/HSTS/CSP) + CORSِ صریح. باقی: 2FA(TOTP) + IP whitelist + Fail2ban.
 - [x] ۲.۱۰ Key Rotation (`/api/keys/rotate` — چرخشِ secretِ JWT، ابطالِ همه توکن‌ها).
 

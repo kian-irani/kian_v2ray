@@ -36,6 +36,8 @@ from fastapi import (Depends, FastAPI, HTTPException, Request, WebSocket,
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 from core import db as core_db
 from core import migrate
@@ -252,6 +254,39 @@ def api_stats(admin: str = Depends(require_admin), conn=Depends(get_db)):
     return repo.stats(conn)
 
 
+@app.get("/api/audit")
+def api_audit(limit: int = 50, admin: str = Depends(require_admin),
+              conn=Depends(get_db)):
+    """Recent admin actions for the Audit Log viewer (2.8)."""
+    return {"entries": audit.tail(conn, limit=min(limit, 500))}
+
+
+@app.get("/api/system")
+def api_system(admin: str = Depends(require_admin)):
+    """Lightweight CPU/RAM/Net snapshot from /proc for the monitor (2.8)."""
+    out: dict = {}
+    try:
+        with open("/proc/loadavg") as fh:
+            la = fh.read().split()
+        out["loadavg"] = [float(la[0]), float(la[1]), float(la[2])]
+    except OSError:
+        out["loadavg"] = None
+    try:
+        mem: dict[str, int] = {}
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                k, _, rest = line.partition(":")
+                mem[k] = int(rest.strip().split()[0])  # kB
+        total, avail = mem.get("MemTotal", 0), mem.get("MemAvailable", 0)
+        out["mem_total_kb"] = total
+        out["mem_used_kb"] = total - avail
+        out["mem_used_pct"] = round((total - avail) / total * 100, 1) if total else None
+    except OSError:
+        out["mem_total_kb"] = None
+    out["ts"] = int(time.time())
+    return out
+
+
 @app.get("/api/export")
 def api_export(fmt: str = "json", admin: str = Depends(require_admin),
                conn=Depends(get_db)):
@@ -279,6 +314,12 @@ def api_rotate_keys(admin: str = Depends(require_admin), conn=Depends(get_db)):
 # --------------------------------------------------------------------------- #
 # websocket live stats
 # --------------------------------------------------------------------------- #
+# Serve the dashboard SPA at /app (static dark-glass UI in panel/web).
+_web_dir = Path(__file__).parent / "web"
+if _web_dir.is_dir():
+    app.mount("/app", StaticFiles(directory=str(_web_dir), html=True), name="web")
+
+
 @app.websocket("/ws/stats")
 async def ws_stats(websocket: WebSocket):
     secret_token: Optional[str] = websocket.query_params.get("token")

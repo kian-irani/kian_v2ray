@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KIAN V2Ray — Panel</title>
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F172A; --surface:rgba(255,255,255,.04); --surface2:rgba(255,255,255,.06);
+    --border:rgba(255,255,255,.09); --primary:#1E3A5F; --accent:#22C55E;
+    --danger:#DC2626; --fg:#F8FAFC; --muted:#94A3B8; --ring:#22C55E;
+    --radius:16px; --shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100dvh;background:
+     radial-gradient(1200px 600px at 80% -10%,rgba(34,197,94,.10),transparent 60%),
+     radial-gradient(900px 500px at 0% 0%,rgba(30,58,95,.35),transparent 55%),var(--bg);
+     color:var(--fg);font-family:Vazirmatn,system-ui,sans-serif;font-size:15px;line-height:1.6}
+  .mono{font-family:'Fira Code',ui-monospace,monospace}
+  a{color:var(--accent)}
+  button{font-family:inherit;cursor:pointer}
+  .hidden{display:none!important}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px}
+  /* topbar */
+  .top{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);
+       background:var(--surface);backdrop-filter:blur(10px);position:sticky;top:0;z-index:20}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.3px}
+  .brand .logo{width:26px;height:26px;color:var(--accent)}
+  .spacer{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid var(--border);
+        border-radius:999px;background:var(--surface);font-size:13px;color:var(--muted)}
+  .pill b{color:var(--fg);font-weight:600}
+  .icon{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;border-radius:12px;border:1px solid var(--border);
+       background:var(--surface2);color:var(--fg);font-weight:500;transition:.15s ease}
+  .btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .btn:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+  .btn.primary{background:linear-gradient(180deg,#26d266,#16a34a);border-color:transparent;color:#06210f;font-weight:700}
+  .btn.ghost{background:transparent}
+  .btn.danger{border-color:rgba(220,38,38,.5);color:#fca5a5}
+  .btn.sm{padding:6px 10px;font-size:13px;border-radius:10px}
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:18px 0}
+  .card{padding:16px 18px;border:1px solid var(--border);border-radius:var(--radius);
+        background:var(--surface);box-shadow:var(--shadow)}
+  .card .k{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:8px}
+  .card .v{font-size:28px;font-weight:700;margin-top:6px}
+  .card .v small{font-size:14px;color:var(--muted);font-weight:500}
+  /* panel + table */
+  .panel{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)}
+  .tabs{display:flex;gap:6px}
+  .tab{padding:8px 13px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--muted);font-weight:500}
+  .tab.active{background:var(--surface2);color:var(--fg);border-color:var(--border)}
+  input,select{font-family:inherit;background:#0b1426;border:1px solid var(--border);color:var(--fg);
+        border-radius:11px;padding:9px 12px;font-size:14px}
+  input:focus,select:focus{outline:2px solid var(--ring);outline-offset:1px;border-color:transparent}
+  .search{min-width:180px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:start;padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.4px}
+  tbody tr:hover{background:var(--surface2)}
+  .tag{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600}
+  .tag.on{background:rgba(34,197,94,.15);color:#86efac}
+  .tag.off{background:rgba(220,38,38,.15);color:#fca5a5}
+  .bar{height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;min-width:80px}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#16a34a)}
+  .muted{color:var(--muted)}
+  .row-actions{display:flex;gap:6px}
+  /* modal */
+  .scrim{position:fixed;inset:0;background:rgba(2,6,16,.6);backdrop-filter:blur(3px);display:flex;
+         align-items:center;justify-content:center;z-index:40;padding:18px}
+  .modal{width:100%;max-width:440px;border:1px solid var(--border);border-radius:var(--radius);
+         background:#0d1730;box-shadow:var(--shadow);padding:20px}
+  .modal h3{margin:0 0 14px}
+  .field{margin-bottom:12px;display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:13px;color:var(--muted)}
+  .field input,.field select{width:100%}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+  /* login */
+  .login{min-height:88dvh;display:flex;align-items:center;justify-content:center;padding:18px}
+  .login .modal{max-width:380px}
+  .err{color:#fca5a5;font-size:13px;min-height:18px}
+  canvas{width:100%;height:160px;display:block}
+  @media(max-width:640px){th.hide,td.hide{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<section id="login" class="login">
+  <form class="modal" id="login-form">
+    <h3 style="display:flex;align-items:center;gap:9px">
+      <svg class="logo icon" style="width:24px;height:24px;color:var(--accent)" viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+      <span data-i18n="login.title">ورود به پنل KIAN</span>
+    </h3>
+    <div class="field">
+      <label for="lg-user" data-i18n="login.user">نام کاربری</label>
+      <input id="lg-user" autocomplete="username" value="admin">
+    </div>
+    <div class="field">
+      <label for="lg-pass" data-i18n="login.pass">رمز عبور</label>
+      <input id="lg-pass" type="password" autocomplete="current-password">
+    </div>
+    <div class="err" id="lg-err"></div>
+    <button class="btn primary" style="width:100%" type="submit" data-i18n="login.btn">ورود</button>
+  </form>
+</section>
+
+<!-- ===== APP ===== -->
+<div id="app" class="hidden">
+  <header class="top">
+    <span class="brand"><svg class="logo icon" viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg> KIAN&nbsp;Panel</span>
+    <span class="pill" id="sys-pill" title="system">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+      <span data-i18n="sys.load">بار</span> <b id="sys-load">—</b> · <span data-i18n="sys.mem">رم</span> <b id="sys-mem">—</b>
+    </span>
+    <span class="spacer"></span>
+    <button class="btn ghost sm" id="lang-toggle" type="button" aria-label="Switch language">EN</button>
+    <button class="btn ghost sm" id="logout" type="button"><svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> <span data-i18n="logout">خروج</span></button>
+  </header>
+
+  <main class="wrap">
+    <div class="cards" id="stat-cards">
+      <div class="card"><div class="k"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> <span data-i18n="stat.total">کل کاربران</span></div><div class="v" id="s-total">—</div></div>
+      <div class="card"><div class="k"><svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg> <span data-i18n="stat.active">فعال</span></div><div class="v" id="s-active">—</div></div>
+      <div class="card"><div class="k"><svg class="icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 4-6"/></svg> <span data-i18n="stat.traffic">مصرف کل</span></div><div class="v" id="s-traffic">—<small> GB</small></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <div class="tabs">
+          <button class="tab active" data-view="users" data-i18n="tab.users">کاربران</button>
+          <button class="tab" data-view="audit" data-i18n="tab.audit">گزارش ممیزی</button>
+          <button class="tab" data-view="chart" data-i18n="tab.chart">نمودار مصرف</button>
+        </div>
+        <span class="spacer"></span>
+        <input class="search" id="search" placeholder="جستجوی نام…" data-i18n-ph="search.ph">
+        <select id="bulk-action" aria-label="bulk">
+          <option value="" data-i18n="bulk.none">اقدام گروهی…</option>
+          <option value="enable" data-i18n="bulk.enable">فعال‌سازی</option>
+          <option value="disable" data-i18n="bulk.disable">غیرفعال</option>
+          <option value="delete" data-i18n="bulk.delete">حذف</option>
+        </select>
+        <button class="btn sm" id="bulk-apply" data-i18n="bulk.apply">اعمال</button>
+        <button class="btn primary sm" id="new-user"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> <span data-i18n="user.new">کاربر جدید</span></button>
+        <button class="btn sm" id="export"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> CSV</button>
+      </div>
+
+      <!-- USERS -->
+      <div id="view-users" style="overflow:auto">
+        <table>
+          <thead><tr>
+            <th><input type="checkbox" id="chk-all" aria-label="select all"></th>
+            <th data-i18n="th.name">نام</th>
+            <th class="hide mono">UUID</th>
+            <th data-i18n="th.usage">مصرف</th>
+            <th class="hide" data-i18n="th.limits">محدودیت</th>
+            <th data-i18n="th.status">وضعیت</th>
+            <th data-i18n="th.actions">اقدام</th>
+          </tr></thead>
+          <tbody id="users-body"><tr><td colspan="7" class="muted" style="text-align:center;padding:24px" data-i18n="loading">در حال بارگذاری…</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- AUDIT -->
+      <div id="view-audit" class="hidden" style="overflow:auto">
+        <table>
+          <thead><tr><th data-i18n="th.time">زمان</th><th data-i18n="th.actor">کاربر</th><th data-i18n="th.action">عملیات</th><th data-i18n="th.target">هدف</th><th class="hide">IP</th></tr></thead>
+          <tbody id="audit-body"></tbody>
+        </table>
+      </div>
+
+      <!-- CHART -->
+      <div id="view-chart" class="hidden" style="padding:18px">
+        <div class="muted" style="margin-bottom:10px" data-i18n="chart.title">پرمصرف‌ترین کاربران (گیگابایت)</div>
+        <canvas id="chart" width="900" height="160"></canvas>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===== USER MODAL ===== -->
+<div id="modal" class="scrim hidden">
+  <form class="modal" id="user-form">
+    <h3 id="modal-title" data-i18n="modal.new">کاربر جدید</h3>
+    <div class="field"><label data-i18n="f.name">نام (انگلیسی)</label><input id="f-name" pattern="[A-Za-z0-9._-]+" required></div>
+    <div class="field"><label data-i18n="f.quota">حجم (GB — ۰ نامحدود)</label><input id="f-quota" type="number" min="0" value="0"></div>
+    <div class="field"><label data-i18n="f.days">اعتبار (روز — ۰ دائمی)</label><input id="f-days" type="number" min="0" value="0"></div>
+    <div class="field"><label data-i18n="f.iplimit">سقف IP همزمان</label><input id="f-iplimit" type="number" min="0" value="0"></div>
+    <div class="field"><label data-i18n="f.speed">سقف سرعت (KB/s — ۰ نامحدود)</label><input id="f-speed" type="number" min="0" value="0"></div>
+    <div class="err" id="modal-err"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="modal-cancel" data-i18n="cancel">انصراف</button>
+      <button type="submit" class="btn primary" data-i18n="save">ذخیره</button>
+    </div>
+  </form>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
