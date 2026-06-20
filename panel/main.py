@@ -39,12 +39,13 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
+from core import cluster
 from core import db as core_db
 from core import migrate
 from . import repo, security
-from .schemas import (BulkAction, LoginRequest, PasswordChange, RefreshRequest,
-                      StatsOut, TokenPair, TotpEnable, UserCreate, UserOut,
-                      UserUpdate)
+from .schemas import (BulkAction, LoginRequest, NodeCreate, NodeHeartbeat,
+                      PasswordChange, RefreshRequest, StatsOut, TokenPair,
+                      TotpEnable, UserCreate, UserOut, UserUpdate)
 
 # Optional admin IP allowlist (2.9). Empty = allow all.
 _ADMIN_IPS = {ip.strip() for ip in
@@ -360,6 +361,54 @@ def api_rotate_keys(admin: str = Depends(require_admin), conn=Depends(get_db)):
 # --------------------------------------------------------------------------- #
 # websocket live stats
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# nodes / cluster (phase 5)
+# --------------------------------------------------------------------------- #
+@app.get("/api/nodes")
+def api_list_nodes(admin: str = Depends(require_admin), conn=Depends(get_db)):
+    nodes = repo.list_nodes(conn)
+    for n in nodes:
+        n["alive"] = cluster.is_alive(n)
+    return {"nodes": nodes}
+
+
+@app.post("/api/nodes")
+def api_add_node(body: NodeCreate, admin: str = Depends(require_admin),
+                 conn=Depends(get_db)):
+    return repo.upsert_node(conn, actor=admin, **body.model_dump())
+
+
+@app.delete("/api/nodes/{name}")
+def api_del_node(name: str, admin: str = Depends(require_admin),
+                 conn=Depends(get_db)):
+    if not repo.delete_node(conn, actor=admin, name=name):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such node")
+    return {"ok": True}
+
+
+@app.post("/api/nodes/{name}/heartbeat")
+def api_node_heartbeat(name: str, body: NodeHeartbeat, conn=Depends(get_db)):
+    """Called by node-agents. Auth is the node's own token via header."""
+    node = next((n for n in repo.list_nodes(conn) if n["name"] == name), None)
+    if not node:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such node")
+    repo.node_heartbeat(conn, name=name, load=body.load,
+                        bandwidth_gb=body.bandwidth_gb, healthy=body.healthy)
+    return {"ok": True}
+
+
+@app.get("/api/route")
+def api_route(country: str = "", admin: str = Depends(require_admin),
+              conn=Depends(get_db)):
+    """Pick the best node for a client country (geo + load + failover)."""
+    nodes = repo.list_nodes(conn)
+    chosen = cluster.route_by_geo(country, nodes) if country else \
+        cluster.pick_least_loaded(nodes)
+    return {"chosen": chosen["name"] if chosen else None,
+            "failover": cluster.failover_order(nodes),
+            "alerts": cluster.bandwidth_alerts(nodes)}
+
+
 # Serve the dashboard SPA at /app (static dark-glass UI in panel/web).
 _web_dir = Path(__file__).parent / "web"
 if _web_dir.is_dir():

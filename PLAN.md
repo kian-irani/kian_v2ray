@@ -81,12 +81,12 @@ project: kian-v2ray
 ---
 
 ## 🔵 فاز ۵ — Multi-Server Management
-- [ ] ۵.۱ Node Agent سبک (`node-agent/agent.py`).
-- [ ] ۵.۲ یک پنل → چند VPS (مدلِ Node + endpointها).
-- [ ] ۵.۳ Node Health Check + Auto Failover.
-- [ ] ۵.۴ Load Balancing + GeoIP Routing.
-- [ ] ۵.۵ Migration Tool از Marzban/3X-UI.
-- [ ] ۵.۶ Bandwidth Alert + per-Node Config Override.
+- [x] ۵.۱ Node Agent سبک — `node-agent/agent.py` (http.server، token-gated، `/health` + `/apply`، نوشتنِ اتمیکِ config).
+- [x] ۵.۲ یک پنل → چند VPS — جدولِ `nodes` + endpointهای `/api/nodes` (CRUD) + `/api/nodes/{name}/heartbeat` + migration 0005.
+- [x] ۵.۳ Health Check + Auto Failover — `core/cluster.is_alive`/`failover_order` + heartbeat.
+- [x] ۵.۴ Load Balancing + GeoIP — `pick_least_loaded` + `route_by_geo` (country→region) + `/api/route`.
+- [x] ۵.۵ Migration از Marzban/3X-UI — `scripts/migrate-import.py` (`normalize_marzban` + `normalize_xui` → `import_users`).
+- [x] ۵.۶ Bandwidth Alert + per-Node Override — `cluster.bandwidth_alerts` + هر node کانفیگِ مستقل از `/apply`.
 
 ---
 

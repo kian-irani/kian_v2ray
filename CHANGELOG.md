@@ -5,6 +5,21 @@
 
 ---
 
+## [cluster] — 2026-06-20  (فاز ۵: مدیریتِ چندسرور — auto-rp)
+
+### افزوده شد
+- **`core/cluster.py`** — مغزِ تصمیمِ خوشه: `is_alive`/`healthy_nodes`، `pick_least_loaded` (Load Balance)،
+  `failover_order` (Auto Failover)، `route_by_geo` (GeoIP، country→region)، `bandwidth_alerts`.
+- **`node-agent/agent.py`** — ایجنتِ سبکِ هر VPS (http.server، توکنِ Bearer، `/health` + `/apply` با نوشتنِ اتمیک).
+- **پنل:** جدولِ `nodes` + ستون‌های telemetry (migration 0005: load/bandwidth_gb/healthy) +
+  endpointها: `/api/nodes` (CRUD)، `/api/nodes/{name}/heartbeat`، `/api/route`.
+- **`scripts/migrate-import.py`** — مهاجرتِ کاربر از **Marzban** (JSON) و **3X-UI** (sqlite) به مدلِ kian.
+
+### تأیید
+- `py_compile` همه (به CI اضافه شد) · `pytest -q` → **۳۶ passed** (cluster/failover/geo/heartbeat/migrate/agent).
+
+---
+
 ## [protocols] — 2026-06-20  (فاز ۴: پروتکل‌ها و ضدسانسور — auto-rp)
 
 ### افزوده شد

@@ -75,3 +75,17 @@ class StatsOut(BaseModel):
 class PasswordChange(BaseModel):
     old_password: str
     new_password: str = Field(..., min_length=8)
+
+
+class NodeCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=40)
+    address: str
+    token: str
+    api_port: int = Field(8443, ge=1, le=65535)
+    geo: Optional[str] = None
+
+
+class NodeHeartbeat(BaseModel):
+    load: float = 0.0
+    bandwidth_gb: float = 0.0
+    healthy: bool = True

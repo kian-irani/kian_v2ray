@@ -73,6 +73,12 @@ MIGRATIONS: list[str] = [
         value  TEXT
     );
     """,
+    # 0005 — node telemetry columns for the phase-5 cluster brain.
+    """
+    ALTER TABLE nodes ADD COLUMN load REAL NOT NULL DEFAULT 0;
+    ALTER TABLE nodes ADD COLUMN bandwidth_gb REAL NOT NULL DEFAULT 0;
+    ALTER TABLE nodes ADD COLUMN healthy INTEGER NOT NULL DEFAULT 1;
+    """,
 ]
 
 

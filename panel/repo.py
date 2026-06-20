@@ -118,6 +118,45 @@ def stats(conn: sqlite3.Connection) -> dict[str, Any]:
             "total_used_bytes": int(used)}
 
 
+# --------------------------------------------------------------------------- #
+# nodes (phase 5 multi-server)
+# --------------------------------------------------------------------------- #
+def list_nodes(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    return [dict(r) for r in conn.execute(
+        "SELECT * FROM nodes ORDER BY name").fetchall()]
+
+
+def upsert_node(conn: sqlite3.Connection, *, actor: str, name: str,
+                address: str, token: str, api_port: int = 8443,
+                geo: Optional[str] = None) -> dict[str, Any]:
+    conn.execute(
+        "INSERT INTO nodes (name, address, api_port, token, geo) "
+        "VALUES (?, ?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET "
+        "address=excluded.address, api_port=excluded.api_port, "
+        "token=excluded.token, geo=excluded.geo",
+        (name, address, api_port, token, geo))
+    audit.record(conn, actor=actor, action="node.upsert", target=name)
+    return _row(conn.execute("SELECT * FROM nodes WHERE name=?",
+                             (name,)).fetchone())  # type: ignore[return-value]
+
+
+def delete_node(conn: sqlite3.Connection, *, actor: str, name: str) -> bool:
+    cur = conn.execute("DELETE FROM nodes WHERE name=?", (name,))
+    audit.record(conn, actor=actor, action="node.remove", target=name)
+    return cur.rowcount > 0
+
+
+def node_heartbeat(conn: sqlite3.Connection, *, name: str, load: float,
+                   bandwidth_gb: float = 0.0, healthy: bool = True,
+                   now: Optional[int] = None) -> bool:
+    ts = int(now if now is not None else time.time())
+    cur = conn.execute(
+        "UPDATE nodes SET last_seen=?, load=?, bandwidth_gb=?, healthy=? "
+        "WHERE name=?",
+        (ts, load, bandwidth_gb, 1 if healthy else 0, name))
+    return cur.rowcount > 0
+
+
 def get_setting(conn: sqlite3.Connection, key: str) -> Optional[str]:
     r = conn.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
     return r["value"] if r else None
