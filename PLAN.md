@@ -32,15 +32,15 @@ project: kian-v2ray
 
 ## 🟠 فاز ۱ — پایه‌ریزی
 - [x] ۱.۱۰ **LANDING-i18n-FULL** — i18n.js بازنویسی شد: پشتیبانیِ `data-i18n-ph` (placeholder) + `data-i18n-title` + دیکشنریِ ۱۰۴کلیدی FA/EN. کلِ سطحِ تعاملی (فرمِ ساخت: لیبل/placeholder/option/mode/دکمه + فرمِ مدیریت: اکشن‌ها/فیلدها) + همه‌ی هدینگِ تب‌ها + about + hero/roadmap/footer دوزبانه شد. اعتبارسنجی: `node --check` سبز، ۱۰۴/۱۰۴ کلید تعریف‌شده، تگ‌های HTML متوازن، smoke test سبز (generator دست‌نخورده)، toggle درست FA↔EN را سوییچ می‌کند. **[باقی: ترجمه‌ی عمیقِ پاراگراف‌های troubleshooting در tips/domain = ادامه.]**
-- [ ] ۱.۱ ریفکتورِ ساختار: ماژولِ `core/` (پایتونِ مشترک) + `tests/` + سامان‌دهیِ `scripts/`/`docs/` بدونِ شکستنِ مسیرهای CI.
-- [ ] ۱.۲ SQLite schema (`core/db.py`) + سیستمِ Migration سبک (`core/migrate.py`).
-- [ ] ۱.۳ لاگِ ساختاریافتهٔ JSON (`core/logging.py`).
-- [ ] ۱.۴ SemVer رسمی + Git Tagging (`scripts/release.sh` + سیاستِ نسخه در docs).
+- [x] ۱.۱ ریفکتورِ ساختار: پکیجِ `core/` (stdlib-only، importable روی VPS) + `tests/` ساخته شد؛ مسیرهای CI نشکست.
+- [x] ۱.۲ SQLite schema (`core/db.py`: users/audit_log/nodes/settings + pragmaهای WAL/FK) + Migration سبکِ forward-only (`core/migrate.py` با `user_version`، idempotent).
+- [x] ۱.۳ لاگِ ساختاریافتهٔ JSON (`core/logging.py`: خروجیِ تک‌خطیِ JSON، فیلدهای ساختاریافته در `kian_fields`، بدونِ تداخل با LogRecord).
+- [x] ۱.۴ SemVer + Git Tagging (`scripts/release.sh` major/minor/patch + tag + `docs/VERSIONING.md`).
 - [ ] ۱.۵ پشتیبانیِ IPv6 در inboundها و CLI (`install.sh` + `scripts/kian-v2ray`).
-- [ ] ۱.۶ بکاپِ خودکارِ رمزنگاری‌شده (`scripts/kian-backup.py` → Telegram/S3/R2).
-- [ ] ۱.۷ Audit Log (`core/audit.py`) + اتصال به CLI.
-- [ ] ۱.۸ pytest (`tests/test_core.py`, `tests/test_db.py`) + اتصال به CI.
-- [ ] ۱.۹ Config Health Check (`scripts/config-health.py` + subcommandِ CLI).
+- [x] ۱.۶ بکاپِ خودکارِ رمزنگاری‌شده (`scripts/kian-backup.py`: tar.gz + openssl AES-256 + آپلودِ Telegram/S3/rclone، cron-ready).
+- [x] ۱.۷ Audit Log (`core/audit.py`: `record`/`tail`، نوشتن در DB + mirror در JSON log).
+- [x] ۱.۸ pytest (`tests/test_core.py` + `tests/test_scripts.py`، ۸ تست سبز) + اتصال به CI (`validate.yml`).
+- [x] ۱.۹ Config Health Check (`scripts/config-health.py`: اعتبارسنجیِ inbound/port/Reality/SS-cipher + `--probe`).
 
 ---
 

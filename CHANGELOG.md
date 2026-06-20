@@ -5,6 +5,27 @@
 
 ---
 
+## [core + tooling] — 2026-06-20  (فاز ۱: زیرساختِ کد — auto-rp)
+
+### افزوده شد
+- **پکیجِ `core/` (stdlib-only):**
+  - `core/db.py` — لایهٔ SQLite با schemaِ کامل (users با IP/Speed/HWID/quota/expiry، audit_log، nodes، settings) +
+    pragmaهای WAL/foreign_keys/busy_timeout.
+  - `core/migrate.py` — Migration runnerِ forward-only مبتنی بر `PRAGMA user_version` (idempotent).
+  - `core/logging.py` — لاگِ ساختاریافتهٔ JSON تک‌خطی (سازگار با jq/Loki).
+  - `core/audit.py` — ثبتِ audit (`record`/`tail`) + mirror در لاگ.
+- **`scripts/kian-backup.py`** — بکاپِ رمزنگاری‌شده (tar.gz → openssl AES-256-CBC) + آپلود به Telegram/S3/rclone (cron-ready).
+- **`scripts/config-health.py`** — اعتبارسنجیِ واقعیِ config.json (یکتاییِ پورت، پروتکلِ شناخته‌شده، فیلدهای Reality،
+  cipherِ مجازِ Shadowsocks) + گزینهٔ `--probe` برای تستِ شنونده‌بودنِ پورت‌ها.
+- **`scripts/release.sh` + `docs/VERSIONING.md`** — SemVer + git tagging رسمی.
+- **تست:** `tests/test_core.py` + `tests/test_scripts.py` (۸ تست) — به `validate.yml` وصل شد (py_compile coreها + pytest).
+
+### تأیید
+- `python3 -m py_compile core/* scripts/*` سبز · `pytest -q` → **۸ passed**.
+- یک باگِ واقعی پیدا و رفع شد: تداخلِ کلیدِ `name` با LogRecord در لاگِ ساختاریافته (namespace به `kian_fields`).
+
+---
+
 ## [site + docs] — 2026-06-20  (PRD + دوزبانه‌سازیِ کاملِ صفحه — auto-rp)
 
 ### افزوده شد
