@@ -1,76 +1,117 @@
 ---
 title: PLAN — kian-v2ray
 tags: [v2ray, plan]
-date: 2026-06-16
+date: 2026-06-20
 status: active
 priority: medium
 project: kian-v2ray
 ---
 
-# 🗺️ PLAN — `01-kian-v2ray` (rev v2.4)
+# 🗺️ PLAN — `01-kian-v2ray` (rev v3.0 — full task breakdown)
 
 > هدف: از نصب‌کنندهٔ V2Ray تک‌دستوری → **پلتفرم VPN چندسروره + اکوسیستم موبایل**.
-> رودمپ کامل: `repo/ROADMAP.md` (نسخه ۲.۴، ادغام‌شده 2026-06-16). بایگانی: `repo/ROADMAP-legacy.md`.
-> مزیت اختصاصیِ غیرقابل‌کپی: **کلید خصوصی هرگز به سرور نمی‌رسد** (ساخت در مرورگر).
+> سند محصول: `PRD.md` · رودمپ کامل: `repo/ROADMAP.md` (v2.4) · بایگانی: `repo/ROADMAP-legacy.md`.
+> مزیتِ اختصاصیِ غیرقابل‌کپی: **کلید خصوصی هرگز به سرور نمی‌رسد** (ساخت در مرورگر).
+> هر آیتم یک تسکِ مستقل با شناسه است. `[x]`=done · `[~]`=in-progress · `[ ]`=open · `(srv)`=نیازِ تستِ سرور.
 
 ## ✅ Done
 - صفحهٔ تعاملی (کلید در مرورگر، چند SNI/پورت) · Subscription سه‌لایه (Gist HTTPS) · TLS دامنه‌دار پشت Caddy · هسته (Reality/WARP/SS/multi-user/CLI/Watchdog/BBR) · Kv2m دسکتاپ.
-- **[2026-06-20 auto-rp]** **فاز ۰ کامل** → نصب‌کننده **v2.1.0** (خودتشخیصیِ `status`/`health`/`doctor`، ۰.۱–۰.۵).
-  **حقوقی** (privacy/terms دوزبانه). **صفحهٔ تعاملی دوزبانه + سکشنِ رودمپ**. **GitHub project آپدیت شد:** README
-  بازنویسیِ حرفه‌ای و دوزبانه + ROADMAP (فاز ۰ ✅) + CHANGELOG (v2.1.0). همه روی main، CI سبز.
+- **[2026-06-20 auto-rp]** فاز ۰ کامل → نصب‌کننده **v2.1.0** (خودتشخیصیِ `status`/`health`/`doctor`). حقوقی (privacy/terms دوزبانه). صفحهٔ تعاملیِ دوزبانه + سکشنِ رودمپ. README/ROADMAP/CHANGELOG بازنویسی.
 
-## 🔴 اولویت ۰ — رفع باگ‌های بحرانی (قبل از هر چیز)
-- [x] ۰.۱ تداخل پورت API (10085) → auto-fix در `install.sh` (پورتِ آزادِ تصادفی + تزریق در config + `api.txt`).
-- [x] ۰.۲ پایدارسازی WARP → `warp_fallback()` (افتِ WARP → خروجی مستقیم، بازگشتِ خودکار) + چکِ اتصالِ socks.
-- [x] **۰.۳ خودتشخیصیِ `status`** (auto-rp، 2026-06-20): `cmd_status` بازنویسی شد — تشخیصِ **کرش‌لوپِ Xray**
-  (RestartCount در آپ‌تایمِ کوتاه)، **WARP** (آگاه از fallback)، **پورت‌های شنونده‌نبودنِ reality/ss**،
-  **سلامتِ Shadowsocks**، و **سرویس Subscription**؛ برای هر مشکل **دستورِ رفع** + بخشِ «خودتشخیصی» با شمارشِ
-  مشکلات. + alias `kian-v2ray health|doctor`. `bash -n` سبز.
-- [x] ۰.۴ بهینه‌سازی سرعت BBR → بخشِ «بهینه‌سازی شبکه» (BBR+fq، امن، idempotent، با verifyِ cc).
-- [x] ۰.۵ نصب مجدد امن → بکاپِ users/config + ادغامِ کاربرانِ قبلی که در payload جدید نیستند (پاک نمی‌شوند).
-- [ ] ۰.۶ رفع/بازطراحی Shadowsocks (نیازِ تستِ روی سرور — cipher فعلی `chacha20-ietf-poly1305`؛ سلامتش حالا در `status` دیده می‌شود).
+---
 
-## 🟠 اولویت ۱ — پایه‌ریزی (۱-۲ هفته)
-- [ ] **LANDING-i18n-FULL — دوزبانه‌کردنِ کاملِ `index.html`** (دستور کاربر 2026-06-20): الان فقط hero/tabs/footer
-  با تغییرِ زبان عوض می‌شوند؛ **بدنه‌ی همه‌ی تب‌ها (server/android/pc/tips/domain/manage/about) + لیبل‌ها/placeholder/
-  option‌های فرمِ ساخت** باید `data-i18n`/`data-i18n-ph` بگیرند و ترجمه‌ی EN در `assets/js/i18n.js` کامل شود تا
-  **هر بخش** دوزبانه باشد. (smoke test سبز بماند چون i18n.js در CI inject نمی‌شود.)
-- [~] **LANDING — صفحه‌ی گیت‌هاب حرفه‌ای و دوزبانه** (auto-rp، 2026-06-20): ✅ **دوزبانه** شد —
-  `assets/js/i18n.js` (دیکشنریِ FA/EN، سوییچِ هدر، `dir`+`lang` صحیح، persist در localStorage، مستقل از
-  `app.js` پس سازنده‌ی کانفیگ دست‌نخورد و smoke test سبز ماند) روی hero/tabs/footer. ✅ **رودمپ/چشم‌انداز**:
-  سکشنِ حرفه‌ایِ «از نصب‌کننده به پلتفرم» با ۶ کارتِ شیشه‌ای + آیکنِ SVG (نه ایموجی) — privacy(موجود)/چندسرور/
-  پنل‌وب/اپ‌موبایل/پروتکل‌ها/پایش، با badgeِ موجود|به‌زودی. CSS با همان توکن‌ها، ریسپانسیو، کنتراست AA.
-  `node --check i18n.js` + HTML balanced + secret-scan سبز. **[باقی: i18nِ عمیقِ محتوای تب‌های تعاملی = ادامه.]**
-- [ ] ریفکتور `panel/ core/ scripts/ tests/ docs/` + SQLite + Migration (Alembic)
-- [ ] لاگ ساختاریافته + Semantic Versioning + Git Tagging
-- [ ] **[v2.4]** IPv6 کامل · Automated Backup (Telegram/S3/R2) · Audit Log
-- [ ] pytest + unit/integration test + **Config Health Check**
-- [x] **حقوقی:** Privacy Policy + ToS (fa + en) — پیش‌نیازِ مارکت‌ها ✅ (auto-rp، 2026-06-20): `privacy.html` + `terms.html` دو‌زبانه (فارسیِ RTL + انگلیسیِ LTR)، با همان design-systemِ `assets/css/style.css` (Vazirmatn، dark glass، توکن‌های --acc/--bg)، بدونِ ایموجیِ ساختاری، کنتراست AA، لینک در footerِ `index.html`. پیام: کلید در مرورگر، AS-IS، مسئولیتِ قانونی با کاربر، MIT. **[کاربر باید محتوای حقوقی را برای محدوده‌ی قضاییِ خودش بازبینی کند.]**
+## 🔴 فاز ۰ — رفع باگ‌های بحرانی
+- [x] ۰.۱ تداخل پورت API (10085) → auto-fix در `install.sh`.
+- [x] ۰.۲ پایدارسازی WARP → `warp_fallback()` + چکِ socks.
+- [x] ۰.۳ خودتشخیصیِ `status` (کرش‌لوپ/WARP/پورت/SS/Subscription) + alias `health`/`doctor`.
+- [x] ۰.۴ بهینه‌سازی سرعت BBR (BBR+fq، idempotent).
+- [x] ۰.۵ نصب مجدد امن (بکاپ + ادغامِ کاربرانِ قبلی).
+- [ ] ۰.۶ بازطراحی Shadowsocks — code-side: cipher انتخابی + اعتبارسنجی؛ `(srv)` تستِ نهایی.
 
-## 🟠 اولویت ۲ — وب پنل کامل (۳-۵ هفته)
-- [ ] FastAPI + JWT + REST/OpenAPI + WebSocket stats + Export · UI Dark/Glass + i18n/RTL
-- [ ] **IP Limit · Speed Limit · HWID · Auto-Disable · Bulk Actions** per user
-- [ ] امنیت: Caddy TLS + Rate-Limit/Fail2ban + 2FA + IP whitelist + **[v2.4]** Key Rotation
+---
 
-## 🟡 اولویت ۳ — Kv2m Desktop چندسروره (۲-۴ هفته)
-- [ ] PyQt6/CustomTkinter · مدیریت چندسرور · auto-update · macOS/Linux · System Tray
+## 🟠 فاز ۱ — پایه‌ریزی
+- [x] ۱.۱۰ **LANDING-i18n-FULL** — i18n.js بازنویسی شد: پشتیبانیِ `data-i18n-ph` (placeholder) + `data-i18n-title` + دیکشنریِ ۱۰۴کلیدی FA/EN. کلِ سطحِ تعاملی (فرمِ ساخت: لیبل/placeholder/option/mode/دکمه + فرمِ مدیریت: اکشن‌ها/فیلدها) + همه‌ی هدینگِ تب‌ها + about + hero/roadmap/footer دوزبانه شد. اعتبارسنجی: `node --check` سبز، ۱۰۴/۱۰۴ کلید تعریف‌شده، تگ‌های HTML متوازن، smoke test سبز (generator دست‌نخورده)، toggle درست FA↔EN را سوییچ می‌کند. **[باقی: ترجمه‌ی عمیقِ پاراگراف‌های troubleshooting در tips/domain = ادامه.]**
+- [ ] ۱.۱ ریفکتورِ ساختار: ماژولِ `core/` (پایتونِ مشترک) + `tests/` + سامان‌دهیِ `scripts/`/`docs/` بدونِ شکستنِ مسیرهای CI.
+- [ ] ۱.۲ SQLite schema (`core/db.py`) + سیستمِ Migration سبک (`core/migrate.py`).
+- [ ] ۱.۳ لاگِ ساختاریافتهٔ JSON (`core/logging.py`).
+- [ ] ۱.۴ SemVer رسمی + Git Tagging (`scripts/release.sh` + سیاستِ نسخه در docs).
+- [ ] ۱.۵ پشتیبانیِ IPv6 در inboundها و CLI (`install.sh` + `scripts/kian-v2ray`).
+- [ ] ۱.۶ بکاپِ خودکارِ رمزنگاری‌شده (`scripts/kian-backup.py` → Telegram/S3/R2).
+- [ ] ۱.۷ Audit Log (`core/audit.py`) + اتصال به CLI.
+- [ ] ۱.۸ pytest (`tests/test_core.py`, `tests/test_db.py`) + اتصال به CI.
+- [ ] ۱.۹ Config Health Check (`scripts/config-health.py` + subcommandِ CLI).
 
-## 🟡 اولویت ۴ — پروتکل‌ها و ضدسانسور (۱-۲ ماه)
-- [ ] Hysteria2 · TUIC v5 · WireGuard inbound · Sing-box/Clash sub · Mux
-- [ ] **[v2.4]** Tor Bridge Fallback · REALITY IP Scanner · Self-hosted Sub Page · Fragment/uTLS/Noise · بات تلگرام
+---
 
-## 🔵 اولویت ۵ — Multi-Server Management (۱-۲ ماه)
-- [ ] Node Agent · یک پنل→چند VPS · Health/Failover/LoadBalance · GeoIP routing · Migration از Marzban/3X-UI
+## 🟠 فاز ۲ — وب پنل کامل
+- [ ] ۲.۱ اسکلتِ FastAPI (`panel/main.py`) + SQLAlchemy models (`panel/models.py`).
+- [ ] ۲.۲ JWT Auth + Refresh Token (`panel/auth.py`).
+- [ ] ۲.۳ REST API کاربر CRUD + OpenAPI (`panel/routers/users.py`).
+- [ ] ۲.۴ WebSocket آمارِ زنده (`panel/routers/ws.py`).
+- [ ] ۲.۵ محدودیتِ IP/Speed/HWID + Auto-Disable + Bulk Actions (مدل + endpoint).
+- [ ] ۲.۶ Export (JSON/CSV) + Session Management + Password Recovery.
+- [ ] ۲.۷ Frontend پنل: UI Dark/Glass دوزبانه (RTL/LTR) + CRUD + نمودار (`panel/web/`).
+- [ ] ۲.۸ System Monitor (CPU/RAM/Net) + Backup/Restore + Audit Log Viewer در UI.
+- [ ] ۲.۹ امنیت: Rate-Limit/Fail2ban + 2FA(TOTP) + IP whitelist + Security Headers + CORS.
+- [ ] ۲.۱۰ Key Rotation (چرخشِ X25519 بدونِ downtime).
 
-## 🔵 اولویت ۶ — اپ موبایل Flutter (۲-۳ ماه)
-- [ ] Flutter cross-platform · **[v2.4] انتشار: Cafe Bazaar اول → Myket → F-Droid → Google Play → iOS**
-- [ ] بدون GMS (مارکت‌های ایرانی) · Keystore با ۳ backup · Privacy Policy فارسی
+---
 
-## 🟢 اولویت ۷ — CI/CD + Monitoring (مستمر)
-- [ ] GitHub Actions (lint/test/release) · GHCR · **[v2.4]** Prometheus+Grafana stack · SAST/Trivy · Plugin System
+## 🟡 فاز ۳ — Kv2m Desktop چندسروره
+- [ ] ۳.۱ مدیریتِ چندسرور در core/app (`kv2m/core.py` + `kv2m/app.py`).
+- [ ] ۳.۲ اتصال به REST API پنل + نصب/آپدیتِ خودکارِ Xray.
+- [ ] ۳.۳ Auto-update (GitHub Releases) + System Tray.
+- [ ] ۳.۴ Dark/Light Mode ذخیره‌شده + پشتیبانیِ macOS/Linux + Crash Reporting.
+
+---
+
+## 🟡 فاز ۴ — پروتکل‌ها و ضدسانسور
+- [ ] ۴.۱ Hysteria2 inbound (`install.sh` + builder).
+- [ ] ۴.۲ TUIC v5 inbound.
+- [ ] ۴.۳ WireGuard inbound + Mux.cool.
+- [ ] ۴.۴ خروجیِ Sing-box format در Subscription (`worker/` + `scripts/sub-server.py`).
+- [ ] ۴.۵ خروجیِ Clash Meta format + تشخیصِ خودکارِ کلاینت.
+- [ ] ۴.۶ Self-hosted Sub Page (حجم/انقضا/QR).
+- [ ] ۴.۷ ضدِDPI: Fragment + uTLS fingerprint + TTL + Noise Padding.
+- [ ] ۴.۸ REALITY IP Scanner داخلی (پیشنهادِ SNI).
+- [ ] ۴.۹ Tor Bridge Fallback (obfs4/Snowflake).
+- [ ] ۴.۱۰ بات تلگرام + Webhook + Email Notification + بکاپِ شبانه.
+
+---
+
+## 🔵 فاز ۵ — Multi-Server Management
+- [ ] ۵.۱ Node Agent سبک (`node-agent/agent.py`).
+- [ ] ۵.۲ یک پنل → چند VPS (مدلِ Node + endpointها).
+- [ ] ۵.۳ Node Health Check + Auto Failover.
+- [ ] ۵.۴ Load Balancing + GeoIP Routing.
+- [ ] ۵.۵ Migration Tool از Marzban/3X-UI.
+- [ ] ۵.۶ Bandwidth Alert + per-Node Config Override.
+
+---
+
+## 🔵 فاز ۶ — اپ موبایل Flutter
+- [ ] ۶.۱ اسکلتِ Flutter (`app/` — pubspec + ساختار + theme + RTL/LTR).
+- [ ] ۶.۲ صفحاتِ اصلی: اتصال + لیستِ سرور + import (لینک/دستی/پنل) + QR Scanner.
+- [ ] ۶.۳ Smart Server Selection (latency/speed) + Offline Mode + Widget.
+- [ ] ۶.۴ بدونِ GMS + Push بدونِ FCM (SSE/Telegram).
+- [ ] ۶.۵ Metadata + Privacy فارسی + بسته‌بندیِ AAB/APK + Keystore docs.
+- [ ] ۶.۶ آماده‌سازیِ انتشار: Cafe Bazaar / Myket / F-Droid metadata.
+
+---
+
+## 🟢 فاز ۷ — CI/CD + Monitoring
+- [ ] ۷.۱ GitHub Actions: lint + test + Auto Release با CHANGELOG.
+- [ ] ۷.۲ Docker Image (GHCR) + One-click Deploy (Compose).
+- [ ] ۷.۳ SAST (CodeQL/Semgrep) + Trivy container scan.
+- [ ] ۷.۴ Prometheus + Node/Xray Exporter (config + scrape).
+- [ ] ۷.۵ Grafana Dashboard (`.json` آمادهٔ import) + Alert Rules.
+- [ ] ۷.۶ مستنداتِ fa/en + Migration Guide + Plugin System + Contributor Guide.
+
+---
 
 ## 🔴 بلاکر
-- (فعلاً نیست)
+- (فعلاً نیست) · `(srv)`-ها نیازِ دسترسیِ سرورِ `37.221.79.91`.
 
 ---
 ← [[kian-workspace/01-projects/01-kian-v2ray/kian-v2ray|kian-v2ray]]

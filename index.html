@@ -59,37 +59,37 @@
 
   <!-- راهنمای انتخاب مسیر — فقط در همین تب -->
   <div class="guide" id="guide">
-    <div class="guide-q">کدوم وضعیت تویی؟ 👇</div>
+    <div class="guide-q" data-i18n="g.guide.q">کدوم وضعیت تویی؟ 👇</div>
     <div class="guide-cards">
       <button type="button" class="guide-card" data-go="gen-stay">
         <div class="guide-ic">🆕</div>
-        <div class="guide-tt">بار اولمه</div>
-        <div class="guide-ds">می‌خوام روی یه سرور تازه نصب کنم و کانفیگ بگیرم — فرم پایین رو پر کن</div>
+        <div class="guide-tt" data-i18n="g.guide.c1t">بار اولمه</div>
+        <div class="guide-ds" data-i18n="g.guide.c1d">می‌خوام روی یه سرور تازه نصب کنم و کانفیگ بگیرم — فرم پایین رو پر کن</div>
       </button>
       <button type="button" class="guide-card" data-go="manage">
         <div class="guide-ic">➕</div>
-        <div class="guide-tt">قبلاً نصب کردم، کاربر اضافه کنم</div>
-        <div class="guide-ds">سرورم آماده‌ست؛ فقط می‌خوام کاربر/کانفیگ جدید بسازم — <b>نیازی به نصب دوباره نیست</b></div>
+        <div class="guide-tt" data-i18n="g.guide.c2t">قبلاً نصب کردم، کاربر اضافه کنم</div>
+        <div class="guide-ds" data-i18n-html="g.guide.c2d">سرورم آماده‌ست؛ فقط می‌خوام کاربر/کانفیگ جدید بسازم — <b>نیازی به نصب دوباره نیست</b></div>
       </button>
       <button type="button" class="guide-card" data-go="manage">
         <div class="guide-ic">🔗</div>
-        <div class="guide-tt">لینک کاربرم رو می‌خوام</div>
-        <div class="guide-ds">می‌خوام لینک Subscription یا کانفیگ یه کاربر موجود رو بگیرم</div>
+        <div class="guide-tt" data-i18n="g.guide.c3t">لینک کاربرم رو می‌خوام</div>
+        <div class="guide-ds" data-i18n="g.guide.c3d">می‌خوام لینک Subscription یا کانفیگ یه کاربر موجود رو بگیرم</div>
       </button>
       <button type="button" class="guide-card" data-go="manage">
         <div class="guide-ic">❌</div>
-        <div class="guide-tt">می‌خوام کلاً حذف کنم</div>
-        <div class="guide-ds">سرویس رو کامل از سرور پاک کنم (uninstall)</div>
+        <div class="guide-tt" data-i18n="g.guide.c4t">می‌خوام کلاً حذف کنم</div>
+        <div class="guide-ds" data-i18n="g.guide.c4d">سرویس رو کامل از سرور پاک کنم (uninstall)</div>
       </button>
     </div>
-    <div class="guide-warn">⚠️ اگه قبلاً نصب کردی و فقط می‌خوای کاربر اضافه کنی، <b>دوباره نصب نکن</b> — از «مدیریت کاربر» استفاده کن. نصب دوباره فقط وقتی لازمه که بخوای تنظیمات پایه (پورت/SNI) رو عوض کنی (کاربرهای قبلی خودکار حفظ می‌شن).</div>
+    <div class="guide-warn" data-i18n-html="g.guide.warn">⚠️ اگه قبلاً نصب کردی و فقط می‌خوای کاربر اضافه کنی، <b>دوباره نصب نکن</b> — از «مدیریت کاربر» استفاده کن. نصب دوباره فقط وقتی لازمه که بخوای تنظیمات پایه (پورت/SNI) رو عوض کنی (کاربرهای قبلی خودکار حفظ می‌شن).</div>
   </div>
 
   <div class="notice">
     <div class="notice-ic">📡</div>
     <div>
-      <div class="notice-title">قبل از شروع: این روش برای چه سروری کار می‌کند؟</div>
-      <p>
+      <div class="notice-title" data-i18n="g.notice.t">قبل از شروع: این روش برای چه سروری کار می‌کند؟</div>
+      <p data-i18n-html="g.notice.d">
         برای سروری که <b>از داخل ایران بدون فیلترشکن بهش SSH می‌خوره</b> و آی‌پی‌اش از ایران بازه
         (بیشتر سرورهای خارجِ تازه). اگه سرور نداری، توی تب
         <b>«نصب روی سرور»</b> گفتم از کجا بخری.
@@ -99,68 +99,68 @@
 
   <div class="card">
     <div class="card-head">
-      <h2>⚙️ ساخت کانفیگ</h2>
-      <p class="muted">فقط آی‌پی سرورت رو بزن و دکمه رو فشار بده. همین.</p>
+      <h2 data-i18n="g.head.t">⚙️ ساخت کانفیگ</h2>
+      <p class="muted" data-i18n="g.head.d">فقط آی‌پی سرورت رو بزن و دکمه رو فشار بده. همین.</p>
     </div>
 
     <form id="gen-form" novalidate>
 
       <!-- تنها فیلد ضروری -->
       <div class="field big">
-        <label for="server-ip">🖥️ آی‌پی سرور</label>
-        <input id="server-ip" type="text" inputmode="decimal" placeholder="مثلاً ۱۸۵.۱۲.۳.۴۵" autocomplete="off" spellcheck="false">
-        <small class="hint">همون آی‌پی که با اون به سرور وصل می‌شی (SSH). بعد از خرید سرور بهت داده می‌شه.</small>
+        <label for="server-ip" data-i18n="g.f.ip.l">🖥️ آی‌پی سرور</label>
+        <input id="server-ip" type="text" inputmode="decimal" placeholder="مثلاً ۱۸۵.۱۲.۳.۴۵" data-i18n-ph="g.f.ip.ph" autocomplete="off" spellcheck="false">
+        <small class="hint" data-i18n="g.f.ip.h">همون آی‌پی که با اون به سرور وصل می‌شی (SSH). بعد از خرید سرور بهت داده می‌شه.</small>
       </div>
 
       <div class="field big">
-        <label for="user-prefix">👤 نام کاربر</label>
-        <input id="user-prefix" type="text" placeholder="مثلاً ali یا reza" autocomplete="off" spellcheck="false" maxlength="32">
-        <small class="hint">یک نام انگلیسی برای این کاربر بذار (حروف/عدد). <b>این نام مهمه:</b> لینک Subscription و کانفیگ‌های هر کاربر با همین نام از هم جدا می‌شن تا قاطی نشن. برای چند کاربر، خودکار شماره می‌خوره (مثلاً ali-1, ali-2).</small>
+        <label for="user-prefix" data-i18n="g.f.user.l">👤 نام کاربر</label>
+        <input id="user-prefix" type="text" placeholder="مثلاً ali یا reza" data-i18n-ph="g.f.user.ph" autocomplete="off" spellcheck="false" maxlength="32">
+        <small class="hint" data-i18n-html="g.f.user.h">یک نام انگلیسی برای این کاربر بذار (حروف/عدد). <b>این نام مهمه:</b> لینک Subscription و کانفیگ‌های هر کاربر با همین نام از هم جدا می‌شن تا قاطی نشن. برای چند کاربر، خودکار شماره می‌خوره (مثلاً ali-1, ali-2).</small>
       </div>
 
       <!-- 💡 سرور ایده‌آل -->
       <div class="server-tips">
-        <div class="server-tips-head">💡 سرور ایده‌آل برای نصب</div>
+        <div class="server-tips-head" data-i18n="g.tips.head">💡 سرور ایده‌آل برای نصب</div>
         <div class="server-tips-body">
-          <p>یک VPS با <b>Ubuntu ۲۲.۰۴ یا ۲۴.۰۴ تازه نصب‌شده</b> (یا «Reinstall OS» از پنل پروایدر). بهتر است هیچ پنل V2Ray دیگری (مثل 3x-ui، X-UI، Marzban)، هیچ Docker قبلی، هیچ Caddy/Nginx از قبل نباشد — این‌طور نصب از همان بار اول بدون تداخل کار می‌کند.</p>
-          <p class="muted small">اگر روی سرورت پنل دیگری داری، یا اول uninstallش کن، یا در «تنظیمات پیشرفته» پایین، پورت پایه را به عددی بالاتر (مثل ۹۴۴۳) عوض کن تا با چیزی که داری برخورد نکند.</p>
+          <p data-i18n-html="g.tips.p1">یک VPS با <b>Ubuntu ۲۲.۰۴ یا ۲۴.۰۴ تازه نصب‌شده</b> (یا «Reinstall OS» از پنل پروایدر). بهتر است هیچ پنل V2Ray دیگری (مثل 3x-ui، X-UI، Marzban)، هیچ Docker قبلی، هیچ Caddy/Nginx از قبل نباشد — این‌طور نصب از همان بار اول بدون تداخل کار می‌کند.</p>
+          <p class="muted small" data-i18n="g.tips.p2">اگر روی سرورت پنل دیگری داری، یا اول uninstallش کن، یا در «تنظیمات پیشرفته» پایین، پورت پایه را به عددی بالاتر (مثل ۹۴۴۳) عوض کن تا با چیزی که داری برخورد نکند.</p>
         </div>
       </div>
 
       <!-- حالت: کارت‌های ساده و درشت -->
       <div class="field">
-        <label>🌐 حالت اتصال</label>
+        <label data-i18n="g.mode.l">🌐 حالت اتصال</label>
         <div class="modes">
           <label class="mode">
             <input type="radio" name="mode" value="both" checked>
             <span class="mode-box">
-              <span class="mode-title">هر دو ✨</span>
-              <span class="mode-sub">پیشنهادی — هم سریع، هم همه‌چیز باز. دو لینک می‌گیری.</span>
+              <span class="mode-title" data-i18n="g.mode.both.t">هر دو ✨</span>
+              <span class="mode-sub" data-i18n="g.mode.both.s">پیشنهادی — هم سریع، هم همه‌چیز باز. دو لینک می‌گیری.</span>
             </span>
           </label>
           <label class="mode">
             <input type="radio" name="mode" value="direct">
             <span class="mode-box">
-              <span class="mode-title">سریع</span>
-              <span class="mode-sub">سریع‌ترین، ولی شاید بعضی سایت‌ها باز نشه.</span>
+              <span class="mode-title" data-i18n="g.mode.dir.t">سریع</span>
+              <span class="mode-sub" data-i18n="g.mode.dir.s">سریع‌ترین، ولی شاید بعضی سایت‌ها باز نشه.</span>
             </span>
           </label>
           <label class="mode">
             <input type="radio" name="mode" value="warp">
             <span class="mode-box">
-              <span class="mode-title">همه‌چیز باز</span>
-              <span class="mode-sub">از WARP رد می‌شه، کمی کندتر.</span>
+              <span class="mode-title" data-i18n="g.mode.warp.t">همه‌چیز باز</span>
+              <span class="mode-sub" data-i18n="g.mode.warp.s">از WARP رد می‌شه، کمی کندتر.</span>
             </span>
           </label>
           <label class="mode">
             <input type="radio" name="mode" value="nosni">
             <span class="mode-box">
-              <span class="mode-title">بدون SNI ⚠️</span>
-              <span class="mode-sub">Shadowsocks ساده — بدون استتار. فقط برای خودت.</span>
+              <span class="mode-title" data-i18n="g.mode.ns.t">بدون SNI ⚠️</span>
+              <span class="mode-sub" data-i18n="g.mode.ns.s">Shadowsocks ساده — بدون استتار. فقط برای خودت.</span>
             </span>
           </label>
         </div>
-        <small class="hint">نمی‌دونی کدوم؟ همون «هر دو» رو بذار — هر دو لینک رو می‌گیری و هرکدوم بهتر بود استفاده کن. «بدون SNI» ساده‌ست ولی ممکنه آی‌پی سرورت زودتر فیلتر بشه (پایین توضیح دادم).</small>
+        <small class="hint" data-i18n="g.mode.h">نمی‌دونی کدوم؟ همون «هر دو» رو بذار — هر دو لینک رو می‌گیری و هرکدوم بهتر بود استفاده کن. «بدون SNI» ساده‌ست ولی ممکنه آی‌پی سرورت زودتر فیلتر بشه (پایین توضیح دادم).</small>
       </div>
 
       <!-- ⚠️ هشدار فیلتر IP در حالت بدون دامنه -->
@@ -179,18 +179,18 @@
 
       <!-- تعداد کاربر -->
       <div class="field">
-        <label for="num-users">👥 چند نفر می‌خوان استفاده کنن؟</label>
+        <label for="num-users" data-i18n="g.num.l">👥 چند نفر می‌خوان استفاده کنن؟</label>
         <div class="stepper">
           <button type="button" class="step-btn" data-step="-1" aria-label="کمتر">−</button>
           <input id="num-users" type="number" min="1" max="50" value="1" readonly>
           <button type="button" class="step-btn" data-step="1" aria-label="بیشتر">+</button>
         </div>
-        <small class="hint">برای هر نفر یک کانفیگ جدا ساخته می‌شه. اگه فقط خودتی، روی ۱ بذار.</small>
+        <small class="hint" data-i18n="g.num.h">برای هر نفر یک کانفیگ جدا ساخته می‌شه. اگه فقط خودتی، روی ۱ بذار.</small>
       </div>
 
       <!-- تنظیمات پیشرفته (مخفی، اختیاری) -->
       <button type="button" class="adv-toggle" id="adv-toggle" aria-expanded="false">
-        <span class="adv-caret">▸</span> تنظیمات پیشرفته (اختیاری — اگه نمی‌دونی دست نزن)
+        <span class="adv-caret">▸</span> <span data-i18n="g.adv.toggle">تنظیمات پیشرفته (اختیاری — اگه نمی‌دونی دست نزن)</span>
       </button>
       <div class="adv-body hidden" id="adv-body">
         <div id="sni-block">
@@ -352,10 +352,10 @@
       <div id="form-error" class="form-error" role="alert"></div>
 
       <button id="gen-btn" type="submit" class="btn-primary">
-        <span class="btn-text">🚀 ساخت کانفیگ و دستور نصب</span>
+        <span class="btn-text" data-i18n="g.btn">🚀 ساخت کانفیگ و دستور نصب</span>
         <span class="btn-spin" aria-hidden="true"></span>
       </button>
-      <p class="muted small center">هیچ اطلاعاتی به جایی ارسال نمی‌شه — همه‌چیز همین‌جا توی مرورگر تو ساخته می‌شه.</p>
+      <p class="muted small center" data-i18n="g.btn.note">هیچ اطلاعاتی به جایی ارسال نمی‌شه — همه‌چیز همین‌جا توی مرورگر تو ساخته می‌شه.</p>
     </form>
   </div>
 
@@ -365,7 +365,7 @@
 <!-- ===================== TAB: SERVER ===================== -->
 <section class="panel-tab" data-panel="server">
   <div class="card prose">
-    <h2>🖥️ نصب روی سرور — قدم به قدم</h2>
+    <h2 data-i18n="s.server.h">🖥️ نصب روی سرور — قدم به قدم</h2>
 
     <div class="step-list">
       <div class="stp"><span class="stp-n">۱</span><div>
@@ -399,7 +399,7 @@
       </div></div>
     </div>
 
-    <h3>🛒 سرور نداری؟ از کجا بخری</h3>
+    <h3 data-i18n="s.server.buy">🛒 سرور نداری؟ از کجا بخری</h3>
     <div class="buy-grid">
       <div class="buy">
         <div class="buy-title">🌐 Netlen (ترکیه)</div>
@@ -424,7 +424,7 @@
 <!-- ===================== TAB: ANDROID ===================== -->
 <section class="panel-tab" data-panel="android">
   <div class="card prose">
-    <h2>📱 راه‌اندازی روی اندروید</h2>
+    <h2 data-i18n="s.android.h">📱 راه‌اندازی روی اندروید</h2>
 
     <div class="step-list">
       <div class="stp"><span class="stp-n">۱</span><div>
@@ -459,7 +459,7 @@
 <!-- ===================== TAB: PC ===================== -->
 <section class="panel-tab" data-panel="pc">
   <div class="card prose">
-    <h2>💻 راه‌اندازی روی ویندوز / کامپیوتر</h2>
+    <h2 data-i18n="s.pc.h">💻 راه‌اندازی روی ویندوز / کامپیوتر</h2>
 
     <div class="step-list">
       <div class="stp"><span class="stp-n">۱</span><div>
@@ -489,7 +489,7 @@
 <!-- ===================== TAB: TIPS ===================== -->
 <section class="panel-tab" data-panel="tips">
   <div class="card prose">
-    <h2>💡 نکات و عیب‌یابی</h2>
+    <h2 data-i18n="s.tips.h">💡 نکات و عیب‌یابی</h2>
 
     <h3>فرق «سریع» و «WARP» چیه؟</h3>
     <ul class="tips">
@@ -552,7 +552,7 @@
 <!-- ===================== TAB: DOMAIN ===================== -->
 <section class="panel-tab" data-panel="domain">
   <div class="card prose">
-    <h2>🌐 راهنمای کامل کانفیگ‌های دامنه‌دار (TLS)</h2>
+    <h2 data-i18n="s.domain.h">🌐 راهنمای کامل کانفیگ‌های دامنه‌دار (TLS)</h2>
     <p class="muted">کانفیگ‌های دامنه‌دار (VLESS-WS، VMess-WS، gRPC، Trojan، HTTPUpgrade) از نظر امنیت و پایداری در ایران <b>بهترین گزینه</b> هستند، چون شبیه ترافیک HTTPS معمولی‌اند. ولی به یک <b>دامنه</b> نیاز دارند. اگر دامنه نداری، حالت Reality (پیش‌فرض) همچنان عالی است.</p>
 
     <h3>🎯 چه دامنه‌ای بگیرم؟</h3>
@@ -668,43 +668,43 @@
 <!-- ===================== TAB: MANAGE ===================== -->
 <section class="panel-tab" data-panel="manage">
   <div class="card prose">
-    <h2>👥 مدیریت کاربر — بدون حفظ‌کردن دستور</h2>
+    <h2 data-i18n="s.manage.h">👥 مدیریت کاربر — بدون حفظ‌کردن دستور</h2>
     <p>عملیات را انتخاب کن و فیلدها را پر کن؛ یک <b>دستور آمادهٔ کپی</b> می‌گیری. کافی است یک‌بار آن را در ترمینال سرور (SSH) Paste کنی — نیازی نیست چیزی را به‌خاطر بسپاری یا دستی بنویسی.</p>
 
     <div class="field">
-      <label for="mg-action">چه کاری می‌خوای بکنی؟</label>
+      <label for="mg-action" data-i18n="m.action.l">چه کاری می‌خوای بکنی؟</label>
       <select id="mg-action">
-        <option value="add">➕ افزودن کاربر جدید</option>
-        <option value="configs">🔗 دیدن کانفیگ یک کاربر (با QR)</option>
-        <option value="sub">⭐ گرفتن لینک Subscription یک کاربر</option>
-        <option value="renew">🔄 تمدید اعتبار کاربر</option>
-        <option value="reset">♻️ صفر/تغییر حجم کاربر</option>
-        <option value="remove">🗑️ حذف کاربر</option>
-        <option value="users">📋 لیست همهٔ کاربرها و مصرف</option>
-        <option value="status">📊 وضعیت سرویس</option>
-        <option value="update">⬆️ آپدیت به آخرین نسخه (حفظ کاربران)</option>
-        <option value="uninstall">❌ حذف کامل نصب از سرور</option>
+        <option value="add" data-i18n="m.act.add">➕ افزودن کاربر جدید</option>
+        <option value="configs" data-i18n="m.act.configs">🔗 دیدن کانفیگ یک کاربر (با QR)</option>
+        <option value="sub" data-i18n="m.act.sub">⭐ گرفتن لینک Subscription یک کاربر</option>
+        <option value="renew" data-i18n="m.act.renew">🔄 تمدید اعتبار کاربر</option>
+        <option value="reset" data-i18n="m.act.reset">♻️ صفر/تغییر حجم کاربر</option>
+        <option value="remove" data-i18n="m.act.remove">🗑️ حذف کاربر</option>
+        <option value="users" data-i18n="m.act.users">📋 لیست همهٔ کاربرها و مصرف</option>
+        <option value="status" data-i18n="m.act.status">📊 وضعیت سرویس</option>
+        <option value="update" data-i18n="m.act.update">⬆️ آپدیت به آخرین نسخه (حفظ کاربران)</option>
+        <option value="uninstall" data-i18n="m.act.uninst">❌ حذف کامل نصب از سرور</option>
       </select>
     </div>
 
     <div class="field" id="mg-name-f">
-      <label for="mg-name">نام کاربر (انگلیسی — مثل ali یا user-2)</label>
+      <label for="mg-name" data-i18n="m.name.l">نام کاربر (انگلیسی — مثل ali یا user-2)</label>
       <input id="mg-name" type="text" placeholder="ali" autocomplete="off" spellcheck="false">
-      <small class="hint">همان نامی که موقع ساخت گذاشتی، یا یک نام جدید برای کاربر تازه.</small>
+      <small class="hint" data-i18n="m.name.h">همان نامی که موقع ساخت گذاشتی، یا یک نام جدید برای کاربر تازه.</small>
     </div>
 
     <div class="grid2">
       <div class="field" id="mg-gb-f">
-        <label for="mg-gb">حجم (گیگ — ۰ یعنی نامحدود)</label>
+        <label for="mg-gb" data-i18n="m.gb.l">حجم (گیگ — ۰ یعنی نامحدود)</label>
         <input id="mg-gb" type="number" min="0" max="100000" value="100">
       </div>
       <div class="field" id="mg-days-f">
-        <label for="mg-days">مدت (روز — ۰ یعنی دائمی)</label>
+        <label for="mg-days" data-i18n="m.days.l">مدت (روز — ۰ یعنی دائمی)</label>
         <input id="mg-days" type="number" min="0" max="3650" value="30">
       </div>
     </div>
 
-    <label>👇 این دستور را در ترمینال سرور بزن:</label>
+    <label data-i18n="m.run.l">👇 این دستور را در ترمینال سرور بزن:</label>
     <div class="terminal">
       <div class="term-bar"><i></i><i></i><i></i><span>root@server:~#</span></div>
       <pre class="term-body mono" id="mg-out"></pre>
@@ -719,13 +719,13 @@
 <!-- ===================== TAB: ABOUT ===================== -->
 <section class="panel-tab" data-panel="about">
   <div class="card prose">
-    <h2>ℹ️ درباره</h2>
+    <h2 data-i18n="s.about.h">ℹ️ درباره</h2>
     <p>
       KIAN V2Ray یک ابزار رایگان و متن‌بازه که روی <b>سرورِ خودت</b> کانفیگ V2Ray (VLESS Reality + WARP) می‌سازه.
       کلیدها توی مرورگر خودت ساخته می‌شن و هیچ‌جا ذخیره نمی‌شن. هدف اینه که حتی بدون دانش فنی، فقط با کپی-پیست کار کنه.
     </p>
 
-    <h3>🗺️ نقشهٔ راه</h3>
+    <h3 data-i18n="ab.roadmap">🗺️ نقشهٔ راه</h3>
     <ul class="tips">
       <li>✅ <b>فاز ۱:</b> Reality سریع + WARP، نصب تک‌دستوری، مدیریت کاربر/حجم.</li>
       <li>✅ <b>پایداری و سرعت:</b> WARP با WireGuard/MASQUE + بازگشت خودکار به مستقیم، خودتشخیصی در <span class="mono">status</span>، رفع تداخل پورت، نصب مجدد امن، بهینه‌سازی BBR.</li>
@@ -735,11 +735,11 @@
       <li>🔜 <b>فاز ۵:</b> اتصال مستقیم به ربات تلگرام + هشدار حجم.</li>
     </ul>
 
-    <h3>🛠️ نرم‌افزار Kv2m (جدید)</h3>
+    <h3 data-i18n="ab.kv2m">🛠️ نرم‌افزار Kv2m (جدید)</h3>
     <p class="muted">برای مدیریت حرفه‌ای‌تر، نرم‌افزار <b>Kv2m</b> خودش به سرورت SSH می‌زند و همه‌چیز را مدیریت/نصب می‌کند — برای ویندوز/مک/لینوکس و اندروید (Termux).</p>
     <div class="callout">💻 دانلود و راهنما: <a href="https://github.com/kian-irani/kian_v2ray/tree/main/kv2m" target="_blank" rel="noopener">پوشهٔ kv2m در گیت‌هاب</a></div>
 
-    <h3>👤 کانال‌ها و ارتباط</h3>
+    <h3 data-i18n="ab.channels">👤 کانال‌ها و ارتباط</h3>
     <div class="links-grid">
       <a class="lk" href="https://t.me/kian_irani_cdn_f" target="_blank" rel="noopener">🎓 آموزش و کانال<br><span>@kian_irani_cdn_f</span></a>
       <a class="lk" href="https://t.me/Kian_irani_t" target="_blank" rel="noopener">🆘 پشتیبانی<br><span>@Kian_irani_t</span></a>
@@ -748,7 +748,7 @@
       <a class="lk" href="https://github.com/kian-irani/kian_v2ray" target="_blank" rel="noopener">⭐ سورس در گیت‌هاب<br><span>kian_v2ray</span></a>
     </div>
 
-    <h3>💝 حمایت (اختیاری)</h3>
+    <h3 data-i18n="ab.donate">💝 حمایت (اختیاری)</h3>
     <p class="muted">این پروژه رایگانه ولی هزینهٔ سرور و وقت توسعه واقعیه. اگه دوست داشتی:</p>
     <div class="donate">
       <span class="donate-label">🔺 Tron (TRC20) — USDT / TRX:</span>
@@ -756,7 +756,7 @@
       <button type="button" class="copy" id="copy-trc20"><span>کپی</span></button>
     </div>
 
-    <h3>🙏 ساخته‌شده با استفاده از</h3>
+    <h3 data-i18n="ab.builtwith">🙏 ساخته‌شده با استفاده از</h3>
     <p class="muted small">
       <a href="https://github.com/XTLS/Xray-core" target="_blank" rel="noopener">Xray-core (REALITY)</a> ·
       <a href="https://developers.cloudflare.com/warp-client/" target="_blank" rel="noopener">Cloudflare WARP</a> ·
