@@ -43,7 +43,12 @@ from core import db as core_db
 from core import migrate
 from . import repo, security
 from .schemas import (BulkAction, LoginRequest, PasswordChange, RefreshRequest,
-                      StatsOut, TokenPair, UserCreate, UserOut, UserUpdate)
+                      StatsOut, TokenPair, TotpEnable, UserCreate, UserOut,
+                      UserUpdate)
+
+# Optional admin IP allowlist (2.9). Empty = allow all.
+_ADMIN_IPS = {ip.strip() for ip in
+              os.environ.get("KIAN_ADMIN_IP_WHITELIST", "").split(",") if ip.strip()}
 
 ACCESS_TTL = 900          # 15 min
 REFRESH_TTL = 7 * 86400   # 7 days
@@ -150,15 +155,56 @@ def _issue_pair(secret: str, sub: str) -> TokenPair:
     return TokenPair(access_token=access, refresh_token=refresh)
 
 
+def _check_ip_allowlist(request: Request) -> None:
+    if not _ADMIN_IPS:
+        return
+    ip = request.client.host if request.client else None
+    if ip not in _ADMIN_IPS:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "ip not allowed")
+
+
 @app.post("/auth/login", response_model=TokenPair)
 def login(body: LoginRequest, request: Request, conn=Depends(get_db)):
+    _check_ip_allowlist(request)
     _rate_limit(request.client.host if request.client else "?")
     admin_user = repo.get_setting(conn, "admin_user") or "admin"
     pw_hash = repo.get_setting(conn, "admin_pw_hash") or ""
     if body.username != admin_user or not security.verify_password(
             body.password, pw_hash):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "bad credentials")
+    # Second factor (2.9) — required only once enabled.
+    if repo.get_setting(conn, "twofa_enabled") == "1":
+        secret = repo.get_setting(conn, "twofa_secret") or ""
+        if not body.totp or not security.verify_totp(secret, body.totp):
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED,
+                                "2FA code required/invalid")
     return _issue_pair(_jwt_secret(conn), admin_user)
+
+
+@app.post("/auth/2fa/setup")
+def twofa_setup(admin: str = Depends(require_admin), conn=Depends(get_db)):
+    """Generate (but don't yet enable) a TOTP secret + otpauth URI."""
+    secret = security.generate_totp_secret()
+    repo.set_setting(conn, "twofa_secret", secret)
+    uri = (f"otpauth://totp/KIAN%20Panel:{admin}?secret={secret}"
+           f"&issuer=KIAN%20V2Ray")
+    return {"secret": secret, "otpauth_uri": uri}
+
+
+@app.post("/auth/2fa/enable")
+def twofa_enable(body: TotpEnable, admin: str = Depends(require_admin),
+                 conn=Depends(get_db)):
+    secret = repo.get_setting(conn, "twofa_secret") or ""
+    if not secret or not security.verify_totp(secret, body.code):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "invalid code")
+    repo.set_setting(conn, "twofa_enabled", "1")
+    return {"ok": True}
+
+
+@app.post("/auth/2fa/disable")
+def twofa_disable(admin: str = Depends(require_admin), conn=Depends(get_db)):
+    repo.set_setting(conn, "twofa_enabled", "0")
+    return {"ok": True}
 
 
 @app.post("/auth/refresh", response_model=TokenPair)

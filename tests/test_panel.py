@@ -63,6 +63,18 @@ def test_jwt_rejects_tampered_signature():
     assert raised
 
 
+# ---------- security: TOTP 2FA ----------
+
+def test_totp_accepts_current_code_and_rejects_wrong():
+    secret = security.generate_totp_secret()
+    code = security.totp_at(secret, for_time=1_000_000)
+    assert security.verify_totp(secret, code, for_time=1_000_000)
+    # within the +/- window (30s drift) still accepted
+    assert security.verify_totp(secret, code, for_time=1_000_000 + 29)
+    # a clearly wrong code is rejected
+    assert not security.verify_totp(secret, "000000", for_time=1_000_000) or code == "000000"
+
+
 # ---------- repo ----------
 
 def test_repo_user_lifecycle(tmp_path):

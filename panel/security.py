@@ -87,6 +87,42 @@ class InvalidToken(Exception):
 
 
 # --------------------------------------------------------------------------- #
+# TOTP (RFC 6238) — optional 2FA, stdlib only
+# --------------------------------------------------------------------------- #
+def generate_totp_secret() -> str:
+    """A base32 secret suitable for Google Authenticator / Aegis."""
+    return base64.b32encode(os.urandom(20)).decode().rstrip("=")
+
+
+def totp_at(secret_b32: str, *, for_time: Optional[int] = None,
+            step: int = 30, digits: int = 6) -> str:
+    counter = int((for_time if for_time is not None else time.time()) // step)
+    key = base64.b32decode(_pad_b32(secret_b32.upper()))
+    msg = counter.to_bytes(8, "big")
+    digest = hmac.new(key, msg, hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    code = ((digest[offset] & 0x7F) << 24 | digest[offset + 1] << 16
+            | digest[offset + 2] << 8 | digest[offset + 3]) % (10 ** digits)
+    return str(code).zfill(digits)
+
+
+def verify_totp(secret_b32: str, code: str, *, for_time: Optional[int] = None,
+                window: int = 1) -> bool:
+    """Accept a code valid within +/- *window* steps (clock skew tolerance)."""
+    now = int(for_time if for_time is not None else time.time())
+    code = str(code).strip()
+    for drift in range(-window, window + 1):
+        if hmac.compare_digest(totp_at(secret_b32, for_time=now + drift * 30),
+                               code):
+            return True
+    return False
+
+
+def _pad_b32(s: str) -> str:
+    return s + "=" * (-len(s) % 8)
+
+
+# --------------------------------------------------------------------------- #
 # base64 helpers
 # --------------------------------------------------------------------------- #
 def _b64(raw: bytes) -> str:

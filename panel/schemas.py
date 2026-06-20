@@ -10,6 +10,11 @@ from pydantic import BaseModel, Field
 class LoginRequest(BaseModel):
     username: str
     password: str
+    totp: Optional[str] = None   # required only if 2FA is enabled
+
+
+class TotpEnable(BaseModel):
+    code: str
 
 
 class TokenPair(BaseModel):
