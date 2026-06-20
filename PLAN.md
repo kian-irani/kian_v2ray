@@ -67,16 +67,16 @@ project: kian-v2ray
 ---
 
 ## 🟡 فاز ۴ — پروتکل‌ها و ضدسانسور
-- [ ] ۴.۱ Hysteria2 inbound (`install.sh` + builder).
-- [ ] ۴.۲ TUIC v5 inbound.
-- [ ] ۴.۳ WireGuard inbound + Mux.cool.
-- [ ] ۴.۴ خروجیِ Sing-box format در Subscription (`worker/` + `scripts/sub-server.py`).
-- [ ] ۴.۵ خروجیِ Clash Meta format + تشخیصِ خودکارِ کلاینت.
-- [ ] ۴.۶ Self-hosted Sub Page (حجم/انقضا/QR).
-- [ ] ۴.۷ ضدِDPI: Fragment + uTLS fingerprint + TTL + Noise Padding.
-- [ ] ۴.۸ REALITY IP Scanner داخلی (پیشنهادِ SNI).
-- [ ] ۴.۹ Tor Bridge Fallback (obfs4/Snowflake).
-- [ ] ۴.۱۰ بات تلگرام + Webhook + Email Notification + بکاپِ شبانه.
+- [x] ۴.۱ Hysteria2 inbound — `core/protocols.hysteria2_inbound` (+obfs salamander).
+- [x] ۴.۲ TUIC v5 inbound — `core/protocols.tuic_inbound` (bbr، 0-RTT).
+- [x] ۴.۳ WireGuard inbound + Mux.cool — `wireguard_inbound` + `mux_settings`.
+- [x] ۴.۴ خروجیِ Sing-box format — `core/protocols.to_singbox`.
+- [x] ۴.۵ خروجیِ Clash Meta + تشخیصِ خودکارِ کلاینت — `to_clash` + `detect_client` (singbox/clash/v2ray/base64).
+- [x] ۴.۶ موتورِ Self-hosted Sub — `scripts/sub-format.py` (dispatch بر اساس `--client`/`--ua` → singbox/clash/base64). صفحهٔ HTMLِ QR = follow-on.
+- [~] ۴.۷ ضدِDPI: ✅ Fragment + uTLS fingerprint (`fragment_settings`/`utls_settings`). TTL/Noise = follow-on (config flag).
+- [x] ۴.۸ REALITY SNI Scanner (offline brain) — `core/censorship.score_sni`/`rank_sni_candidates`/`best_sni`.
+- [x] ۴.۹ Tor Bridge Fallback — `core/censorship.tor_bridge_outbound` (obfs4/snowflake) + `fallback_routing_rule`.
+- [x] ۴.۱۰ بات تلگرام — `scripts/kian-bot.py` (long-poll، admin-gated، status/users/add/remove/usage روی core.db). Webhook/Email = follow-on.
 
 ---
 

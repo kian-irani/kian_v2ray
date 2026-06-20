@@ -5,6 +5,22 @@
 
 ---
 
+## [protocols] — 2026-06-20  (فاز ۴: پروتکل‌ها و ضدسانسور — auto-rp)
+
+### افزوده شد
+- **`core/protocols.py`** — سازنده‌ی inbound برای **Hysteria2 / TUIC v5 / WireGuard** + Mux،
+  تنظیماتِ ضدِDPI (**Fragment** + **uTLS**)، و **مبدل‌های Subscription**: `to_singbox` (JSON)، `to_clash` (Meta YAML)،
+  و `detect_client` (تشخیصِ singbox/clash/v2ray از User-Agent).
+- **`core/censorship.py`** — **REALITY SNI scanner** (مغزِ آفلاین: `score_sni`/`rank_sni_candidates`/`best_sni`) +
+  **Tor Bridge Fallback** (obfs4/snowflake) + قانونِ مسیریابیِ fallback.
+- **`scripts/sub-format.py`** — موتورِ صفحهٔ Subscriptionِ self-hosted (dispatch بر اساس `--client`/`--ua`).
+- **`scripts/kian-bot.py`** — بات تلگرامِ مدیریتی (stdlib long-poll، فقط ادمین‌ها، status/users/add/remove/usage).
+
+### تأیید
+- `py_compile` همه (به CI اضافه شد) · `pytest -q` → **۲۸ passed** (protocols/censorship/bot/sub-format).
+
+---
+
 ## [kv2m] — 2026-06-20  (فاز ۳: Kv2m چندسروره — auto-rp)
 
 ### افزوده شد
