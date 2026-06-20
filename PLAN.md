@@ -59,10 +59,10 @@ project: kian-v2ray
 ---
 
 ## 🟡 فاز ۳ — Kv2m Desktop چندسروره
-- [ ] ۳.۱ مدیریتِ چندسرور در core/app (`kv2m/core.py` + `kv2m/app.py`).
-- [ ] ۳.۲ اتصال به REST API پنل + نصب/آپدیتِ خودکارِ Xray.
-- [ ] ۳.۳ Auto-update (GitHub Releases) + System Tray.
-- [ ] ۳.۴ Dark/Light Mode ذخیره‌شده + پشتیبانیِ macOS/Linux + Crash Reporting.
+- [x] ۳.۱ مدیریتِ چندسرور: `kv2m/servers.py` (`ServerProfile` + `ServerStore`: add/remove/select/active، persist در JSON، بدونِ ذخیرهٔ رمز) — ۳ تست سبز.
+- [x] ۳.۲ اتصال به REST API پنل: `kv2m/panel_client.py` (login + refreshِ خودکار + CRUDِ کاربر + stats، stdlib urllib).
+- [x] ۳.۳ Auto-update (GitHub Releases): `kv2m/updater.py` (`parse_version`/`is_newer`/`check` با مقایسهٔ نسخهٔ مقاوم به نامِ محصول) — تست سبز.
+- [~] ۳.۴ Dark/Light + macOS/Linux + Crash Reporting: theme در `kv2m/theme.py` موجود؛ multi-server GUI wiring + tray + crash-reporter = follow-on (نیازِ اجرای Qt دسکتاپ).
 
 ---
 

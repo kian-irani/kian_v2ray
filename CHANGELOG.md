@@ -5,6 +5,20 @@
 
 ---
 
+## [kv2m] — 2026-06-20  (فاز ۳: Kv2m چندسروره — auto-rp)
+
+### افزوده شد
+- **`kv2m/servers.py`** — مدیریتِ چندسرور: `ServerProfile` + `ServerStore` (add/remove/select/active،
+  persist در JSON با `os.replace` اتمیک، بدونِ ذخیرهٔ رمز).
+- **`kv2m/panel_client.py`** — کلاینتِ REST برای پنل (login + refreshِ شفاف روی 401 + CRUDِ کاربر + stats).
+- **`kv2m/updater.py`** — بررسیِ آپدیت از GitHub Releases با مقایسهٔ نسخهٔ مقاوم (نادیده‌گرفتنِ رقمِ داخلِ نامِ محصول).
+
+### تأیید
+- `py_compile` همه (به CI اضافه شد) · `pytest -q` → **۱۹ passed**.
+- باگِ واقعی رفع شد: `parse_version("kv2m-3.1.0")` رقمِ «۲»ِ داخلِ «kv2m» را نسخه می‌گرفت → الان توکنِ نقطه‌دار اولویت دارد.
+
+---
+
 ## [panel-ui] — 2026-06-20  (فاز ۲: فرانت‌اندِ پنل — auto-rp)
 
 ### افزوده شد
