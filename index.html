@@ -22,17 +22,18 @@
     <div class="brandline">
       <span class="dot"></span>
       <span class="brandmark mono">KIAN<span class="arrow">⟶</span>V2RAY</span>
-      <span class="phase">رایگان · متن‌باز</span>
+      <span class="phase" data-i18n="phase">رایگان · متن‌باز</span>
+      <button id="lang-toggle" class="lang-toggle" type="button" aria-label="Switch to English">EN</button>
     </div>
-    <h1 class="title">کانفیگ سرورت رو در یک دقیقه بساز</h1>
-    <p class="lede">
+    <h1 class="title" data-i18n="hero.title">کانفیگ سرورت رو در یک دقیقه بساز</h1>
+    <p class="lede" data-i18n-html="hero.lede">
       فقط <b>آی‌پی سرورت</b> رو وارد کن. یک دستور می‌گیری، توی سرور می‌زنی، و کانفیگ آماده (با QR) تحویل می‌گیری.
       نیازی نیست چیزی از پورت و تنظیمات فنی بدونی — همه‌چیز خودکاره.
     </p>
     <div class="hero-meta">
-      <span class="chip">🟢 فقط کپی-پیست</span>
-      <span class="chip">🔐 کلیدها توی مرورگر خودت</span>
-      <span class="chip">📱 اندروید + 💻 ویندوز</span>
+      <span class="chip" data-i18n="hero.chip1">🟢 فقط کپی-پیست</span>
+      <span class="chip" data-i18n="hero.chip2">🔐 کلیدها توی مرورگر خودت</span>
+      <span class="chip" data-i18n="hero.chip3">📱 اندروید + 💻 ویندوز</span>
     </div>
   </div>
 </header>
@@ -40,14 +41,14 @@
 <!-- ============================ TABS ============================ -->
 <div class="wrap">
   <nav class="tabs" id="tabs">
-    <button class="tab active" data-tab="gen">⚙️ ساخت کانفیگ</button>
-    <button class="tab" data-tab="server">🖥️ نصب روی سرور</button>
-    <button class="tab" data-tab="android">📱 اندروید</button>
-    <button class="tab" data-tab="pc">💻 ویندوز / PC</button>
-    <button class="tab" data-tab="tips">💡 نکات و عیب‌یابی</button>
-    <button class="tab" data-tab="domain">🌐 دامنه و TLS</button>
-    <button class="tab" data-tab="manage">👥 مدیریت کاربر</button>
-    <button class="tab" data-tab="about">ℹ️ درباره</button>
+    <button class="tab active" data-tab="gen" data-i18n="tab.gen">⚙️ ساخت کانفیگ</button>
+    <button class="tab" data-tab="server" data-i18n="tab.server">🖥️ نصب روی سرور</button>
+    <button class="tab" data-tab="android" data-i18n="tab.android">📱 اندروید</button>
+    <button class="tab" data-tab="pc" data-i18n="tab.pc">💻 ویندوز / PC</button>
+    <button class="tab" data-tab="tips" data-i18n="tab.tips">💡 نکات و عیب‌یابی</button>
+    <button class="tab" data-tab="domain" data-i18n="tab.domain">🌐 دامنه و TLS</button>
+    <button class="tab" data-tab="manage" data-i18n="tab.manage">👥 مدیریت کاربر</button>
+    <button class="tab" data-tab="about" data-i18n="tab.about">ℹ️ درباره</button>
   </nav>
 </div>
 
@@ -765,6 +766,78 @@
   </div>
 </section>
 
+<!-- ===================== ROADMAP / VISION ===================== -->
+<section class="wrap roadmap" id="roadmap" aria-labelledby="roadmap-title">
+  <div class="roadmap-head">
+    <span class="rm-eyebrow" data-i18n="rm.eyebrow">نقشه‌ی راه</span>
+    <h2 id="roadmap-title" data-i18n="rm.title">از یک نصب‌کننده، به یک پلتفرمِ کاملِ VPN</h2>
+    <p class="muted" data-i18n="rm.sub">امروز ساده و رایگان نصب می‌کنی؛ مسیر، یک اکوسیستمِ چندسرور با پنل و اپ موبایل است. این‌ها در دست ساخت‌اند:</p>
+  </div>
+  <div class="rm-grid">
+    <article class="rm-card is-done">
+      <div class="rm-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div class="rm-body">
+        <span class="rm-status done" data-i18n="rm.now">موجود</span>
+        <h3 data-i18n="rm.privacy.t">حریمِ خصوصیِ واقعی</h3>
+        <p data-i18n="rm.privacy.d">کلیدهای خصوصی در مرورگرِ خودت ساخته می‌شوند و هرگز به سرور نمی‌رسند — مزیتی که قابلِ کپی نیست.</p>
+      </div>
+    </article>
+    <article class="rm-card">
+      <div class="rm-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="11" width="18" height="5" rx="1.5"/><path d="M7 6.5h.01M7 13.5h.01"/></svg>
+      </div>
+      <div class="rm-body">
+        <span class="rm-status" data-i18n="rm.soon">به‌زودی</span>
+        <h3 data-i18n="rm.multi.t">مدیریتِ چندسرور</h3>
+        <p data-i18n="rm.multi.d">یک پنل، چندین VPS: سلامت، Failover، توزیعِ بار و مسیریابیِ جغرافیایی — به‌علاوه‌ی مهاجرت از Marzban/3X-UI.</p>
+      </div>
+    </article>
+    <article class="rm-card">
+      <div class="rm-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 21h8"/></svg>
+      </div>
+      <div class="rm-body">
+        <span class="rm-status" data-i18n="rm.soon">به‌زودی</span>
+        <h3 data-i18n="rm.panel.t">پنلِ وبِ کامل</h3>
+        <p data-i18n="rm.panel.d">FastAPI + JWT، آمارِ زنده، محدودیتِ IP/سرعت/HWID، غیرفعال‌سازیِ خودکار و اکشن‌های گروهی برای هر کاربر.</p>
+      </div>
+    </article>
+    <article class="rm-card">
+      <div class="rm-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+      </div>
+      <div class="rm-body">
+        <span class="rm-status" data-i18n="rm.soon">به‌زودی</span>
+        <h3 data-i18n="rm.app.t">اپِ موبایلِ Flutter</h3>
+        <p data-i18n="rm.app.d">کلاینتِ چندسکویی برای اندروید و iOS — با انتشار در کافه‌بازار، مایکت، F-Droid و سپس گوگل‌پلی.</p>
+      </div>
+    </article>
+    <article class="rm-card">
+      <div class="rm-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg>
+      </div>
+      <div class="rm-body">
+        <span class="rm-status" data-i18n="rm.soon">به‌زودی</span>
+        <h3 data-i18n="rm.proto.t">پروتکل‌های ضدسانسورِ جدید</h3>
+        <p data-i18n="rm.proto.d">Hysteria2، TUIC v5، WireGuard، Fragment/uTLS و خروجیِ Sing-box/Clash برای پایداریِ بیشتر در شرایطِ سخت.</p>
+      </div>
+    </article>
+    <article class="rm-card">
+      <div class="rm-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="rm-body">
+        <span class="rm-status" data-i18n="rm.soon">به‌زودی</span>
+        <h3 data-i18n="rm.ops.t">پایش و اتوماسیون</h3>
+        <p data-i18n="rm.ops.d">بکاپِ خودکار (Telegram/S3/R2)، Audit Log، و داشبوردِ Prometheus + Grafana برای دیدِ کامل به سلامتِ سرویس.</p>
+      </div>
+    </article>
+  </div>
+  <p class="rm-foot muted" data-i18n-html="rm.foot">می‌خواهی در ساختش سهیم باشی یا پیشنهاد بدهی؟ کدِ کامل و نقشه‌ی راه در <a href="https://github.com/kian-irani/kian_v2ray" target="_blank" rel="noopener">گیت‌هاب</a> باز است.</p>
+</section>
+
 </main>
 
 <!-- ========================= FOOTER ========================= -->
@@ -773,17 +846,18 @@
     <span class="mono">KIAN ⟶ V2RAY</span>
     <nav class="foot-links">
       <a href="https://github.com/kian-irani/kian_v2ray" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://t.me/kian_irani_cdn_f" target="_blank" rel="noopener">کانال</a>
-      <a href="https://t.me/Kian_irani_t" target="_blank" rel="noopener">پشتیبانی</a>
-      <a href="privacy.html">حریم خصوصی</a>
-      <a href="terms.html">شرایط استفاده</a>
+      <a href="https://t.me/kian_irani_cdn_f" target="_blank" rel="noopener" data-i18n="foot.channel">کانال</a>
+      <a href="https://t.me/Kian_irani_t" target="_blank" rel="noopener" data-i18n="foot.support">پشتیبانی</a>
+      <a href="privacy.html" data-i18n="foot.privacy">حریم خصوصی</a>
+      <a href="terms.html" data-i18n="foot.terms">شرایط استفاده</a>
     </nav>
-    <span class="muted small">متن‌باز · بدون لاگ · کلید سمت کاربر</span>
+    <span class="muted small" data-i18n="foot.tag">متن‌باز · بدون لاگ · کلید سمت کاربر</span>
   </div>
 </footer>
 
 <script src="assets/vendor/nacl.min.js"></script>
 <script src="assets/vendor/qrcode.min.js"></script>
 <script src="assets/js/app.js"></script>
+<script src="assets/js/i18n.js" defer></script>
 </body>
 </html>
