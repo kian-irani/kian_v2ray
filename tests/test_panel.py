@@ -1,0 +1,98 @@
+"""Tests for the panel's dependency-free layers (security + repo).
+
+panel.schemas/panel.main need fastapi+pydantic (not installed in plain CI),
+so we only import panel.security and panel.repo here — both stdlib-only.
+"""
+
+from __future__ import annotations
+
+import os
+
+from core import db, migrate
+from panel import repo, security
+
+
+def _tmp_db(tmp_path) -> str:
+    return os.path.join(str(tmp_path), "panel.db")
+
+
+# ---------- security: password hashing ----------
+
+def test_password_hash_roundtrip():
+    h = security.hash_password("s3cret-pass", iterations=10_000)
+    assert h.startswith("pbkdf2_sha256$")
+    assert security.verify_password("s3cret-pass", h)
+    assert not security.verify_password("wrong", h)
+
+
+def test_password_hash_is_salted():
+    a = security.hash_password("same", iterations=10_000)
+    b = security.hash_password("same", iterations=10_000)
+    assert a != b  # random salt
+
+
+# ---------- security: JWT ----------
+
+def test_jwt_roundtrip_and_claims():
+    tok = security.create_token("secret", "admin", ttl_seconds=100, now=1000)
+    payload = security.decode_token("secret", tok, now=1050)
+    assert payload["sub"] == "admin"
+    assert payload["exp"] == 1100
+
+
+def test_jwt_rejects_expired():
+    tok = security.create_token("secret", "admin", ttl_seconds=10, now=1000)
+    try:
+        security.decode_token("secret", tok, now=2000)
+        raised = False
+    except security.InvalidToken:
+        raised = True
+    assert raised
+
+
+def test_jwt_rejects_tampered_signature():
+    tok = security.create_token("secret", "admin", ttl_seconds=100, now=1000)
+    bad = security.create_token("OTHER", "admin", ttl_seconds=100, now=1000)
+    # swap signature from a token signed with a different secret
+    forged = ".".join(tok.split(".")[:2] + [bad.split(".")[2]])
+    try:
+        security.decode_token("secret", forged, now=1050)
+        raised = False
+    except security.InvalidToken:
+        raised = True
+    assert raised
+
+
+# ---------- repo ----------
+
+def test_repo_user_lifecycle(tmp_path):
+    path = _tmp_db(tmp_path)
+    migrate.migrate_path(path)
+    with db.session(path) as conn:
+        u = repo.create_user(conn, actor="root", name="ali",
+                             quota_bytes=100, ip_limit=2)
+        assert u["name"] == "ali" and u["uuid"]
+        assert repo.get_user(conn, "ali")["ip_limit"] == 2
+        repo.update_user(conn, actor="root", name="ali", speed_kbps=500)
+        assert repo.get_user(conn, "ali")["speed_kbps"] == 500
+        assert repo.stats(conn)["total_users"] == 1
+        assert repo.delete_user(conn, actor="root", name="ali")
+        assert repo.get_user(conn, "ali") is None
+
+
+def test_repo_bulk_and_auto_disable(tmp_path):
+    path = _tmp_db(tmp_path)
+    migrate.migrate_path(path)
+    with db.session(path) as conn:
+        for n in ("a", "b", "c"):
+            repo.create_user(conn, actor="root", name=n)
+        # b is over quota, c is expired
+        repo.update_user(conn, actor="root", name="b",
+                         quota_bytes=10, used_bytes=20)
+        repo.update_user(conn, actor="root", name="c", expires_at=1)
+        disabled = repo.auto_disable_expired(conn, now=1000)
+        assert disabled == 2
+        affected = repo.bulk_action(conn, actor="root", action="disable",
+                                    names=["a"])
+        assert affected == 1
+        assert repo.get_user(conn, "a")["enabled"] == 0

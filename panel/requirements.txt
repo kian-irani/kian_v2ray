@@ -1,0 +1,6 @@
+# KIAN V2Ray web panel — runtime dependencies (phase 2).
+# The data layer reuses core/ (stdlib sqlite3); crypto is hand-rolled in
+# panel/security.py, so the only deps are the web framework + server.
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.27,<1.0
+pydantic>=2.5,<3.0

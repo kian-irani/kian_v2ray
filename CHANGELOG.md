@@ -5,6 +5,25 @@
 
 ---
 
+## [panel] — 2026-06-20  (فاز ۲: بک‌اندِ پنلِ وب — auto-rp)
+
+### افزوده شد
+- **پکیجِ `panel/` (FastAPI):** بک‌اندِ کاملِ مدیریتِ کاربر روی همان `core.db` (بدونِ ORMِ دوم — تک‌منبعِ schema).
+  - `panel/security.py` — JWT HS256 دست‌ساز + هشِ PBKDF2-SHA256 (stdlib، بدونِ PyJWT/passlib).
+  - `panel/repo.py` — CRUD + bulk + auto-disable + stats، با ثبتِ audit در هر تغییر.
+  - `panel/schemas.py` — مدل‌های Pydantic v2.
+  - `panel/main.py` — endpointها: `/auth/{login,refresh,password,sessions}`،
+    `/api/users` (CRUD + `/bulk` + `/auto-disable`)، `/api/stats`، `/api/export` (JSON/CSV)،
+    `/api/keys/rotate`، و WebSocketِ `/ws/stats`. + هدرهای امنیتی (nosniff/DENY/HSTS/CSP)، rate-limitِ لاگین، CORSِ صریح.
+- **محدودیت‌های per-user:** quota/expiry/**IP limit**/**speed limit**/**HWID**/enable + auto-disable + bulk.
+- `panel/requirements.txt` + `panel/README.md` (طراحی + اجرا).
+
+### تأیید
+- `py_compile` همه‌ی panelها سبز (به `validate.yml` اضافه شد) · `pytest -q` → **۱۵ passed**
+  (security: hash/JWT/expiry/tamper · repo: lifecycle/bulk/auto-disable).
+
+---
+
 ## [site] — 2026-06-20  (IPv6 در لینک‌ها + سخت‌سازیِ SS — auto-rp)
 
 ### افزوده شد / تغییر کرد

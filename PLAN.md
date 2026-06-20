@@ -45,16 +45,16 @@ project: kian-v2ray
 ---
 
 ## 🟠 فاز ۲ — وب پنل کامل
-- [ ] ۲.۱ اسکلتِ FastAPI (`panel/main.py`) + SQLAlchemy models (`panel/models.py`).
-- [ ] ۲.۲ JWT Auth + Refresh Token (`panel/auth.py`).
-- [ ] ۲.۳ REST API کاربر CRUD + OpenAPI (`panel/routers/users.py`).
-- [ ] ۲.۴ WebSocket آمارِ زنده (`panel/routers/ws.py`).
-- [ ] ۲.۵ محدودیتِ IP/Speed/HWID + Auto-Disable + Bulk Actions (مدل + endpoint).
-- [ ] ۲.۶ Export (JSON/CSV) + Session Management + Password Recovery.
+- [x] ۲.۱ اسکلتِ FastAPI (`panel/main.py`) + مدل‌ها (`panel/schemas.py` Pydantic) روی `core.db` (به‌جای ORMِ دوم — تصمیمِ معماری برای تک‌منبعِ schema).
+- [x] ۲.۲ JWT Auth + Refresh Token (`panel/security.py` HS256 دست‌ساز + PBKDF2، stdlib؛ `/auth/login`/`/auth/refresh`).
+- [x] ۲.۳ REST API کاربر CRUD + OpenAPI خودکار (`/api/users` GET/POST/PATCH/DELETE، `/docs`).
+- [x] ۲.۴ WebSocket آمارِ زنده (`/ws/stats` با احرازِ توکن).
+- [x] ۲.۵ محدودیتِ IP/Speed/HWID + Auto-Disable + Bulk Actions (`panel/repo.py` + endpointها).
+- [x] ۲.۶ Export (JSON/CSV) + Session Management (`/auth/sessions`) + Password Recovery (`/auth/password`).
 - [ ] ۲.۷ Frontend پنل: UI Dark/Glass دوزبانه (RTL/LTR) + CRUD + نمودار (`panel/web/`).
 - [ ] ۲.۸ System Monitor (CPU/RAM/Net) + Backup/Restore + Audit Log Viewer در UI.
-- [ ] ۲.۹ امنیت: Rate-Limit/Fail2ban + 2FA(TOTP) + IP whitelist + Security Headers + CORS.
-- [ ] ۲.۱۰ Key Rotation (چرخشِ X25519 بدونِ downtime).
+- [~] ۲.۹ امنیت: ✅ Rate-Limit + Security Headers (nosniff/DENY/HSTS/CSP) + CORSِ صریح. باقی: 2FA(TOTP) + IP whitelist + Fail2ban.
+- [x] ۲.۱۰ Key Rotation (`/api/keys/rotate` — چرخشِ secretِ JWT، ابطالِ همه توکن‌ها).
 
 ---
 
