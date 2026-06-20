@@ -50,32 +50,118 @@ mark_step(){ echo "$1" >> "$STATE_FILE"; }
 #  زیرفرمان‌ها: status / logs  (بدون نیاز به payload)
 # ===========================================================================
 cmd_status(){
+  # مشکل ۰.۳: خودتشخیصی — کرش‌لوپ/WARP/پورت/SS را پیدا می‌کند و برای هر مشکل
+  # دستورِ رفع را چاپ می‌کند تا کاربر بدونِ حدس‌زدن، مشکل را حل کند.
   printf "\n${C_B}━━━ KIAN V2Ray — وضعیت ━━━${C_N}\n\n"
+  local issues=()   # هر مورد: "متن مشکل|||دستور رفع"
   if [ -f "$LOCK_FILE" ] && kill -0 "$(cat "$LOCK_FILE" 2>/dev/null)" 2>/dev/null; then
     warn "نصب هنوز در حال اجراست — لاگ زنده:  bash $0 logs"
   fi
-  if command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$CONTAINER"; then
-    say "Xray در حال اجراست (container: $CONTAINER)"
-    docker ps --filter "name=$CONTAINER" --format '   آپ‌تایم: {{.Status}}' 2>/dev/null || true
+
+  # ── Xray: در حال اجرا؟ کرش‌لوپ؟ ──
+  local xrunning=0 cstatus crestart
+  if command -v docker >/dev/null 2>&1; then
+    cstatus="$(docker inspect -f '{{.State.Status}}' "$CONTAINER" 2>/dev/null || echo none)"
+    crestart="$(docker inspect -f '{{.RestartCount}}' "$CONTAINER" 2>/dev/null || echo 0)"
+    case "$cstatus" in
+      running)
+        xrunning=1
+        say "Xray در حال اجراست (container: $CONTAINER)"
+        docker ps --filter "name=$CONTAINER" --format '   آپ‌تایم: {{.Status}}' 2>/dev/null || true
+        # کرش‌لوپ: ری‌استارت‌های مکرر در آپ‌تایمِ کوتاه = config/پورت ایراد دارد
+        local started now s2 uptime_s
+        started="$(docker inspect -f '{{.State.StartedAt}}' "$CONTAINER" 2>/dev/null || echo '')"
+        now=$(date -u +%s); s2=$(date -u -d "${started:-now}" +%s 2>/dev/null || echo "$now")
+        uptime_s=$(( now - s2 ))
+        if [ "${crestart:-0}" -ge 3 ] && [ "$uptime_s" -lt 120 ]; then
+          warn "Xray کرش‌لوپ دارد (restartها: $crestart، آپ‌تایم: ${uptime_s}s)"
+          issues+=("Xray کرش‌لوپ — احتمالاً config یا پورت ایراد دارد|||docker logs --tail 60 $CONTAINER ; jq . $XRAY_DIR/config.json")
+        fi
+        ;;
+      restarting)
+        err "Xray مدام ری‌استارت می‌شود (کرش‌لوپ)"
+        issues+=("Xray بالا نمی‌آید (restarting)|||docker logs --tail 60 $CONTAINER")
+        ;;
+      none)
+        err "کانتینر Xray وجود ندارد — نصب کامل نشده"
+        issues+=("Xray نصب نشده|||نصب را از صفحهٔ kian-v2ray دوباره اجرا کن")
+        ;;
+      *)
+        err "Xray اجرا نمی‌شود (وضعیت: $cstatus)"
+        issues+=("Xray خاموش است|||docker start $CONTAINER")
+        ;;
+    esac
   else
-    err "Xray اجرا نمی‌شود"
+    err "docker نصب نیست"
+    issues+=("docker نصب نیست|||curl -fsSL https://get.docker.com | sh")
   fi
+
+  # ── WARP ──
   if command -v warp-cli >/dev/null 2>&1; then
-    local ws; ws=$(warp-cli --accept-tos status 2>/dev/null | head -1 || true)
-    if echo "$ws" | grep -qi connected; then say "WARP: متصل"; else warn "WARP: ${ws:-نامشخص}"; fi
+    local ws; ws="$(warp-cli --accept-tos status 2>/dev/null | head -1 || true)"
+    if echo "$ws" | grep -qi connected; then
+      say "WARP: متصل"
+    elif [ -f "$ETC_DIR/warp_fallback.txt" ] && grep -qi on "$ETC_DIR/warp_fallback.txt" 2>/dev/null; then
+      inf "WARP افتاده بود → خروجی مستقیم شد (fallback فعال؛ خودکار برمی‌گردد)"
+    else
+      warn "WARP: ${ws:-نامشخص}"
+      issues+=("WARP متصل نیست|||warp-cli --accept-tos connect || systemctl restart warp-svc")
+    fi
   else
     inf "WARP نصب نشده (حالت مستقیم)"
   fi
-  if command -v ss >/dev/null 2>&1; then
-    printf "\n${C_B}پورت‌های شنونده:${C_N}\n"
-    ss -tlnp 2>/dev/null | awk 'NR>1{print "   "$4}' | grep -E ':(8[0-9]{3}|44[0-9]|443)$' | sort -u || true
+
+  # ── پورت‌ها: reality + ss باید گوش بدهند ──
+  local cfg="$XRAY_DIR/config.json" listen
+  if [ -f "$cfg" ] && command -v jq >/dev/null 2>&1 && command -v ss >/dev/null 2>&1; then
+    listen="$(ss -tln 2>/dev/null | awk '{print $4}' | grep -oE '[0-9]+$' | sort -u)"
+    local down=""
+    while read -r p tag; do
+      [ -z "${p:-}" ] && continue
+      printf '%s\n' "$listen" | grep -qx "$p" || down="$down $tag:$p"
+    done < <(jq -r '.inbounds[]|select(((.tag//"")|startswith("reality-")) or (.tag=="shadowsocks"))|"\(.port) \(.tag)"' "$cfg" 2>/dev/null)
+    if [ -n "$down" ]; then
+      err "پورت(هایی) که باید باز باشند گوش نمی‌دهند:$down"
+      issues+=("پورت شنونده نیست:$down|||docker restart $CONTAINER ; docker logs --tail 40 $CONTAINER")
+    else
+      printf "\n${C_B}پورت‌های سرویس (همه شنونده):${C_N}\n"
+      jq -r '.inbounds[]|select(((.tag//"")|startswith("reality-")) or (.tag=="shadowsocks"))|"   \(.tag): \(.port)"' "$cfg" 2>/dev/null || true
+    fi
+    # Shadowsocks (مشکل ۰.۶ — سلامتِ SS)
+    local ssport; ssport="$(jq -r '.inbounds[]|select(.tag=="shadowsocks")|.port // empty' "$cfg" 2>/dev/null || true)"
+    if [ -n "${ssport:-}" ]; then
+      printf '%s\n' "$listen" | grep -qx "$ssport" && say "Shadowsocks فعال (پورت $ssport)" || warn "Shadowsocks خاموش (پورت $ssport)"
+    fi
+  fi
+
+  # ── سرویس Subscription ──
+  if [ -f "$ETC_DIR/sub_port.txt" ]; then
+    local subok=0 p
+    for p in $(tr ',' ' ' < "$ETC_DIR/sub_port.txt"); do
+      curl -fsS --max-time 3 "http://127.0.0.1:${p}/health" 2>/dev/null | grep -q ok && { subok=1; break; }
+    done
+    if [ "$subok" = 1 ]; then say "Subscription فعال"
+    else warn "Subscription پاسخ نداد"; issues+=("Subscription خاموش|||systemctl restart kian-sub ; systemctl status kian-sub --no-pager"); fi
+  fi
+
+  # ── جمع‌بندیِ خودتشخیصی ──
+  printf "\n${C_B}━━━ خودتشخیصی ━━━${C_N}\n"
+  if [ "${#issues[@]}" -eq 0 ]; then
+    say "همه‌چیز سالم به‌نظر می‌رسد ✅"
+  else
+    err "${#issues[@]} مشکل پیدا شد — دستورِ رفع برای هرکدام:"
+    local i=1 it
+    for it in "${issues[@]}"; do
+      printf "  ${C_Y}%d) %s${C_N}\n     ${C_B}رفع:${C_N} %s\n" "$i" "${it%%|||*}" "${it##*|||}"
+      i=$(( i + 1 ))
+    done
   fi
   printf "\n${C_B}کانفیگ‌ها:${C_N}  kian-v2ray configs\n\n"
 }
 cmd_logs(){ [ -f "$INSTALL_LOG" ] || { err "هنوز لاگی نیست."; exit 1; }; tail -n 60 -f "$INSTALL_LOG"; }
 
 case "${1:-}" in
-  status) cmd_status; exit 0 ;;
+  status|health|doctor) cmd_status; exit 0 ;;   # ۰.۳ — همان خودتشخیصی، با نامِ آشناتر
   logs)   cmd_logs;   exit 0 ;;
   ""|install) : ;;
   *) if command -v kian-v2ray >/dev/null 2>&1; then exec kian-v2ray "$@"; fi
