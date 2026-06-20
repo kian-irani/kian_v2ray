@@ -5,6 +5,22 @@
 
 ---
 
+## [app] — 2026-06-20  (فاز ۶: اپ موبایلِ Kv2m — auto-rp)
+
+### افزوده شد
+- **اسکلتِ Flutter در `app/`** با نامِ **Kv2m** (هم‌خانواده با دسکتاپِ Kv2m):
+  - `main.dart` (MaterialApp، RTL/LTR، dark/light)، `theme.dart` (dark-glassِ navy+green)، `i18n.dart` (FA/EN).
+  - `models/server_profile.dart` (parseِ share-link + subscription، IPv6-bracket-aware)،
+    `services/selection.dart` (انتخابِ هوشمندِ سرور با TCP latency)، `screens/home_screen.dart`.
+  - **بدونِ GMS** (بدونِ firebase/admob/fcm؛ QR با `mobile_scanner`؛ push با SSE/Telegram).
+- **انتشار:** `fastlane/metadata/android/{fa-IR,en-US}` (Cafe Bazaar/Myket/F-Droid) + `PRIVACY-fa.md` + `KEYSTORE.md` (۳ backup).
+- `app/test/server_profile_test.dart` (تستِ parse — با Flutter اجرا می‌شود).
+
+### توجه
+- Dart در CI کامپایل نمی‌شود (toolchain موجود نیست)؛ ساختار صحیح و braces متوازن.
+
+---
+
 ## [cluster] — 2026-06-20  (فاز ۵: مدیریتِ چندسرور — auto-rp)
 
 ### افزوده شد

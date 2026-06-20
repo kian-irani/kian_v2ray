@@ -1,0 +1,12 @@
+KIAN VPN is an open-source, privacy-first client for secure access to the open internet.
+
+Features:
+• Add servers from a subscription link, QR scan, or manual entry
+• Automatic best-server selection by latency
+• Modern protocols (VLESS Reality, Shadowsocks, and more)
+• Bilingual UI (Persian RTL + English) with dark/light mode
+• No Google Play Services (GMS) dependency — works on any device
+• No logs, no ads, no tracking
+
+Your private key stays on your own device and no personal data is collected.
+Full source code (MIT) is available on GitHub.

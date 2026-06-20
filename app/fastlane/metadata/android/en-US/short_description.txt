@@ -1,0 +1,1 @@
+Lightweight open-source secure-connection client — keys stay on your device, no logs.

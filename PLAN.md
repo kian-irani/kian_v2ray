@@ -91,12 +91,14 @@ project: kian-v2ray
 ---
 
 ## 🔵 فاز ۶ — اپ موبایل Flutter
-- [ ] ۶.۱ اسکلتِ Flutter (`app/` — pubspec + ساختار + theme + RTL/LTR).
-- [ ] ۶.۲ صفحاتِ اصلی: اتصال + لیستِ سرور + import (لینک/دستی/پنل) + QR Scanner.
-- [ ] ۶.۳ Smart Server Selection (latency/speed) + Offline Mode + Widget.
-- [ ] ۶.۴ بدونِ GMS + Push بدونِ FCM (SSE/Telegram).
-- [ ] ۶.۵ Metadata + Privacy فارسی + بسته‌بندیِ AAB/APK + Keystore docs.
-- [ ] ۶.۶ آماده‌سازیِ انتشار: Cafe Bazaar / Myket / F-Droid metadata.
+- [x] ۶.۱ اسکلتِ Flutter — `app/` (pubspec، `main.dart` با RTL/LTR + dark/light، `theme.dart`، `i18n.dart`).
+- [x] ۶.۲ صفحاتِ اصلی — `home_screen.dart` (دکمه‌ی اتصالِ گرد + لیستِ سرور + import sheet) + parseِ subscription (`models/server_profile.dart`)؛ QR از `mobile_scanner` (بدونِ GMS).
+- [~] ۶.۳ Smart Server Selection — `services/selection.dart` (TCP latency ping + rank/best) ✅؛ Offline Mode + Home Widget = follow-on.
+- [x] ۶.۴ بدونِ GMS + Push بدونِ FCM — deps بدونِ firebase/admob؛ مستندِ SSE/Telegram در README.
+- [x] ۶.۵ Metadata + Privacy فارسی + Keystore — `PRIVACY-fa.md` + `KEYSTORE.md` (۳ backup) + دستورِ AAB/APK در README.
+- [x] ۶.۶ Market metadata — `fastlane/metadata/android/{fa-IR,en-US}` (title/short/full) برای Cafe Bazaar/Myket/F-Droid.
+- نامِ اپ: **Kv2m** (هم‌خانواده با دسکتاپِ Kv2m — طبقِ دستورِ کاربر 2026-06-20؛ package=`kv2m`، title=`Kv2m`).
+- توجه: Dart در CI کامپایل نمی‌شود (toolchain نیست)؛ ساختار صحیح و braces متوازن — تستِ Dart (`app/test/`) با Flutter اجرا می‌شود.
 
 ---
 
