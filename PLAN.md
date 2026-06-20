@@ -26,7 +26,7 @@ project: kian-v2ray
 - [x] ۰.۳ خودتشخیصیِ `status` (کرش‌لوپ/WARP/پورت/SS/Subscription) + alias `health`/`doctor`.
 - [x] ۰.۴ بهینه‌سازی سرعت BBR (BBR+fq، idempotent).
 - [x] ۰.۵ نصب مجدد امن (بکاپ + ادغامِ کاربرانِ قبلی).
-- [ ] ۰.۶ بازطراحی Shadowsocks — code-side: cipher انتخابی + اعتبارسنجی؛ `(srv)` تستِ نهایی.
+- [x] ۰.۶ بازطراحی Shadowsocks (code-side): `SS_METHOD` تک‌منبع (app.js)، لینکِ SS حالا IPv6-safe، و اعتبارسنجیِ cipher در `config-health.py` (لیستِ مجاز شاملِ SS-2022). `(srv)` مهاجرتِ نهاییِ cipher + تستِ روی سرور باقی است.
 
 ---
 
@@ -36,7 +36,7 @@ project: kian-v2ray
 - [x] ۱.۲ SQLite schema (`core/db.py`: users/audit_log/nodes/settings + pragmaهای WAL/FK) + Migration سبکِ forward-only (`core/migrate.py` با `user_version`، idempotent).
 - [x] ۱.۳ لاگِ ساختاریافتهٔ JSON (`core/logging.py`: خروجیِ تک‌خطیِ JSON، فیلدهای ساختاریافته در `kian_fields`، بدونِ تداخل با LogRecord).
 - [x] ۱.۴ SemVer + Git Tagging (`scripts/release.sh` major/minor/patch + tag + `docs/VERSIONING.md`).
-- [ ] ۱.۵ پشتیبانیِ IPv6 در inboundها و CLI (`install.sh` + `scripts/kian-v2ray`).
+- [x] ۱.۵ پشتیبانیِ IPv6 (client/link side): `isIPv6`/`isServerAddr`/`hostForUri` در app.js؛ آدرسِ IPv6 پذیرفته و در لینک‌ها bracket می‌شود (`[2001:db8::1]:port`)؛ اعتبارسنجیِ فرم IPv6 را قبول می‌کند. smoke سبز. `(srv)` بایندِ سروری روی `::` در install.sh باقی است.
 - [x] ۱.۶ بکاپِ خودکارِ رمزنگاری‌شده (`scripts/kian-backup.py`: tar.gz + openssl AES-256 + آپلودِ Telegram/S3/rclone، cron-ready).
 - [x] ۱.۷ Audit Log (`core/audit.py`: `record`/`tail`، نوشتن در DB + mirror در JSON log).
 - [x] ۱.۸ pytest (`tests/test_core.py` + `tests/test_scripts.py`، ۸ تست سبز) + اتصال به CI (`validate.yml`).

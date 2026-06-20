@@ -5,6 +5,19 @@
 
 ---
 
+## [site] — 2026-06-20  (IPv6 در لینک‌ها + سخت‌سازیِ SS — auto-rp)
+
+### افزوده شد / تغییر کرد
+- **IPv6 (فاز ۱.۵):** `assets/js/app.js` حالا آدرسِ IPv6 سرور را می‌پذیرد (`isIPv6`/`isServerAddr`) و در URIها
+  به‌درستی bracket می‌کند (`vless://…@[2001:db8::1]:443`، `ss://…@[…]:port`). اعتبارسنجیِ فرم نمونهٔ IPv6 را نشان می‌دهد.
+- **Shadowsocks (فاز ۰.۶ code-side):** `SS_METHOD` تک‌منبع است و لینکِ SS هم IPv6-safe شد؛ `config-health.py`
+  cipherِ SS را اعتبارسنجی می‌کند (شاملِ SS-2022). مهاجرتِ نهاییِ cipher + تستِ سرور = `(srv)`.
+
+### تأیید
+- `node --check assets/js/app.js` سبز · تستِ helperهای IPv6 سبز · jsdom smoke سبز (IPv4 دست‌نخورده + IPv6 پذیرفته و bracket شد).
+
+---
+
 ## [core + tooling] — 2026-06-20  (فاز ۱: زیرساختِ کد — auto-rp)
 
 ### افزوده شد

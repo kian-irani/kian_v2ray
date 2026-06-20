@@ -79,6 +79,15 @@ function isIPv4(s) {
   if (parts.length !== 4) return false;
   return parts.every(p => /^\d{1,3}$/.test(p) && +p >= 0 && +p <= 255);
 }
+// IPv6 (phase 1.5): accept full/compressed forms incl. an embedded IPv4 tail.
+function isIPv6(s) {
+  s = String(s).trim();
+  if (s.indexOf(':') === -1) return false;
+  return /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|([0-9a-fA-F]{1,4}:){1,4}:((\d{1,3}\.){3}\d{1,3}))$/.test(s);
+}
+function isServerAddr(s) { return isIPv4(s) || isIPv6(s); }
+// In a URI authority an IPv6 literal must be bracketed: [2001:db8::1]:443.
+function hostForUri(ip) { return isIPv6(ip) ? `[${ip}]` : ip; }
 function reExpiry(days) {
   if (!days || days <= 0) return null;                 // دائمی
   return new Date(Date.now() + days * 86400000).toISOString();
@@ -207,10 +216,10 @@ function vlessLink({ uuid, ip, port, sni, pubkey, shortId, label }) {
     sid: shortId,
     type: 'tcp',
   });
-  return `vless://${uuid}@${ip}:${port}?${q.toString()}#${encodeURIComponent(label)}`;
+  return `vless://${uuid}@${hostForUri(ip)}:${port}?${q.toString()}#${encodeURIComponent(label)}`;
 }
 function ssLink({ ip, port, password, label }) {
-  return `ss://${btoa(`${SS_METHOD}:${password}`)}@${ip}:${port}#${encodeURIComponent(label)}`;
+  return `ss://${btoa(`${SS_METHOD}:${password}`)}@${hostForUri(ip)}:${port}#${encodeURIComponent(label)}`;
 }
 
 /* لینک‌های TLS (پشت دامنه، روی :443) */
@@ -860,7 +869,7 @@ function init() {
     const err = $('#form-error');
     err.textContent = '';
 
-    if (!isIPv4(f.serverIp)) { err.textContent = 'آی‌پی سرور معتبر نیست (نمونه: 203.0.113.10).'; $('#server-ip').focus(); return; }
+    if (!isServerAddr(f.serverIp)) { err.textContent = 'آی‌پی سرور معتبر نیست (نمونه: 203.0.113.10 یا 2001:db8::1).'; $('#server-ip').focus(); return; }
     if (!f.prefix) { err.textContent = 'یک نام کاربر (انگلیسی) وارد کن — این نام لینک‌های هر کاربر را از هم جدا می‌کند.'; $('#user-prefix').focus(); return; }
     if (f.tls && f.tls.enabled) {
       if (!isDomain(f.tls.domain)) { err.textContent = 'دامنهٔ TLS معتبر نیست (نمونه: vpn.example.com). یک رکورد A این دامنه باید به IP سرورت اشاره کند.'; $('#tls-domain').focus(); return; }
