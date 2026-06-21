@@ -747,6 +747,13 @@ case "${1:-help}" in
   rebind)    cmd_rebind ;;
   openports) cmd_openports ;;
   warp)      cmd_warp ;;
+  protocols) # Hysteria2/TUIC companion (sing-box) — additive, opt-in
+    shift
+    if [ -x /usr/local/bin/kian-protocols.sh ]; then
+      bash /usr/local/bin/kian-protocols.sh "${1:-enable}"
+    else
+      err "kian-protocols.sh نصب نیست — دوباره نصب کن یا از RAW بگیر"; exit 1
+    fi ;;
   untune)    cmd_untune ;;
   uninstall) cmd_uninstall ;;
   help|-h|--help) cmd_help ;;

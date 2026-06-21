@@ -13,6 +13,8 @@ jobs:
           bash -n install.sh
           bash -n scripts/kian-v2ray
           bash -n scripts/watchdog.sh
+          bash -n scripts/kian-protocols.sh
+          bash -n scripts/release.sh
       - name: JS syntax (node --check)
         run: node --check assets/js/app.js
       - name: Python syntax (py_compile)

@@ -67,9 +67,9 @@ project: kian-v2ray
 ---
 
 ## 🟡 فاز ۴ — پروتکل‌ها و ضدسانسور
-- [x] ۴.۱ Hysteria2 inbound — `core/protocols.hysteria2_inbound` (+obfs salamander).
-- [x] ۴.۲ TUIC v5 inbound — `core/protocols.tuic_inbound` (bbr، 0-RTT).
-- [x] ۴.۳ WireGuard inbound + Mux.cool — `wireguard_inbound` + `mux_settings`.
+- [x] ۴.۱ Hysteria2 inbound — منطق در `core/protocols.py` + **در install.sh وایر شد** (`scripts/kian-protocols.sh`: sing-box companion، opt-in با `KIAN_EXTRA_PROTOCOLS=1` یا `kian-v2ray protocols enable`؛ TLS از Caddy یا self-signed؛ systemd؛ لینکِ کلاینت).
+- [x] ۴.۲ TUIC v5 inbound — همان `kian-protocols.sh` (bbr، 0-RTT روی sing-box). `(srv)` تستِ نهایی روی سرور.
+- [x] ۴.۳ WireGuard inbound + Mux.cool — `wireguard_inbound` + `mux_settings` در core (WG inbound نیازِ کلیدِ کلاینت = تنظیمِ سرور).
 - [x] ۴.۴ خروجیِ Sing-box format — `core/protocols.to_singbox`.
 - [x] ۴.۵ خروجیِ Clash Meta + تشخیصِ خودکارِ کلاینت — `to_clash` + `detect_client` (singbox/clash/v2ray/base64).
 - [x] ۴.۶ Self-hosted Sub — موتورِ `scripts/sub-format.py` + **صفحهٔ `panel/web/sub.html`** (dark، usage bar/انقضا/کپی/**QR**) + endpointِ `/sub/{name}/info`.

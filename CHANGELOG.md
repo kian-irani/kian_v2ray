@@ -5,6 +5,23 @@
 
 ---
 
+## [installer 2.3.0] — 2026-06-21  (Hysteria2 + TUIC در نصب‌کننده — auto-rp)
+
+### افزوده شد (وایرِ پروتکل‌های جدید به `install.sh` — additive/opt-in)
+- **`scripts/kian-protocols.sh`** — companionِ **sing-box** کنارِ Xray (چون Xray-core از Hysteria2/TUIC پشتیبانی نمی‌کند):
+  - نصبِ sing-box (pin شده 1.10.1)، تولیدِ inboundهای **Hysteria2 + TUIC v5** (UDP، bbr)،
+    استفادهٔ مجددِ گواهیِ Caddy (حالتِ TLS) یا گواهیِ self-signed، سرویسِ systemdِ `kian-singbox`، بازکردنِ پورتِ UDP، و چاپِ **لینکِ کلاینت** (`hysteria2://`/`tuic://`).
+  - دستورها: `enable | links | disable | status`.
+- **`install.sh`:** اسکریپت را نصب می‌کند و **فقط با `KIAN_EXTRA_PROTOCOLS=1`** اجرا می‌کند — مسیرِ کارکنندهٔ Reality/SS/TLS کاملاً دست‌نخورده.
+- **CLI:** `kian-v2ray protocols [enable|links|disable|status]`.
+- `VERSION`: `SCRIPT_VERSION=2.3.0` + `SINGBOX_VERSION=1.10.1`.
+
+### تأیید
+- `bash -n` روی install.sh + kian-protocols.sh + kian-v2ray سبز (به CI اضافه شد) · jq configِ sing-box معتبر (۲ inbound).
+- **`(srv)`:** تستِ واقعیِ اتصالِ Hysteria2/TUIC نیازِ سرور دارد (نمی‌توان headless تست کرد).
+
+---
+
 ## [installer 2.2.0] — 2026-06-21  🎉 نسخهٔ بزرگ — پلتفرم، نه فقط نصب‌کننده
 
 > جمع‌بندیِ همه‌ی کارِ این دوره (auto-rp 2026-06-20/21). از یک نصب‌کننده به یک **پلتفرمِ کامل**.

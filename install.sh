@@ -645,6 +645,8 @@ mark_step xray
 inf "نصب ابزار مدیریت و watchdog"
 curl -fsSL "$RAW_BASE/scripts/kian-v2ray"  -o /usr/local/bin/kian-v2ray  && chmod +x /usr/local/bin/kian-v2ray
 curl -fsSL "$RAW_BASE/scripts/watchdog.sh" -o /usr/local/bin/kian-v2ray-watchdog.sh && chmod +x /usr/local/bin/kian-v2ray-watchdog.sh
+# پروتکل‌های اضافی (Hysteria2/TUIC روی sing-box) — فقط نصب می‌شود، خودکار اجرا نمی‌شود.
+curl -fsSL "$RAW_BASE/scripts/kian-protocols.sh" -o /usr/local/bin/kian-protocols.sh 2>/dev/null && chmod +x /usr/local/bin/kian-protocols.sh || true
 cat > /etc/cron.d/kian-v2ray-watchdog <<'CRON'
 */10 * * * * root /usr/local/bin/kian-v2ray-watchdog.sh >> /var/log/kian-xray/watchdog.log 2>&1
 CRON
@@ -791,6 +793,14 @@ else
   inf "فایروال ufw فعال نیست — تغییری اعمال نشد (پورت‌ها در دسترس‌اند)"
 fi
 mark_step firewall
+
+# --- پروتکل‌های اضافی (اختیاری — فقط با KIAN_EXTRA_PROTOCOLS=1) --------------
+# Hysteria2/TUIC روی sing-box، کنارِ Xray. کاملاً additive؛ پیش‌فرض خاموش است
+# تا مسیرِ کارکنندهٔ Reality/SS/TLS دست‌نخورده بماند.
+if [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ] && [ -x /usr/local/bin/kian-protocols.sh ]; then
+  inf "فعال‌سازی پروتکل‌های اضافی (Hysteria2/TUIC روی sing-box)"
+  bash /usr/local/bin/kian-protocols.sh enable || warn "راه‌اندازی sing-box ناموفق بود — Xray دست‌نخورده است"
+fi
 
 # --- پایان -----------------------------------------------------------------
 mark_step done
