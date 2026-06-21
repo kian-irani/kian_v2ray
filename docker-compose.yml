@@ -1,0 +1,45 @@
+# One-click deploy of the KIAN panel + monitoring stack (phase 7).
+#   docker compose up -d
+services:
+  panel:
+    build: .
+    image: ghcr.io/kian-irani/kian-panel:latest
+    restart: unless-stopped
+    environment:
+      KIAN_ADMIN_USER: ${KIAN_ADMIN_USER:-admin}
+      KIAN_ADMIN_PASSWORD: ${KIAN_ADMIN_PASSWORD:-change-me}
+      KIAN_CORS_ORIGINS: ${KIAN_CORS_ORIGINS:-}
+    volumes:
+      - kian-data:/data
+    ports:
+      - "8443:8443"
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+    ports:
+      - "9090:9090"
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    depends_on: [ prometheus ]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+
+volumes:
+  kian-data:
+  grafana-data:

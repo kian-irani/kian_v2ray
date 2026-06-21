@@ -1,0 +1,26 @@
+name: Release
+on:
+  push:
+    tags: [ "v*" ]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Extract changelog for this tag
+        id: notes
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          # pull the first CHANGELOG section as release notes (best-effort)
+          awk '/^## /{n++} n==1{print} n==2{exit}' CHANGELOG.md > RELEASE_NOTES.md || true
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "kian_v2ray ${{ github.ref_name }}"
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: true

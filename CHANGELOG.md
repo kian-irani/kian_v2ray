@@ -5,6 +5,24 @@
 
 ---
 
+## [ci-monitoring] — 2026-06-20  (فاز ۷: CI/CD + مانیتورینگ — auto-rp)
+
+### افزوده شد
+- **CI/CD:** `release.yml` (tag `v*` → release از CHANGELOG) + `security.yml` (CodeQL python/js + Trivy fs، هفتگی/PR).
+- **Docker:** `Dockerfile` (پنل، non-root) + `docker-compose.yml` (panel + prometheus + node-exporter + grafana).
+- **Monitoring:** `monitoring/prometheus.yml` + `monitoring/alerts.yml` (CPU/RAM/NodeDown/Bandwidth) +
+  `monitoring/grafana-dashboard.json` (آمادهٔ import).
+- **Plugin System:** `core/plugins.py` (register/get/available/discover) — افزودنِ پروتکل/فیچر بدونِ تغییرِ core.
+- **مستندات:** `docs/MIGRATION.md` (مهاجرت از Marzban/3X-UI) + `docs/CONTRIBUTING.md`.
+
+### تأیید
+- `py_compile core/plugins.py` سبز · همه‌ی YAML/JSON معتبر · `pytest -q` → **۴۰ passed**.
+
+> **🎉 با این فاز، هر ۷ فازِ رودمپ (۰ تا ۷) از منظرِ کد/پیکربندیِ headless کامل شد.**
+> آیتم‌های `(srv)` (تستِ واقعیِ SS/TLS روی سرور) و GUI-wiringهای دسکتاپ/موبایل به‌صورتِ follow-on باقی‌اند.
+
+---
+
 ## [app] — 2026-06-20  (فاز ۶: اپ موبایلِ Kv2m — auto-rp)
 
 ### افزوده شد

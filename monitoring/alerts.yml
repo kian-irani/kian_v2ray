@@ -1,0 +1,31 @@
+groups:
+  - name: kian-node
+    rules:
+      - alert: HighCpuLoad
+        expr: node_load1 > (count without(cpu) (node_cpu_seconds_total{mode="idle"})) * 0.8
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "High CPU load on {{ $labels.instance }}"
+          description: "1m load above 80% of cores for 5 minutes."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Memory >90% on {{ $labels.instance }}"
+
+      - alert: NodeDown
+        expr: up{job="node"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Node exporter down on {{ $labels.instance }}"
+
+      - alert: BandwidthSpike
+        expr: rate(node_network_transmit_bytes_total[5m]) * 8 > 800e6
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Sustained >800 Mbps egress on {{ $labels.instance }}"

@@ -103,12 +103,12 @@ project: kian-v2ray
 ---
 
 ## 🟢 فاز ۷ — CI/CD + Monitoring
-- [ ] ۷.۱ GitHub Actions: lint + test + Auto Release با CHANGELOG.
-- [ ] ۷.۲ Docker Image (GHCR) + One-click Deploy (Compose).
-- [ ] ۷.۳ SAST (CodeQL/Semgrep) + Trivy container scan.
-- [ ] ۷.۴ Prometheus + Node/Xray Exporter (config + scrape).
-- [ ] ۷.۵ Grafana Dashboard (`.json` آمادهٔ import) + Alert Rules.
-- [ ] ۷.۶ مستنداتِ fa/en + Migration Guide + Plugin System + Contributor Guide.
+- [x] ۷.۱ GitHub Actions: lint+test (`validate.yml`) + **Auto Release** (`release.yml`، tag `v*` → ساختِ release از CHANGELOG).
+- [x] ۷.۲ Docker Image (`Dockerfile`، GHCR، non-root) + One-click Deploy (`docker-compose.yml`: panel+prometheus+node-exporter+grafana).
+- [x] ۷.۳ SAST CodeQL (python+javascript) + Trivy fs scan (`security.yml`، هفتگی + روی PR).
+- [x] ۷.۴ Prometheus + Node/Xray Exporter (`monitoring/prometheus.yml` با scrapeهای node/xray/panel).
+- [x] ۷.۵ Grafana Dashboard (`monitoring/grafana-dashboard.json` آمادهٔ import) + Alert Rules (`monitoring/alerts.yml`: CPU/RAM/NodeDown/Bandwidth).
+- [x] ۷.۶ مستندات + Plugin System: `core/plugins.py` (register/get/discover، ۴ تست) + `docs/MIGRATION.md` + `docs/CONTRIBUTING.md`.
 
 ---
 

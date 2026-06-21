@@ -19,7 +19,7 @@ jobs:
         run: |
           python3 -m py_compile scripts/sub-server.py scripts/sync_upstream.py scripts/gist_sync.py
           python3 -m py_compile scripts/kian-backup.py scripts/config-health.py scripts/sub-format.py scripts/kian-bot.py scripts/migrate-import.py
-          python3 -m py_compile core/__init__.py core/db.py core/migrate.py core/logging.py core/audit.py core/protocols.py core/censorship.py core/cluster.py
+          python3 -m py_compile core/__init__.py core/db.py core/migrate.py core/logging.py core/audit.py core/protocols.py core/censorship.py core/cluster.py core/plugins.py
           python3 -m py_compile node-agent/agent.py
           python3 -m py_compile panel/__init__.py panel/security.py panel/repo.py panel/schemas.py panel/main.py
           python3 -m py_compile kv2m/core.py kv2m/i18n.py kv2m/theme.py kv2m/app.py kv2m/cli.py kv2m/kv2m.py
