@@ -14,6 +14,7 @@ it drops onto any VPS and runs under systemd.
 
 from __future__ import annotations
 
+import hmac
 import json
 import os
 import time
@@ -46,7 +47,8 @@ def make_handler(token: str):
     class Handler(BaseHTTPRequestHandler):
         def _auth_ok(self) -> bool:
             got = self.headers.get("Authorization", "")
-            return got == f"Bearer {token}"
+            # Constant-time compare to avoid leaking the token via timing.
+            return hmac.compare_digest(got, f"Bearer {token}")
 
         def _send(self, code: int, obj: dict) -> None:
             body = json.dumps(obj).encode()

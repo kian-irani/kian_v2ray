@@ -94,6 +94,12 @@ def _bootstrap() -> None:
             repo.set_setting(conn, "jwt_secret", secrets.token_urlsafe(48))
         if repo.get_setting(conn, "admin_pw_hash") is None:
             initial = os.environ.get("KIAN_ADMIN_PASSWORD", "admin")
+            if initial == "admin":
+                # Loud warning: never leave the default password in production.
+                import logging
+                logging.getLogger("kian.panel").warning(
+                    "⚠️  KIAN_ADMIN_PASSWORD not set — admin password defaults to "
+                    "'admin'. Set KIAN_ADMIN_PASSWORD or change it in Settings now.")
             repo.set_setting(conn, "admin_user",
                              os.environ.get("KIAN_ADMIN_USER", "admin"))
             repo.set_setting(conn, "admin_pw_hash",

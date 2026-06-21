@@ -20,7 +20,9 @@ import os
 import time
 from typing import Any, Optional
 
-_PBKDF2_ITERATIONS = 200_000
+# OWASP 2023 minimum for PBKDF2-HMAC-SHA256. The iteration count is stored in
+# each hash, so old 200k hashes still verify — only new hashes use 600k.
+_PBKDF2_ITERATIONS = 600_000
 _ALGO = "pbkdf2_sha256"
 
 
