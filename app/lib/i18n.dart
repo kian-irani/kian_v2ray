@@ -23,6 +23,20 @@ class Strings {
     'servers.empty': ['هنوز سروری اضافه نکرده‌ای', 'No servers yet'],
     'best.auto': ['انتخاب خودکار بهترین سرور', 'Auto-pick best server'],
     'offline.note': ['آخرین وضعیت (آفلاین)', 'Last state (offline)'],
+    'cancel': ['انصراف', 'Cancel'],
+    'login.user': ['نام کاربری', 'Username'],
+    'login.pass': ['رمز عبور', 'Password'],
+    'stat.total': ['کل کاربران', 'Total'],
+    'stat.active': ['فعال', 'Active'],
+    'stat.traffic': ['مصرف', 'Traffic'],
+    'mg.title': ['مدیریت سرور', 'Server management'],
+    'mg.connect': ['به پنلِ سرورت وصل شو', 'Connect to your server panel'],
+    'mg.url': ['آدرس پنل', 'Panel URL'],
+    'mg.connectbtn': ['اتصال', 'Connect'],
+    'mg.add': ['افزودن کاربر', 'Add user'],
+    'mg.toggle': ['فعال/غیرفعال', 'Enable/Disable'],
+    'mg.delete': ['حذف', 'Delete'],
+    'open.manage': ['مدیریت سرور', 'Manage server'],
   };
 
   String t(String key) {

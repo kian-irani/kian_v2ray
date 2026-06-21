@@ -64,6 +64,21 @@ def _choose_server(store: settings_mod.Settings, sstore):
                 continue
 
 
+def _deploy_panel(ssh):
+    """Deploy the web panel on the connected server over SSH, print URL+creds."""
+    import getpass as _gp
+    user = input("panel admin username [admin]: ").strip() or "admin"
+    pw = _gp.getpass("panel admin password (empty = random): ")
+    env = f'KIAN_ADMIN_USER={user} '
+    if pw:
+        env += f'KIAN_ADMIN_PASSWORD={pw!r} '
+    print("→ deploying web panel (this installs deps + a systemd service)…")
+    code, out = ssh.run(f'{env}kian-v2ray panel enable')
+    print(out)
+    if code != 0:
+        print("✘ panel deploy failed (Xray is untouched).")
+
+
 def run():
     print(f"Kv2m v{APP_VERSION} — kian_v2ray (multi-server CLI)")
     cfg = settings_mod.Settings()
@@ -88,6 +103,7 @@ def run():
         ("remove <name>", lambda: print(ssh.run(cmd_remove(input("name: ").strip()))[1])),
         ("sub <name>", lambda: print(ssh.run(cmd_sub(input("name: ").strip()))[1])),
         ("update", lambda: print(ssh.run(cmd_update())[1])),
+        ("deploy web panel", lambda: _deploy_panel(ssh)),
     ]
     try:
         while True:

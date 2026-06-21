@@ -6,6 +6,7 @@ import '../services/cache.dart';
 import '../services/selection.dart';
 import '../services/vpn_service.dart';
 import '../theme.dart';
+import 'manage_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Strings strings;
@@ -107,6 +108,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(s.t('app.title')),
         actions: [
+          IconButton(
+            tooltip: s.t('open.manage'),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => ManageScreen(strings: s))),
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+          ),
           IconButton(
             tooltip: s.t('best.auto'),
             onPressed: _servers.isEmpty ? null : _pickBest,
