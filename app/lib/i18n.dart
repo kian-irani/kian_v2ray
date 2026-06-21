@@ -45,6 +45,10 @@ class Strings {
     'setup.sshuser': ['کاربر SSH', 'SSH user'],
     'setup.sshpass': ['رمز SSH', 'SSH password'],
     'setup.username': ['نام کاربر (برای کانفیگ)', 'User name (for the config)'],
+    'setup.users': ['تعداد کاربر', 'How many users'],
+    'setup.sni': ['SNI دلخواه (اختیاری)', 'Custom SNI (optional)'],
+    'setup.ssport': ['پورت Shadowsocks', 'Shadowsocks port'],
+    'setup.tlsprotos': ['پروتکل‌های TLS (چندتا قابل‌انتخاب):', 'TLS protocols (pick any):'],
     'setup.install': ['ساخت و نصب', 'Build & install'],
     'setup.sublink': ['لینک Subscription (روی Gist):', 'Subscription link (on Gist):'],
     'setup.warp': ['WARP (همه‌چیز باز)', 'WARP (everything open)'],
@@ -88,6 +92,8 @@ class Strings {
     'hist.delete.confirm': ['این رکوردِ تاریخچه حذف شود؟', 'Delete this history record?'],
     'copyall.title': ['کپیِ همهٔ کانفیگ‌ها', 'Copy all configs'],
     'copyall.done': ['همهٔ لینک‌ها کپی شد', 'All links copied'],
+    'nocore.title': ['اتصال در این نسخه فعال نیست', 'Tunnel not available in this build'],
+    'nocore.body': ['این نسخهٔ اپ کانفیگ و سرور را می‌سازد/مدیریت می‌کند ولی هستهٔ تونلِ روی‌دستگاه هنوز در آن نیست — اگر وصل شویم اینترنتت قطع می‌شود. فعلاً کانفیگ را کپی کن و در v2rayNG وارد کن (یا QR را اسکن کن). به‌محضِ افزودنِ هسته، همین دکمه واقعی وصل می‌شود.', 'This build generates & manages configs/servers but the on-device tunnel core isn\'t bundled yet — connecting would cut your internet. For now copy the config into v2rayNG (or scan its QR). Once the core is added, this button will really connect.'],
   };
 
   String t(String key) {

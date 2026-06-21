@@ -38,6 +38,7 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     }
                     "status" -> result.success(KianVpnService.currentStatus)
+                    "coreAvailable" -> result.success(KianVpnService.isCoreAvailable())
                     else -> result.notImplemented()
                 }
             }

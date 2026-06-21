@@ -122,7 +122,11 @@ class ConfigGen {
     String? tlsDomain,
     List<String> tlsProtoKinds = const [],
     List<String> extraProtocols = const [],
+    List<String> snis = const [],   // override the default Reality SNIs (page parity)
   }) async {
+    // Use caller-supplied SNIs when given (custom SNI), else the built-in set.
+    final activeSnis = snis.where((s) => s.trim().isNotEmpty).toList();
+    final useSnis = activeSnis.isEmpty ? _snis : activeSnis;
     final (priv, pub, sid) = await genReality();
     final installId = _randHex(16);
     final channel = warp ? 'warp' : 'direct';
@@ -157,7 +161,7 @@ class ConfigGen {
       users.add({'id': uuid, 'email': name, 'active': true});
       final links = <String>[];
       for (var p = 0; p < _ports.length; p++) {
-        links.add(_vlessReality(uuid, serverIp, _ports[p], _snis[p % _snis.length],
+        links.add(_vlessReality(uuid, serverIp, _ports[p], useSnis[p % useSnis.length],
             pub, sid, 'KIAN-$name-${_ports[p]}'));
       }
       for (final t in tls) {
@@ -173,7 +177,7 @@ class ConfigGen {
     }
 
     final config = _buildConfig(users, priv, sid, channel, ss, ssPort,
-        ssPassword, tls, warp);
+        ssPassword, tls, warp, useSnis);
     final payload = {
       'warp_needed': warp,
       'server_ip': serverIp,
@@ -202,7 +206,8 @@ class ConfigGen {
 
   Map<String, dynamic> _buildConfig(
       List<Map<String, dynamic>> users, String priv, String sid, String channel,
-      bool ss, int ssPort, String ssPw, List<Map<String, dynamic>> tls, bool warp) {
+      bool ss, int ssPort, String ssPw, List<Map<String, dynamic>> tls, bool warp,
+      List<String> snis) {
     final sniff = {'enabled': true, 'destOverride': ['http', 'tls', 'quic']};
     final realityClients = users
         .map((u) => {'id': u['id'], 'email': u['email'], 'flow': 'xtls-rprx-vision'})
@@ -215,7 +220,7 @@ class ConfigGen {
     for (var i = 0; i < _ports.length; i++) {
       final tag = 'reality-$channel-${i + 1}';
       realityTags.add(tag);
-      final sni = _snis[i % _snis.length];
+      final sni = snis[i % snis.length];
       inbounds.add({'tag': tag, 'protocol': 'vless', 'port': _ports[i],
         'settings': {'clients': realityClients, 'decryption': 'none'},
         'streamSettings': {'network': 'tcp', 'security': 'reality',

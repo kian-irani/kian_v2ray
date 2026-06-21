@@ -12,10 +12,21 @@
 set -euo pipefail
 
 APP_DIR="/opt/kian-panel"
-PORT="${KIAN_PANEL_PORT:-8443}"
 SVC="kian-panel"
 RAW_TARBALL="https://github.com/kian-irani/kian_v2ray/archive/refs/heads/main.tar.gz"
 DB_PATH="/etc/kian-v2ray/kian.db"
+
+# Pick a panel port that is actually free. Default 8443 collides with the
+# Hysteria2 companion (kian-protocols.sh), so if it's taken we auto-pick the
+# next free one. The chosen port is persisted so `url` prints the right value.
+_port_busy(){ ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${1}\$"; }
+_pick_port(){
+  local want="${KIAN_PANEL_PORT:-8443}" p
+  if ! _port_busy "$want"; then echo "$want"; return; fi
+  for p in 8444 8445 8480 8843 9443 2087; do _port_busy "$p" || { echo "$p"; return; }; done
+  echo "$want"  # last resort
+}
+PORT="$( [ -f "$APP_DIR/port" ] && cat "$APP_DIR/port" 2>/dev/null || _pick_port )"
 
 say(){ printf '\033[32m✔\033[0m %s\n' "$*"; }
 inf(){ printf '\033[34m→\033[0m %s\n' "$*"; }
@@ -37,10 +48,21 @@ fetch_code(){
 
 setup_venv(){
   inf "installing python venv + dependencies"
-  command -v python3 >/dev/null || { apt-get update -y && apt-get install -y python3 python3-venv python3-pip; }
-  python3 -m venv "$APP_DIR/venv"
+  # `python3` existing does NOT mean the venv module is present — on Ubuntu the
+  # `python3-venv` package is separate and often missing, which made `venv` fail
+  # and the panel never came up. Ensure venv + pip are actually available.
+  if ! python3 -m venv --help >/dev/null 2>&1; then
+    inf "installing python3-venv (missing)"
+    apt-get update -y >/dev/null 2>&1 || true
+    apt-get install -y python3-venv python3-pip >/dev/null 2>&1 \
+      || { err "could not install python3-venv — run: apt-get install -y python3-venv"; exit 1; }
+  fi
+  rm -rf "$APP_DIR/venv"
+  python3 -m venv "$APP_DIR/venv" || { err "venv creation failed"; exit 1; }
   "$APP_DIR/venv/bin/pip" install --quiet --upgrade pip
-  "$APP_DIR/venv/bin/pip" install --quiet -r "$APP_DIR/panel/requirements.txt"
+  "$APP_DIR/venv/bin/pip" install --quiet -r "$APP_DIR/panel/requirements.txt" \
+    || { err "pip install failed (no internet?)"; exit 1; }
+  mkdir -p "$APP_DIR"; printf '%s' "$PORT" > "$APP_DIR/port"   # remember the chosen port
 }
 
 ask_admin(){

@@ -8,6 +8,20 @@ import '../models/server_profile.dart';
 class VpnController {
   static const _channel = MethodChannel('kv2m/vpn');
 
+  /// True if this build bundles a real native tunnel core. When false, the app
+  /// can generate/manage configs but cannot tunnel traffic on-device — importing
+  /// the subscription into v2rayNG is the way to actually connect. On dev/desktop
+  /// (no channel) we report false so the UI stays honest.
+  Future<bool> coreAvailable() async {
+    try {
+      return await _channel.invokeMethod<bool>('coreAvailable') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   /// Ask the OS for VPN consent (first connect). Returns true if granted.
   Future<bool> prepare() async {
     try {

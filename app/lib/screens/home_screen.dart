@@ -98,6 +98,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _toggleConnection() async {
     if (_selected == null || _busy) return;
+    // Honesty guard: if this build has no native tunnel core, connecting would
+    // route all traffic into a dead tunnel and kill the user's internet. Don't.
+    if (!_connected) {
+      final hasCore = await _vpn.coreAvailable();
+      if (!hasCore) {
+        if (mounted) await _showNoCoreDialog();
+        return;
+      }
+    }
     setState(() => _busy = true);
     try {
       if (_connected) {
@@ -110,6 +119,39 @@ class _HomeScreenState extends State<HomeScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Explain (honestly) that this build can't tunnel on-device yet, and offer
+  /// the real path: copy the config and import it into v2rayNG.
+  Future<void> _showNoCoreDialog() async {
+    final s = widget.strings;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(s.t('nocore.title')),
+        content: Text(s.t('nocore.body')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(s.t('cancel')),
+          ),
+          if (_selected != null)
+            FilledButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: _selected!.uri));
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(s.t('cfg.copied')),
+                      duration: const Duration(seconds: 2)),
+                );
+              },
+              icon: const Icon(Icons.copy_outlined, size: 18),
+              label: Text(s.t('cfg.copy')),
+            ),
+        ],
+      ),
+    );
   }
 
   Future<void> _pickBest() async {

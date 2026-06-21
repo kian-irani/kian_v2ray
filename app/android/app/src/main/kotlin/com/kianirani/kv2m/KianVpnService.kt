@@ -29,6 +29,18 @@ class KianVpnService : VpnService() {
         @Volatile
         var currentStatus: String = "disconnected"
             private set
+
+        /**
+         * True if a native tunnel core (xray-core / libv2ray .aar) is bundled.
+         * Checked by reflection so the project compiles with or without the
+         * .aar; once it's added this flips to true automatically.
+         */
+        fun isCoreAvailable(): Boolean = try {
+            Class.forName("libv2ray.Libv2ray")
+            true
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     private var tunInterface: ParcelFileDescriptor? = null
@@ -49,6 +61,15 @@ class KianVpnService : VpnService() {
 
     private fun startTunnel(config: String) {
         if (tunInterface != null) return
+        // CRITICAL: never establish a full-tunnel (0.0.0.0/0) unless a real
+        // tunnel core is present to forward the packets. Otherwise every packet
+        // is routed into the tun and dropped → the device looks "connected" but
+        // has NO internet. If there's no core, report it honestly and bail.
+        if (!isCoreAvailable()) {
+            currentStatus = "no_core"
+            stopSelf()
+            return
+        }
         val builder = Builder()
             .setSession("Kv2m")
             .setMtu(1500)
@@ -66,20 +87,27 @@ class KianVpnService : VpnService() {
             stopSelf()
             return
         }
+        val started = startTunnelCore(config, tunInterface!!.fd)
+        if (!started) {
+            stopTunnel()              // don't keep a dead tunnel that kills internet
+            currentStatus = "no_core"
+            return
+        }
         startForeground(NOTIF_ID, buildNotification())
-        startTunnelCore(config, tunInterface!!.fd)
         currentStatus = "connected"
     }
 
     /**
-     * Hand the tun fd + config to the native tunnel core. The xray-core .aar
-     * exposes a `start(fd, configJson)` entry point; it is added at build time.
-     * Until the .aar is bundled this is a no-op so the project still builds.
+     * Hand the tun fd + config to the native tunnel core. Returns true if the
+     * core started. The xray-core .aar exposes a start entry point added at
+     * build time. Until the .aar is bundled this returns false (no-op) so the
+     * service reports "no_core" instead of black-holing traffic.
      */
-    private fun startTunnelCore(config: String, tunFd: Int) {
+    private fun startTunnelCore(config: String, tunFd: Int): Boolean {
+        if (!isCoreAvailable()) return false
         // TODO(build): bundle xray-core .aar and call its start() here, e.g.
-        //   XrayCore.start(tunFd, config)
-        // The Dart layer already produces the per-server config JSON.
+        //   Libv2ray.newV2RayPoint(...).runLoop(...) with tunFd + config
+        return false
     }
 
     private fun stopTunnel() {

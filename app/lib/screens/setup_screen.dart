@@ -27,7 +27,17 @@ class _SetupScreenState extends State<SetupScreen> {
   final _sshUser = TextEditingController(text: 'root');
   final _sshPass = TextEditingController();
   final _username = TextEditingController(text: 'ali');
+  final _numUsers = TextEditingController(text: '1');
+  final _ssPort = TextEditingController(text: '8388');
+  final _customSni = TextEditingController();
   final _tlsDomain = TextEditingController();
+
+  // Full TLS protocol set (parity with the web page). Default: vless-ws.
+  static const _tlsKinds = [
+    'vless-ws', 'vmess-ws', 'vless-grpc', 'vmess-grpc',
+    'trojan-ws', 'vless-httpupgrade', 'vmess-httpupgrade',
+  ];
+  final Set<String> _tlsSelected = {'vless-ws'};
 
   bool _warp = false;
   bool _ss = false;
@@ -93,11 +103,14 @@ class _SetupScreenState extends State<SetupScreen> {
       final bundle = await gen.build(
         serverIp: _ip.text.trim(),
         userPrefix: _username.text.trim().isEmpty ? 'user' : _username.text.trim(),
+        count: (int.tryParse(_numUsers.text.trim()) ?? 1).clamp(1, 50),
         warp: _warp,
         ss: _ss,
+        ssPort: int.tryParse(_ssPort.text.trim()) ?? 8388,
         tlsDomain: _tls ? _tlsDomain.text.trim() : null,
-        tlsProtoKinds: _tls ? const ['vless-ws', 'vmess-ws', 'trojan-ws'] : const [],
+        tlsProtoKinds: _tls ? _tlsSelected.toList() : const [],
         extraProtocols: [if (_hy2) 'hysteria2', if (_tuic) 'tuic'],
+        snis: _customSni.text.trim().isEmpty ? const [] : [_customSni.text.trim()],
       );
 
       _say('• ساختِ لینکِ Subscription روی Gist…');
@@ -200,7 +213,13 @@ class _SetupScreenState extends State<SetupScreen> {
             Expanded(flex: 3, child: _field(_sshUser, s.t('setup.sshuser'))),
           ]),
           _field(_sshPass, s.t('setup.sshpass'), obscure: true),
-          _field(_username, s.t('setup.username')),
+          Row(children: [
+            Expanded(flex: 3, child: _field(_username, s.t('setup.username'))),
+            const SizedBox(width: 10),
+            Expanded(flex: 2, child: _field(_numUsers, s.t('setup.users'),
+                keyboardType: TextInputType.number)),
+          ]),
+          _field(_customSni, s.t('setup.sni'), hint: 'www.microsoft.com'),
           const SizedBox(height: 4),
           SwitchListTile(
             value: _warp, onChanged: (v) => setState(() => _warp = v),
@@ -212,13 +231,38 @@ class _SetupScreenState extends State<SetupScreen> {
             title: Text(s.t('setup.ss')), subtitle: Text(s.t('setup.ss.d')),
             contentPadding: EdgeInsets.zero,
           ),
+          if (_ss)
+            _field(_ssPort, s.t('setup.ssport'), keyboardType: TextInputType.number),
           SwitchListTile(
             value: _tls, onChanged: (v) => setState(() => _tls = v),
             title: Text(s.t('setup.tls')), subtitle: Text(s.t('setup.tls.d')),
             contentPadding: EdgeInsets.zero,
           ),
-          if (_tls)
+          if (_tls) ...[
             _field(_tlsDomain, s.t('setup.tlsdomain'), hint: 'vpn.example.com'),
+            const SizedBox(height: 6),
+            Text(s.t('setup.tlsprotos'), style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8, runSpacing: 8,
+              children: _tlsKinds.map((k) {
+                final on = _tlsSelected.contains(k);
+                return FilterChip(
+                  label: Text(k, style: const TextStyle(fontSize: 11)),
+                  selected: on,
+                  showCheckmark: false,
+                  selectedColor: KianTheme.accent.withOpacity(0.25),
+                  onSelected: (v) => setState(() {
+                    if (v) {
+                      _tlsSelected.add(k);
+                    } else if (_tlsSelected.length > 1) {
+                      _tlsSelected.remove(k);
+                    }
+                  }),
+                );
+              }).toList(),
+            ),
+          ],
           const Divider(height: 24),
           Text(s.t('setup.extra'),
               style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
@@ -301,12 +345,13 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Widget _field(TextEditingController c, String label,
-      {String? hint, bool obscure = false}) {
+      {String? hint, bool obscure = false, TextInputType? keyboardType}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: TextField(
         controller: c,
         obscureText: obscure,
+        keyboardType: keyboardType,
         decoration: InputDecoration(labelText: label, hintText: hint),
       ),
     );
@@ -319,6 +364,9 @@ class _SetupScreenState extends State<SetupScreen> {
     _sshUser.dispose();
     _sshPass.dispose();
     _username.dispose();
+    _numUsers.dispose();
+    _ssPort.dispose();
+    _customSni.dispose();
     _tlsDomain.dispose();
     _panelUser.dispose();
     _panelPass.dispose();
