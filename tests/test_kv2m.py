@@ -9,6 +9,7 @@ _HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_HERE, "kv2m"))
 
 import servers as kv_servers  # noqa: E402
+import settings as kv_settings  # noqa: E402
 import updater as kv_updater  # noqa: E402
 
 
@@ -41,6 +42,23 @@ def test_server_store_rejects_duplicate(tmp_path):
         store.add(kv_servers.ServerProfile(name="x", host="9.9.9.9"))
         raised = False
     except ValueError:
+        raised = True
+    assert raised
+
+
+def test_settings_persist_and_toggle(tmp_path):
+    path = os.path.join(str(tmp_path), "settings.json")
+    s = kv_settings.Settings(path)
+    assert s.get("theme") == "dark" and s.get("lang") == "fa"
+    assert s.toggle_theme() == "light"
+    s.set("lang", "en")
+    # reload from disk
+    s2 = kv_settings.Settings(path)
+    assert s2.get("theme") == "light" and s2.get("lang") == "en"
+    try:
+        s2.set("bogus", 1)
+        raised = False
+    except KeyError:
         raised = True
     assert raised
 

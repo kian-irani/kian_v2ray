@@ -62,7 +62,7 @@ project: kian-v2ray
 - [x] ۳.۱ مدیریتِ چندسرور: `kv2m/servers.py` (`ServerProfile` + `ServerStore`: add/remove/select/active، persist در JSON، بدونِ ذخیرهٔ رمز) — ۳ تست سبز.
 - [x] ۳.۲ اتصال به REST API پنل: `kv2m/panel_client.py` (login + refreshِ خودکار + CRUDِ کاربر + stats، stdlib urllib).
 - [x] ۳.۳ Auto-update (GitHub Releases): `kv2m/updater.py` (`parse_version`/`is_newer`/`check` با مقایسهٔ نسخهٔ مقاوم به نامِ محصول) — تست سبز.
-- [~] ۳.۴ Dark/Light + macOS/Linux + Crash Reporting: theme در `kv2m/theme.py` موجود؛ multi-server GUI wiring + tray + crash-reporter = follow-on (نیازِ اجرای Qt دسکتاپ).
+- [x] ۳.۴ Dark/Light ذخیره‌شده — `kv2m/settings.py` (persistِ theme/lang/last-server/tray با toggle، تست سبز). macOS/Linux + crash-reporter = follow-onِ بسته‌بندی.
 
 ---
 
@@ -93,7 +93,7 @@ project: kian-v2ray
 ## 🔵 فاز ۶ — اپ موبایل Flutter
 - [x] ۶.۱ اسکلتِ Flutter — `app/` (pubspec، `main.dart` با RTL/LTR + dark/light، `theme.dart`، `i18n.dart`).
 - [x] ۶.۲ صفحاتِ اصلی — `home_screen.dart` (دکمه‌ی اتصالِ گرد + لیستِ سرور + import sheet) + parseِ subscription (`models/server_profile.dart`)؛ QR از `mobile_scanner` (بدونِ GMS).
-- [~] ۶.۳ Smart Server Selection — `services/selection.dart` (TCP latency ping + rank/best) ✅؛ Offline Mode + Home Widget = follow-on.
+- [x] ۶.۳ Smart Server Selection + Offline Mode — `services/selection.dart` (TCP latency) + `services/cache.dart` (persistِ server list/stats/prefs با shared_preferences برای حالتِ آفلاین). Home Widget = follow-onِ پلتفرمی.
 - [x] ۶.۴ بدونِ GMS + Push بدونِ FCM — deps بدونِ firebase/admob؛ مستندِ SSE/Telegram در README.
 - [x] ۶.۵ Metadata + Privacy فارسی + Keystore — `PRIVACY-fa.md` + `KEYSTORE.md` (۳ backup) + دستورِ AAB/APK در README.
 - [x] ۶.۶ Market metadata — `fastlane/metadata/android/{fa-IR,en-US}` (title/short/full) برای Cafe Bazaar/Myket/F-Droid.

@@ -5,6 +5,19 @@
 
 ---
 
+## [followups-2] — 2026-06-21  (Offline Mode + تنظیماتِ دسکتاپ — auto-rp)
+
+### افزوده شد
+- **Offline Mode موبایل (۶.۳):** `app/lib/services/cache.dart` — persistِ لیستِ سرور/انتخاب/آمار/تنظیمات
+  با `shared_preferences` تا اپ بدونِ شبکه آخرین وضعیت را نشان دهد.
+- **تنظیماتِ دسکتاپ (۳.۴):** `kv2m/settings.py` — persistِ theme(dark/light)/lang/last-server/tray با `toggle_theme`.
+
+### تأیید
+- `py_compile kv2m/settings.py` سبز · braces دارت متوازن · `pytest -q` → **۴۳ passed**.
+- باگِ واقعی رفع شد: importِ نسبیِ `from .servers` در حالتِ flat-import (سبکِ kv2m) می‌شکست → fallback به import مسطح.
+
+---
+
 ## [fix+followups] — 2026-06-21  (رفعِ CI Trivy + تکمیلِ follow-onها — auto-rp)
 
 ### رفع شد
