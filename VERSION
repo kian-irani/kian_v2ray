@@ -4,5 +4,5 @@
 # XRAY_VERSION نسخهٔ pin‌شدهٔ Xray-core است (تست‌شده و سازگار).
 # نسخه‌های Xray: https://github.com/XTLS/Xray-core/releases
 
-SCRIPT_VERSION=2.1.0
+SCRIPT_VERSION=2.2.0
 XRAY_VERSION=26.5.9

@@ -5,6 +5,24 @@
 
 ---
 
+## [installer 2.2.0] — 2026-06-21  🎉 نسخهٔ بزرگ — پلتفرم، نه فقط نصب‌کننده
+
+> جمع‌بندیِ همه‌ی کارِ این دوره (auto-rp 2026-06-20/21). از یک نصب‌کننده به یک **پلتفرمِ کامل**.
+
+### مهم‌ترین‌ها
+- **زیرساختِ `core/`** (stdlib): SQLite + migration، لاگِ JSON، audit · `scripts/`: backup رمزنگاری‌شده، config-health، sub-format، بات تلگرام، مهاجرت از Marzban/3X-UI.
+- **پنلِ وبِ FastAPI کامل** (`panel/`): JWT + **2FA TOTP با UI** + CRUD/bulk/auto-disable + WebSocket + export + key-rotation + هدرهای امنیتی + **داشبوردِ dark-glass دوزبانه** (کاربران/سرورها/ممیزی/نمودار/تنظیمات).
+- **چندسرور** (`core/cluster.py` + `node-agent/`): health/failover/load-balance/GeoIP + node API.
+- **پروتکل‌ها** (`core/protocols.py` + `censorship.py`): Hysteria2/TUIC/WG + Fragment/uTLS/TTL/Noise + sing-box/Clash + REALITY-scanner + Tor-fallback.
+- **اپِ موبایلِ Kv2m** (`app/`): پروژهٔ واقعیِ Flutter+Android با VpnService (فقط هستهٔ native مانده).
+- **دسکتاپِ Kv2m v3.1.0** منتشر شد (چندسرورِ CLI).
+- **صفحهٔ تعاملی ۱۰۰٪ دوزبانه** (۲۲۵ کلید) · **CI/CD** (CodeQL/Trivy/release) + Docker/compose + Prometheus/Grafana.
+
+### تأیید
+- `validate.yml` سبز · **۴۳ تستِ pytest** · CodeQL + Trivy سبز · secret-scan تمیز.
+
+---
+
 ## [panel-settings] — 2026-06-21  (تبِ تنظیمات + UIِ 2FA — auto-rp)
 
 ### افزوده شد (بستنِ گپِ «2FA بدونِ UI» در فاز ۲)
