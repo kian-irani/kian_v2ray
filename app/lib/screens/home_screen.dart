@@ -7,6 +7,7 @@ import '../services/selection.dart';
 import '../services/vpn_service.dart';
 import '../theme.dart';
 import 'manage_screen.dart';
+import 'setup_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Strings strings;
@@ -108,6 +109,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(s.t('app.title')),
         actions: [
+          IconButton(
+            tooltip: s.t('open.setup'),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => SetupScreen(strings: s))),
+            icon: const Icon(Icons.rocket_launch_outlined),
+          ),
           IconButton(
             tooltip: s.t('open.manage'),
             onPressed: () => Navigator.push(context, MaterialPageRoute(

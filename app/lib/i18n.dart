@@ -37,6 +37,16 @@ class Strings {
     'mg.toggle': ['فعال/غیرفعال', 'Enable/Disable'],
     'mg.delete': ['حذف', 'Delete'],
     'open.manage': ['مدیریت سرور', 'Manage server'],
+    'open.setup': ['نصب روی سرور', 'Set up server'],
+    'setup.title': ['نصب روی سرور', 'Set up server'],
+    'setup.desc': ['اپ خودش به سرورت SSH می‌زند، کانفیگ می‌سازد و نصب می‌کند — بدون ترمینال.', 'The app SSHes into your server, builds the config and installs — no terminal.'],
+    'setup.ip': ['آی‌پی سرور', 'Server IP'],
+    'setup.sshport': ['پورت SSH', 'SSH port'],
+    'setup.sshuser': ['کاربر SSH', 'SSH user'],
+    'setup.sshpass': ['رمز SSH', 'SSH password'],
+    'setup.username': ['نام کاربر (برای کانفیگ)', 'User name (for the config)'],
+    'setup.install': ['ساخت و نصب', 'Build & install'],
+    'setup.sublink': ['لینک Subscription (روی Gist):', 'Subscription link (on Gist):'],
   };
 
   String t(String key) {
