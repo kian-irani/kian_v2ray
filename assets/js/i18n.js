@@ -170,6 +170,46 @@
     "dm.p.httpupgrade": { fa: "سبک‌تر از WebSocket. عبور خوب از پراکسی‌های شرکتی. نسبتاً جدید، در همهٔ کلاینت‌ها پشتیبانی نمی‌شود.", en: "Lighter than WebSocket. Passes corporate proxies well. Fairly new, not supported in all clients." },
     "dm.proto.note":  { fa: "می‌توانی همه را تیک بزنی — هیچ ضرری ندارد. هر کاربر برای هر پروتکل یک لینک می‌گیرد و در v2rayNG کدام بهتر کار کرد، همان را نگه می‌دارد.", en: "You can tick all of them — no harm. Each user gets a link per protocol, and in v2rayNG you keep whichever works best." },
 
+    /* ---------- shared step-guide ---------- */
+    "gd.enterlink":   { fa: "لینک کانفیگ رو وارد کن", en: "Enter the config link" },
+
+    /* ---------- SERVER tab (steps) ---------- */
+    "sv.s1t": { fa: "یک برنامهٔ SSH باز کن", en: "Open an SSH app" },
+    "sv.s1d": { fa: "روی گوشی: اپ <b>Termius</b> رو نصب کن. روی ویندوز: <b>PowerShell</b> یا <b>PuTTY</b>.", en: "On phone: install <b>Termius</b>. On Windows: <b>PowerShell</b> or <b>PuTTY</b>." },
+    "sv.s2t": { fa: "به سرورت وصل شو", en: "Connect to your server" },
+    "sv.s2d": { fa: "با آی‌پی و رمز سرور وصل شو. توی ترمینال این رو بزن (آی‌پی خودت رو بذار):", en: "Connect with the server IP and password. Type this in the terminal (use your own IP):" },
+    "sv.s2n": { fa: "رمز سرور رو هنگام خرید بهت می‌دن. موقع تایپ رمز چیزی نمایش داده نمی‌شه — طبیعیه.", en: "The server password is given to you at purchase. Nothing shows while typing it — that's normal." },
+    "sv.s3t": { fa: "دستور نصب رو از تب «ساخت کانفیگ» بگیر", en: "Get the install command from the “Build config” tab" },
+    "sv.s3d": { fa: "برگرد به تب اول، آی‌پی سرورت رو وارد کن، دکمه رو بزن و <b>«دستور نصب»</b> رو کپی کن.", en: "Go back to the first tab, enter your server IP, press the button, and copy the <b>install command</b>." },
+    "sv.s4t": { fa: "دستور رو توی ترمینال سرور Paste کن", en: "Paste the command into the server terminal" },
+    "sv.s4d": { fa: "نصب خودش انجام می‌شه. <b>اگه وسط کار اینترنتت قطع شد هم اشکالی نداره</b> — نصب پشت‌صحنه ادامه می‌ده.", en: "It installs itself. <b>If your internet drops mid-way, no problem</b> — the install keeps running in the background." },
+    "sv.s4n": { fa: "📱 <b>روی موبایل:</b> اگه Ctrl+V کار نکرد، روی ترمینال نگه‌دار (long-press) و از منو <b>Paste</b> رو بزن.", en: "📱 <b>On mobile:</b> if Ctrl+V doesn't work, long-press the terminal and choose <b>Paste</b> from the menu." },
+    "sv.s5t": { fa: "۲ تا ۵ دقیقه صبر کن، بعد وضعیت رو چک کن", en: "Wait 2–5 minutes, then check the status" },
+    "sv.s5d": { fa: "اگه نوشت Xray در حال اجراست ✅ تمومه. لینک‌های کانفیگ همون‌هایی هستن که توی تب اول گرفتی.", en: "If it says Xray is running ✅ you're done. The config links are the ones you got in the first tab." },
+    "sv.min": { fa: "حداقل سرور: ۱ هسته CPU، ۵۱۲ مگ رم، اوبونتو ۲۲ یا ۲۴. لوکیشن خارج از ایران.", en: "Minimum server: 1 CPU core, 512 MB RAM, Ubuntu 22 or 24. Location outside Iran." },
+
+    /* ---------- ANDROID tab (steps) ---------- */
+    "an.s1t": { fa: "اپ v2rayNG رو نصب کن", en: "Install the v2rayNG app" },
+    "an.s1d": { fa: "رایگان و متن‌باز — از Reality پشتیبانی می‌کنه.", en: "Free and open-source — supports Reality." },
+    "an.alt": { fa: "جایگزین: NekoBox for Android.", en: "Alternative: NekoBox for Android." },
+    "an.two": { fa: "دو راه داری:", en: "You have two ways:" },
+    "an.copy": { fa: "• <b>کپی-پیست:</b> توی تب «ساخت کانفیگ» روی «کپی لینک» بزن، بعد توی v2rayNG: دکمهٔ <b>+</b> بالا ← <b>«Import config from Clipboard»</b>.", en: "• <b>Copy-paste:</b> in the “Build config” tab tap “Copy link”, then in v2rayNG: the <b>+</b> button ← <b>“Import config from Clipboard”</b>." },
+    "an.qr": { fa: "• <b>QR:</b> توی v2rayNG: دکمهٔ <b>+</b> ← <b>«Scan QR code»</b> ← QR روی صفحه رو اسکن کن.", en: "• <b>QR:</b> in v2rayNG: the <b>+</b> button ← <b>“Scan QR code”</b> ← scan the QR on screen." },
+    "an.s3t": { fa: "وصل شو", en: "Connect" },
+    "an.s3d": { fa: "روی کانفیگ بزن تا انتخاب بشه، بعد دکمهٔ گرد پایین (▶) رو بزن. اولین بار اجازهٔ VPN می‌خواد — تأیید کن.", en: "Tap the config to select it, then press the round button at the bottom (▶). The first time it asks for VPN permission — approve it." },
+    "an.s4t": { fa: "اگه «هر دو» رو ساخته بودی", en: "If you built “Both”" },
+    "an.s4d": { fa: "دو کانفیگ داری: یکی <b>سریع (Direct)</b> و یکی <b>WARP</b>. اول سریع رو امتحان کن؛ اگه سایتی باز نشد، به WARP سوییچ کن.", en: "You have two configs: one <b>Fast (Direct)</b> and one <b>WARP</b>. Try Fast first; if a site won't open, switch to WARP." },
+    "an.share": { fa: "📤 می‌خوای کانفیگ رو به دوستت بدی؟ همون لینک یا QR رو بفرست — همه‌چیز خودکار وارد می‌شه.", en: "📤 Want to share the config with a friend? Just send the same link or QR — everything imports automatically." },
+
+    /* ---------- PC tab (steps) ---------- */
+    "pc.s1t": { fa: "اپ v2rayN رو دانلود کن", en: "Download the v2rayN app" },
+    "pc.s1d": { fa: "برای ویندوز — از Reality پشتیبانی می‌کنه.", en: "For Windows — supports Reality." },
+    "pc.alt": { fa: "جایگزین چندسکویی (ویندوز/مک/لینوکس): NekoRay.", en: "Cross-platform alternative (Windows/macOS/Linux): NekoRay." },
+    "pc.s2d": { fa: "توی تب «ساخت کانفیگ» روی «کپی لینک» بزن. بعد توی v2rayN از منوی بالا: <b>Servers ← Import bulk URL from clipboard</b> (یا Ctrl+V داخل لیست سرورها).", en: "In the “Build config” tab tap “Copy link”. Then in v2rayN from the top menu: <b>Servers ← Import bulk URL from clipboard</b> (or Ctrl+V inside the server list)." },
+    "pc.s3t": { fa: "روشن کن", en: "Turn it on" },
+    "pc.s3d": { fa: "روی کانفیگ دابل‌کلیک کن تا فعال بشه. بعد پایین‌راست ویندوز روی آیکن v2rayN راست‌کلیک ← <b>System Proxy ← Set system proxy</b>.", en: "Double-click the config to activate it. Then right-click the v2rayN icon in the Windows tray ← <b>System Proxy ← Set system proxy</b>." },
+    "pc.ios": { fa: "🍎 <b>آیفون/iOS:</b> از اپ‌های <b>Streisand</b> یا <b>V2Box</b> (رایگان) یا <b>Shadowrocket</b> (پولی) استفاده کن — لینک یا QR رو همون‌طوری Import کن.", en: "🍎 <b>iPhone/iOS:</b> use <b>Streisand</b> or <b>V2Box</b> (free) or <b>Shadowrocket</b> (paid) — import the link or QR the same way." },
+
     "tp.h.quota":     { fa: "حجم و انقضا", en: "Quota & expiry" },
     "tp.quota.1":     { fa: "سیستم هر ۱۰ دقیقه مصرف هر کاربر رو چک می‌کنه و اگه حجمش تموم شد یا منقضی شد، خودکار غیرفعالش می‌کنه.", en: "Every 10 minutes the system checks each user's usage and auto-disables them if their quota is used up or they've expired." },
     "tp.quota.2":     { fa: "برای فعال‌کردن دوباره: <span class=\"mono\">kian-v2ray reset نام</span> یا <span class=\"mono\">renew نام</span>.", en: "To re-enable: <span class=\"mono\">kian-v2ray reset name</span> or <span class=\"mono\">renew name</span>." },
