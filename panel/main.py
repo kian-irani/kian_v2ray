@@ -39,6 +39,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
+from core import audit
 from core import cluster
 from core import db as core_db
 from core import migrate

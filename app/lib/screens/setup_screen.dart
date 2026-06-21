@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../i18n.dart';
 import '../models/install_record.dart';
@@ -50,10 +51,19 @@ class _SetupScreenState extends State<SetupScreen> {
   final _panelPass = TextEditingController();
   final _log = <String>[];
   String? _subUrl;
+  final _subUrls = <String>[];   // all per-user subscription URLs (for copy)
   String? _panelInfo;
   int _imported = 0;
 
   void _say(String s) => setState(() => _log.add(s));
+
+  Future<void> _copyText(String text, String toast) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(toast), duration: const Duration(seconds: 2)),
+    );
+  }
 
   /// A short random panel password when the user leaves the field empty.
   String _randPass() {
@@ -95,7 +105,7 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Future<void> _run() async {
-    setState(() { _busy = true; _log.clear(); _subUrl = null; });
+    setState(() { _busy = true; _log.clear(); _subUrl = null; _subUrls.clear(); });
     final ssh = SshInstaller();
     try {
       _say('• ساختِ کانفیگ و کلید (روی همین دستگاه)…');
@@ -116,6 +126,9 @@ class _SetupScreenState extends State<SetupScreen> {
       _say('• ساختِ لینکِ Subscription روی Gist…');
       final urls = await gen.createGistSubs(bundle.installId, bundle.subItems);
       final firstUrl = urls.values.isNotEmpty ? urls.values.first : null;
+      _subUrls
+        ..clear()
+        ..addAll(urls.values);
 
       _say('• اتصالِ SSH به ${_ip.text.trim()}…');
       final err = await ssh.connect(
@@ -312,9 +325,36 @@ class _SetupScreenState extends State<SetupScreen> {
           if (_subUrl != null) ...[
             const SizedBox(height: 14),
             Text(s.t('setup.sublink'),
-                style: const TextStyle(color: KianTheme.accent)),
-            SelectableText(_subUrl!,
-                style: const TextStyle(fontFamily: 'monospace')),
+                style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1426),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(children: [
+                Expanded(
+                  child: SelectableText(_subUrl!,
+                      maxLines: 2,
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+                ),
+                IconButton(
+                  tooltip: s.t('cfg.copy'),
+                  icon: const Icon(Icons.copy_outlined, size: 20),
+                  onPressed: () => _copyText(_subUrl!, s.t('cfg.copied')),
+                ),
+              ]),
+            ),
+            if (_subUrls.length > 1) ...[
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: () => _copyText(_subUrls.join('\n'),
+                    '${_subUrls.length} ${s.t('setup.suballcopied')}'),
+                icon: const Icon(Icons.copy_all_outlined, size: 18),
+                label: Text('${s.t('setup.suball')} (${_subUrls.length})'),
+              ),
+            ],
           ],
           if (_panelInfo != null) ...[
             const SizedBox(height: 14),

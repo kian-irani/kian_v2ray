@@ -51,6 +51,8 @@ class Strings {
     'setup.tlsprotos': ['پروتکل‌های TLS (چندتا قابل‌انتخاب):', 'TLS protocols (pick any):'],
     'setup.install': ['ساخت و نصب', 'Build & install'],
     'setup.sublink': ['لینک Subscription (روی Gist):', 'Subscription link (on Gist):'],
+    'setup.suball': ['کپیِ همهٔ لینک‌های Subscription', 'Copy all subscription links'],
+    'setup.suballcopied': ['لینکِ Subscription کپی شد', 'subscription links copied'],
     'setup.warp': ['WARP (همه‌چیز باز)', 'WARP (everything open)'],
     'setup.warp.d': ['ترافیک از WARP کلودفلر رد می‌شود؛ کمی کندتر.', 'Routes via Cloudflare WARP; a bit slower.'],
     'setup.ss': ['Shadowsocks (پشتیبان)', 'Shadowsocks (backup)'],
