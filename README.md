@@ -38,11 +38,26 @@ A **free, open-source** stack to run your own anti-censorship VPN on **your own 
 | **Web panel** (`panel/`) | FastAPI + JWT/2FA · dark-glass dashboard (users/nodes/audit/charts/settings) · IP/speed/HWID limits · WebSocket stats · `/metrics` | ✅ code-complete |
 | **Multi-server** (`core/cluster.py` + `node-agent/`) | One panel → many VPS · health/failover/load-balance/GeoIP · Marzban/3X-UI import | ✅ code-complete |
 | **New protocols** (`scripts/kian-protocols.sh`) | **Hysteria2 + TUIC v5** via a sing-box companion (opt-in) · Fragment/uTLS/TTL/Noise · sing-box/Clash sub export · REALITY SNI scanner · Tor fallback | ✅ code · ⏳ server test |
-| **Kv2m desktop** (`kv2m/`) | PySide6/Qt app, **multi-server** CLI, auto-update — Windows installer + portable | ✅ **v3.1.0** |
-| **Kv2m mobile** (`app/`) | Flutter Android client, VpnService, GMS-free, offline mode | ✅ project · ⏳ native core |
+| **Kv2m desktop** (`kv2m/`) | PySide6/Qt app, **multi-server**, web-panel deploy, **Hysteria2/TUIC** generator, auto-update — Windows installer + portable | ✅ **v3.2.0** |
+| **Kv2m mobile** (`app/`) | Flutter Android client — in-app SSH install, config **QR + copy**, **install history**, web-panel deploy, **Hysteria2/TUIC**, GMS-free, offline mode | ✅ project · ⏳ native core |
 | **Monitoring** (`monitoring/`) | Prometheus + node/Xray exporters + Grafana dashboard + alert rules | ✅ configs |
 | **Notifications** (`core/notify.py`) | Telegram + Email(SMTP) + Webhook · server-side expiry/quota push (no FCM) | ✅ code-complete |
 | **CI/CD** | Validate (bash/js/py/pytest/smoke) + CodeQL + Trivy + auto-release | ✅ green |
+
+## ⬇️ Downloads
+
+All builds are on the **[latest release](https://github.com/kian-irani/kian_v2ray/releases/latest)** page (CI-built on every version tag).
+
+| Platform | File | For whom |
+|---|---|---|
+| 🪟 **Windows — Setup** | `Kv2m-Setup-x64.exe` | Full install (Start Menu + Desktop shortcut). No Python needed. |
+| 🪟 **Windows — Portable** | `Kv2m-Portable-x64.exe` | Run directly, no install. |
+| 🤖 **Android — Universal** | `Kv2m-*-universal.apk` | **Works on every phone** — the safe choice. |
+| 🤖 **Android — 64-bit** | `Kv2m-*-arm64.apk` | New phones (arm64-v8a) — smaller download. |
+| 🤖 **Android — 32-bit** | `Kv2m-*-arm32.apk` | Very old phones (armeabi-v7a). |
+| 🌐 **No install** | [Web generator](https://kian-irani.github.io/kian_v2ray/) | Build configs right in the browser. |
+
+> The Android builds are **preview** (full UI — in-app install, config QR, install history, Hysteria2/TUIC, web-panel deploy — but the native tunnel core isn't bundled yet). The web generator + Windows app + installer are production-ready.
 
 ## Quick start (the installer)
 
@@ -86,8 +101,8 @@ Features: JWT + refresh + **TOTP 2FA** (with UI) · user CRUD + search + **bulk 
 
 ## 💻 Kv2m apps
 
-- **Desktop v3.1.0** — PySide6/Qt, bilingual, now **multi-server** (saved profiles, auto-update). Windows installer + portable on [releases](https://github.com/kian-irani/kian_v2ray/releases/latest).
-- **Mobile (Kv2m, Flutter)** — Android-first, **GMS-free** (Cafe Bazaar / Myket / F-Droid friendly), VpnService, QR import, smart server selection, offline mode. Native tunnel core is the last build step.
+- **Desktop v3.2.0** — PySide6/Qt, bilingual, **multi-server** (saved profiles, auto-update), **web-panel deploy** over SSH, and the **Hysteria2/TUIC** generator. Windows installer + portable on [releases](https://github.com/kian-irani/kian_v2ray/releases/latest).
+- **Mobile (Kv2m, Flutter)** — Android-first, **GMS-free** (Cafe Bazaar / Myket / F-Droid friendly), VpnService. In-app SSH install + **config QR & one-tap copy** + **subscription card** + **install history** (saves your sub link & panel URL/credentials) + **web-panel deploy** + **Hysteria2/TUIC** selection + smart server selection + offline mode. Native tunnel core is the last build step.
 
 ## 🗺️ Roadmap
 
@@ -127,10 +142,21 @@ Issues and suggestions welcome — see [`docs/CONTRIBUTING.md`](docs/CONTRIBUTIN
 | **پنلِ وب** | FastAPI + JWT/**2FA** · داشبوردِ dark-glass (کاربران/سرورها/ممیزی/نمودار/تنظیمات) · محدودیتِ IP/سرعت/HWID · آمارِ زنده | ✅ کد کامل |
 | **چندسرور** | یک پنل → چند VPS · health/failover/load-balance/GeoIP · مهاجرت از Marzban/3X-UI | ✅ کد کامل |
 | **پروتکل‌های جدید** | **Hysteria2 + TUIC v5** روی sing-box (اختیاری) · Fragment/uTLS/TTL/Noise · خروجیِ sing-box/Clash · REALITY scanner · Tor fallback | ✅ کد · ⏳ تستِ سرور |
-| **Kv2m دسکتاپ** | اپِ PySide6/Qt، **چندسرور**، auto-update — ویندوز | ✅ **v3.1.0** |
-| **Kv2m موبایل** | کلاینتِ Flutter اندروید، VpnService، بدونِ GMS، حالتِ آفلاین | ✅ پروژه · ⏳ هستهٔ native |
+| **Kv2m دسکتاپ** | اپِ PySide6/Qt، **چندسرور**، راه‌اندازیِ پنل، سازندهٔ **Hysteria2/TUIC**، auto-update — ویندوز (Setup + Portable) | ✅ **v3.2.0** |
+| **Kv2m موبایل** | کلاینتِ Flutter اندروید — نصبِ SSH داخلِ اپ، **QR و کپیِ کانفیگ**، **تاریخچهٔ نصب**، راه‌اندازیِ پنل، **Hysteria2/TUIC**، بدونِ GMS، آفلاین | ✅ پروژه · ⏳ هستهٔ native |
 | **پایش** | Prometheus + اکسپورترها + داشبوردِ Grafana + قوانینِ هشدار | ✅ پیکربندی |
 | **اعلان‌ها** | Telegram + Email + Webhook · Push انقضا/سهمیه (بدونِ FCM) | ✅ کد کامل |
+
+### ⬇️ دانلود
+
+همهٔ نسخه‌ها در [صفحهٔ آخرین ریلیز](https://github.com/kian-irani/kian_v2ray/releases/latest):
+
+| پلتفرم | فایل | برای |
+|---|---|---|
+| 🪟 ویندوز — نصبی | `Kv2m-Setup-x64.exe` | نصبِ کامل (شورتکات) |
+| 🪟 ویندوز — قابل‌حمل | `Kv2m-Portable-x64.exe` | بدونِ نصب |
+| 🤖 اندروید — همه‌کاره | `Kv2m-*-universal.apk` | **هر گوشی** (مطمئن‌ترین) |
+| 🤖 اندروید — ۶۴ بیتی | `Kv2m-*-arm64.apk` | گوشی‌های جدید |
 
 ### شروع سریع
 
