@@ -129,6 +129,7 @@ class ConfigGen {
 
     // TLS profiles (internal localhost ports behind Caddy)
     final tlsEnabled = tlsDomain != null && tlsDomain.isNotEmpty && tlsProtoKinds.isNotEmpty;
+    final dom = tlsDomain ?? '';   // non-null for the link/caddyfile builders
     final tls = <Map<String, dynamic>>[];
     if (tlsEnabled) {
       final safeStart = [20810, (ss ? ssPort : 0) + 100, _ports.reduce(max) + 100].reduce(max);
@@ -159,7 +160,7 @@ class ConfigGen {
             pub, sid, 'KIAN-$name-${_ports[p]}'));
       }
       for (final t in tls) {
-        links.add(_tlsLink(t['kind'] as String, uuid, tlsDomain, t['path'] as String,
+        links.add(_tlsLink(t['kind'] as String, uuid, dom, t['path'] as String,
             'KIAN-$name-${tlsProtos[t['kind']]![2]}'));
       }
       if (ss) links.add(_ssLink(serverIp, ssPort, ssPassword, 'KIAN-$name-SS'));
@@ -187,8 +188,8 @@ class ConfigGen {
       'ss_password': ssPassword,
       'gist_proxy': gistProxy,
       'install_id': installId,
-      'tls_domain': tlsEnabled ? tlsDomain : '',
-      'caddyfile_b64': tlsEnabled ? _b64(_caddyfile(tlsDomain, tls)) : '',
+      'tls_domain': tlsEnabled ? dom : '',
+      'caddyfile_b64': tlsEnabled ? _b64(_caddyfile(dom, tls)) : '',
     };
     final cmd = "export KIAN_PAYLOAD='${_b64(jsonEncode(payload))}'\n"
         "curl -fsSL $rawBase/install.sh -o /tmp/kian-v2ray.sh && "
