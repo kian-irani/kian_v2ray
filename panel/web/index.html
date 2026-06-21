@@ -135,6 +135,7 @@
       <div class="toolbar">
         <div class="tabs">
           <button class="tab active" data-view="users" data-i18n="tab.users">کاربران</button>
+          <button class="tab" data-view="nodes" data-i18n="tab.nodes">سرورها</button>
           <button class="tab" data-view="audit" data-i18n="tab.audit">گزارش ممیزی</button>
           <button class="tab" data-view="chart" data-i18n="tab.chart">نمودار مصرف</button>
         </div>
@@ -179,6 +180,29 @@
       <div id="view-chart" class="hidden" style="padding:18px">
         <div class="muted" style="margin-bottom:10px" data-i18n="chart.title">پرمصرف‌ترین کاربران (گیگابایت)</div>
         <canvas id="chart" width="900" height="160"></canvas>
+      </div>
+
+      <!-- NODES -->
+      <div id="view-nodes" class="hidden" style="overflow:auto">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;padding:14px 16px;border-bottom:1px solid var(--border)">
+          <input id="nd-name" placeholder="نام" data-i18n-ph="nd.name" style="max-width:120px">
+          <input id="nd-addr" placeholder="آدرس (host)" data-i18n-ph="nd.addr" style="max-width:160px">
+          <input id="nd-geo" placeholder="کشور (DE)" data-i18n-ph="nd.geo" style="max-width:90px">
+          <input id="nd-token" placeholder="token" data-i18n-ph="nd.token" style="max-width:140px">
+          <button class="btn primary sm" id="nd-add"><svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> <span data-i18n="nd.add">افزودن سرور</span></button>
+        </div>
+        <table>
+          <thead><tr>
+            <th data-i18n="th.name">نام</th>
+            <th class="hide" data-i18n="nd.addr">آدرس</th>
+            <th data-i18n="nd.geo">کشور</th>
+            <th data-i18n="nd.load">بار</th>
+            <th data-i18n="th.status">وضعیت</th>
+            <th data-i18n="th.actions">اقدام</th>
+          </tr></thead>
+          <tbody id="nodes-body"></tbody>
+        </table>
+        <div class="muted" id="nodes-route" style="padding:12px 16px;font-size:13px"></div>
       </div>
     </div>
   </main>

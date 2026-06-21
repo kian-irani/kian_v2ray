@@ -16,7 +16,11 @@
     "stat.total": ["کل کاربران", "Total users"], "stat.active": ["فعال", "Active"],
     "stat.traffic": ["مصرف کل", "Total traffic"],
     "tab.users": ["کاربران", "Users"], "tab.audit": ["گزارش ممیزی", "Audit log"],
-    "tab.chart": ["نمودار مصرف", "Usage chart"],
+    "tab.chart": ["نمودار مصرف", "Usage chart"], "tab.nodes": ["سرورها", "Nodes"],
+    "nd.name": ["نام", "name"], "nd.addr": ["آدرس", "address"], "nd.geo": ["کشور", "geo"],
+    "nd.token": ["token", "token"], "nd.add": ["افزودن سرور", "Add node"],
+    "nd.load": ["بار", "Load"], "nd.alive": ["زنده", "Alive"], "nd.down": ["خاموش", "Down"],
+    "nd.route": ["مسیریابی", "Routing"],
     "search.ph": ["جستجوی نام…", "Search name…"],
     "bulk.none": ["اقدام گروهی…", "Bulk action…"], "bulk.enable": ["فعال‌سازی", "Enable"],
     "bulk.disable": ["غیرفعال", "Disable"], "bulk.delete": ["حذف", "Delete"],
@@ -152,6 +156,30 @@
       }).join("") || '<tr><td colspan="5" class="muted" style="text-align:center;padding:20px">—</td></tr>';
     } catch (e) {}
   }
+  async function refreshNodes() {
+    try {
+      var d = await api("/api/nodes");
+      var nodes = d.nodes || [];
+      $("#nodes-body").innerHTML = nodes.length ? nodes.map(function (n) {
+        return '<tr data-name="' + esc(n.name) + '">' +
+          '<td><b>' + esc(n.name) + '</b></td>' +
+          '<td class="hide mono muted">' + esc(n.address) + ':' + esc(n.api_port) + '</td>' +
+          '<td>' + esc(n.geo || '—') + '</td>' +
+          '<td>' + (n.load != null ? Number(n.load).toFixed(2) : '—') + '</td>' +
+          '<td><span class="tag ' + (n.alive ? 'on' : 'off') + '">' + (n.alive ? t('nd.alive') : t('nd.down')) + '</span></td>' +
+          '<td><button class="btn sm danger act-ndel" aria-label="delete"><svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></td>' +
+          '</tr>';
+      }).join("") : '<tr><td colspan="6" class="muted" style="text-align:center;padding:24px">—</td></tr>';
+      // route/failover summary
+      var r = await api("/api/route");
+      var alerts = (r.alerts || []).map(function (a) { return a.name; });
+      $("#nodes-route").innerHTML = t('nd.route') + ': ' +
+        '<b>' + esc(r.chosen || '—') + '</b>' +
+        (r.failover && r.failover.length ? ' · failover: ' + r.failover.map(esc).join(' → ') : '') +
+        (alerts.length ? ' · ⚠ bandwidth: ' + alerts.map(esc).join(', ') : '');
+    } catch (e) {}
+  }
+
   function drawChart() {
     var c = $("#chart"), ctx = c.getContext("2d");
     ctx.clearRect(0, 0, c.width, c.height);
@@ -210,9 +238,31 @@
       $("#view-users").classList.toggle("hidden", state.view !== "users");
       $("#view-audit").classList.toggle("hidden", state.view !== "audit");
       $("#view-chart").classList.toggle("hidden", state.view !== "chart");
+      $("#view-nodes").classList.toggle("hidden", state.view !== "nodes");
       if (state.view === "audit") refreshAudit();
       if (state.view === "chart") drawChart();
+      if (state.view === "nodes") refreshNodes();
     });
+  });
+
+  $("#nd-add").addEventListener("click", async function () {
+    var body = {
+      name: $("#nd-name").value.trim(), address: $("#nd-addr").value.trim(),
+      token: $("#nd-token").value.trim() || "changeme",
+      geo: $("#nd-geo").value.trim() || null
+    };
+    if (!body.name || !body.address) return;
+    try {
+      await api("/api/nodes", { method: "POST", body: JSON.stringify(body) });
+      $("#nd-name").value = $("#nd-addr").value = $("#nd-geo").value = $("#nd-token").value = "";
+      refreshNodes();
+    } catch (e) {}
+  });
+  $("#nodes-body").addEventListener("click", async function (e) {
+    if (!e.target.closest(".act-ndel")) return;
+    var tr = e.target.closest("tr"), name = tr.getAttribute("data-name");
+    if (!confirm(t("del.confirm"))) return;
+    try { await api("/api/nodes/" + encodeURIComponent(name), { method: "DELETE" }); refreshNodes(); } catch (e) {}
   });
 
   /* modal */
