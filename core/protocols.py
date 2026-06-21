@@ -67,6 +67,29 @@ def utls_settings(fingerprint: str = "chrome") -> dict:
     return {"enabled": True, "fingerprint": fingerprint}
 
 
+_VALID_FP = {"chrome", "firefox", "safari", "ios", "edge", "android", "random"}
+
+
+def is_valid_fingerprint(fp: str) -> bool:
+    return fp in _VALID_FP
+
+
+def ttl_settings(ttl: int = 64) -> dict:
+    """TTL manipulation: low TTL can slip a probe packet past some DPI boxes."""
+    if not 1 <= ttl <= 255:
+        raise ValueError("ttl must be 1..255")
+    return {"sockopt": {"tcpKeepAliveIdle": 100, "ttl": ttl}}
+
+
+def noise_settings(packets: int = 3, min_len: int = 50,
+                   max_len: int = 200) -> dict:
+    """Noise padding: inject N meaningless packets to blur traffic shape."""
+    if packets < 0 or min_len < 0 or max_len < min_len:
+        raise ValueError("bad noise parameters")
+    return {"noises": [{"type": "rand", "packet": f"{min_len}-{max_len}",
+                        "delay": "5-15"} for _ in range(packets)]}
+
+
 # --------------------------------------------------------------------------- #
 # subscription format converters
 # --------------------------------------------------------------------------- #

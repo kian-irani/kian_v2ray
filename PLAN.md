@@ -72,8 +72,8 @@ project: kian-v2ray
 - [x] ۴.۳ WireGuard inbound + Mux.cool — `wireguard_inbound` + `mux_settings`.
 - [x] ۴.۴ خروجیِ Sing-box format — `core/protocols.to_singbox`.
 - [x] ۴.۵ خروجیِ Clash Meta + تشخیصِ خودکارِ کلاینت — `to_clash` + `detect_client` (singbox/clash/v2ray/base64).
-- [x] ۴.۶ موتورِ Self-hosted Sub — `scripts/sub-format.py` (dispatch بر اساس `--client`/`--ua` → singbox/clash/base64). صفحهٔ HTMLِ QR = follow-on.
-- [~] ۴.۷ ضدِDPI: ✅ Fragment + uTLS fingerprint (`fragment_settings`/`utls_settings`). TTL/Noise = follow-on (config flag).
+- [x] ۴.۶ Self-hosted Sub — موتورِ `scripts/sub-format.py` + **صفحهٔ `panel/web/sub.html`** (dark، usage bar/انقضا/کپی/**QR**) + endpointِ `/sub/{name}/info`.
+- [x] ۴.۷ ضدِDPI کامل — Fragment + uTLS (`fragment_settings`/`utls_settings`/`is_valid_fingerprint`) + **TTL** (`ttl_settings`) + **Noise padding** (`noise_settings`).
 - [x] ۴.۸ REALITY SNI Scanner (offline brain) — `core/censorship.score_sni`/`rank_sni_candidates`/`best_sni`.
 - [x] ۴.۹ Tor Bridge Fallback — `core/censorship.tor_bridge_outbound` (obfs4/snowflake) + `fallback_routing_rule`.
 - [x] ۴.۱۰ بات تلگرام — `scripts/kian-bot.py` (long-poll، admin-gated، status/users/add/remove/usage روی core.db). Webhook/Email = follow-on.
@@ -106,7 +106,7 @@ project: kian-v2ray
 - [x] ۷.۱ GitHub Actions: lint+test (`validate.yml`) + **Auto Release** (`release.yml`، tag `v*` → ساختِ release از CHANGELOG).
 - [x] ۷.۲ Docker Image (`Dockerfile`، GHCR، non-root) + One-click Deploy (`docker-compose.yml`: panel+prometheus+node-exporter+grafana).
 - [x] ۷.۳ SAST CodeQL (python+javascript) + Trivy fs scan (`security.yml`، هفتگی + روی PR).
-- [x] ۷.۴ Prometheus + Node/Xray Exporter (`monitoring/prometheus.yml` با scrapeهای node/xray/panel).
+- [x] ۷.۴ Prometheus + Node/Xray Exporter (`monitoring/prometheus.yml`) + **endpointِ `/metrics`** در پنل (`panel/metrics.py`، exposition format، تست‌شده).
 - [x] ۷.۵ Grafana Dashboard (`monitoring/grafana-dashboard.json` آمادهٔ import) + Alert Rules (`monitoring/alerts.yml`: CPU/RAM/NodeDown/Bandwidth).
 - [x] ۷.۶ مستندات + Plugin System: `core/plugins.py` (register/get/discover، ۴ تست) + `docs/MIGRATION.md` + `docs/CONTRIBUTING.md`.
 

@@ -28,11 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Trivy scan
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: "0"   # report, don't fail the build (gate later)
+      - name: Install Trivy (official script — avoids action-tag drift)
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
+          trivy --version
+      - name: Trivy filesystem scan
+        run: |
+          trivy fs --severity CRITICAL,HIGH --ignore-unfixed --exit-code 0 \
+            --no-progress .   # report, don't fail the build (gate later)

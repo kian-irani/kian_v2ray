@@ -5,6 +5,23 @@
 
 ---
 
+## [fix+followups] — 2026-06-21  (رفعِ CI Trivy + تکمیلِ follow-onها — auto-rp)
+
+### رفع شد
+- **CI Security (Trivy) سبز شد:** خطای `Unable to resolve action aquasecurity/trivy-action@0.24.0` —
+  تگِ نامعتبر. جایگزین شد با نصبِ مستقیمِ Trivy از اسکریپتِ رسمی (`trivy fs`) تا به تگِ اکشن وابسته نباشد.
+  (Validate و CodeQL از قبل سبز بودند؛ فقط همین job می‌افتاد.)
+
+### افزوده شد
+- **ضدِDPIِ کامل (۴.۷):** `core/protocols.ttl_settings` (دستکاریِ TTL) + `noise_settings` (Noise padding) + `is_valid_fingerprint`.
+- **صفحهٔ Self-hosted Sub (۴.۶):** `panel/web/sub.html` (dark، نوار مصرف/انقضا/کپی/**QR**) + endpointِ `/sub/{name}/info`.
+- **متریکِ پنل (۷.۴):** `panel/metrics.py` + `/metrics` (Prometheus exposition؛ users/active/traffic/nodes).
+
+### تأیید
+- `py_compile` همه سبز · YAMLِ `security.yml` معتبر · `sub.html` متوازن + JSِ inline سبز · `pytest -q` → **۴۲ passed**.
+
+---
+
 ## [ci-monitoring] — 2026-06-20  (فاز ۷: CI/CD + مانیتورینگ — auto-rp)
 
 ### افزوده شد

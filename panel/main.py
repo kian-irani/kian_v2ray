@@ -42,6 +42,7 @@ from pathlib import Path
 from core import cluster
 from core import db as core_db
 from core import migrate
+from . import metrics as panel_metrics
 from . import repo, security
 from .schemas import (BulkAction, LoginRequest, NodeCreate, NodeHeartbeat,
                       PasswordChange, RefreshRequest, StatsOut, TokenPair,
@@ -308,6 +309,19 @@ def api_audit(limit: int = 50, admin: str = Depends(require_admin),
     return {"entries": audit.tail(conn, limit=min(limit, 500))}
 
 
+@app.get("/metrics")
+def metrics(conn=Depends(get_db)):
+    """Prometheus scrape endpoint (job 'kian-panel'). Unauthenticated by
+    convention; restrict at the network layer / behind the panel's TLS."""
+    from fastapi.responses import PlainTextResponse
+    s = repo.stats(conn)
+    nodes = repo.list_nodes(conn)
+    alive = sum(1 for n in nodes if cluster.is_alive(n))
+    return PlainTextResponse(
+        panel_metrics.render_metrics(s, len(nodes), alive),
+        media_type="text/plain; version=0.0.4")
+
+
 @app.get("/api/system")
 def api_system(admin: str = Depends(require_admin)):
     """Lightweight CPU/RAM/Net snapshot from /proc for the monitor (2.8)."""
@@ -407,6 +421,26 @@ def api_route(country: str = "", admin: str = Depends(require_admin),
     return {"chosen": chosen["name"] if chosen else None,
             "failover": cluster.failover_order(nodes),
             "alerts": cluster.bandwidth_alerts(nodes)}
+
+
+@app.get("/sub/{name}/info")
+def sub_info(name: str, conn=Depends(get_db)):
+    """Public self-hosted subscription info (usage/expiry) for the sub page.
+
+    Returns only non-secret usage data. In production gate this with a per-user
+    token (?token=) so user existence isn't enumerable."""
+    user = repo.get_user(conn, name)
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
+    base = repo.get_setting(conn, "sub_base")
+    return {
+        "name": user["name"],
+        "used_bytes": user["used_bytes"],
+        "quota_bytes": user["quota_bytes"],
+        "expires_at": user["expires_at"],
+        "enabled": bool(user["enabled"]),
+        "sub_url": f"{base.rstrip('/')}/{user['name']}" if base else None,
+    }
 
 
 # Serve the dashboard SPA at /app (static dark-glass UI in panel/web).

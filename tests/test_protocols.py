@@ -22,6 +22,21 @@ def test_wireguard_inbound_and_mux():
     assert protocols.mux_settings()["max_streams"] == 8
 
 
+def test_antidpi_ttl_noise_utls():
+    assert protocols.is_valid_fingerprint("chrome")
+    assert not protocols.is_valid_fingerprint("internet-explorer")
+    assert protocols.ttl_settings(40)["sockopt"]["ttl"] == 40
+    noise = protocols.noise_settings(packets=3)
+    assert len(noise["noises"]) == 3
+    for bad in (lambda: protocols.ttl_settings(0),
+                lambda: protocols.noise_settings(min_len=300, max_len=10)):
+        try:
+            bad(); raised = False
+        except ValueError:
+            raised = True
+        assert raised
+
+
 # ---------- format converters ----------
 
 PROXIES = [
