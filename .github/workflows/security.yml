@@ -20,7 +20,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: github/codeql-action/init@v3
         with:
-          language: ${{ matrix.language }}
+          # NOTE: the input is `languages` (plural). With the wrong key CodeQL
+          # auto-detects ALL languages — including the Android Kotlin — and then
+          # fails trying to build a Java/Kotlin DB. Pin to interpreted langs only.
+          languages: ${{ matrix.language }}
+          build-mode: none
       - uses: github/codeql-action/analyze@v3
 
   trivy-fs:
