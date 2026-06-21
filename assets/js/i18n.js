@@ -114,6 +114,15 @@
     "m.days.l":     { fa: "مدت (روز — ۰ یعنی دائمی)", en: "Duration (days — 0 means permanent)" },
     "m.run.l":      { fa: "👇 این دستور را در ترمینال سرور بزن:", en: "👇 Run this command in the server terminal:" },
 
+    /* ---------- web panel setup (manage tab) ---------- */
+    "pn.head":      { fa: "🖥️ پنلِ وبِ مدیریت (اختیاری)", en: "🖥️ Web management panel (optional)" },
+    "pn.desc":      { fa: "به‌جای ترمینال، یک پنلِ گرافیکی (داشبورد) روی سرورت راه بینداز: مدیریتِ کاربر، آمار، محدودیتِ IP/سرعت، ۲FA و مدیریتِ چندسرور. نام کاربری و رمزِ ادمین را بزن تا دستورِ آماده بگیری.", en: "Instead of the terminal, run a graphical dashboard on your server: user management, stats, IP/speed limits, 2FA and multi-server. Enter an admin username & password to get a ready command." },
+    "pn.user":      { fa: "نام کاربری ادمین", en: "Admin username" },
+    "pn.pass":      { fa: "رمز عبور ادمین", en: "Admin password" },
+    "pn.gen":       { fa: "ساخت دستورِ راه‌اندازی", en: "Generate setup command" },
+    "pn.cmdlabel":  { fa: "این را روی سرور بزن (نصب باید قبلاً انجام شده باشد):", en: "Run this on the server (install must already be done):" },
+    "pn.urllabel":  { fa: "آدرس پنل بعد از راه‌اندازی:", en: "Panel URL after setup:" },
+
     /* ---------- ABOUT headings ---------- */
     "ab.roadmap":   { fa: "🗺️ نقشهٔ راه", en: "🗺️ Roadmap" },
     "ab.kv2m":      { fa: "🛠️ نرم‌افزار Kv2m (جدید)", en: "🛠️ Kv2m app (new)" },

@@ -713,6 +713,25 @@
     <p class="muted small">برای «افزودن کاربر»، بعد از اجرا، کانفیگ همان کاربر با QR در ترمینال نشان داده می‌شود. این دستورها فقط روی سروری کار می‌کنند که قبلاً نصب را روی آن انجام داده‌ای.</p>
 
     <div class="callout">🔭 در فازهای بعدی، این کارها مستقیم از <b>ربات تلگرام</b> بدون ترمینال انجام می‌شود (نقشهٔ راه را در تب «درباره» ببین).</div>
+
+    <!-- پنلِ وب: مدیریتِ گرافیکی روی سرور -->
+    <div class="server-tips" id="panel-setup" style="margin-top:18px">
+      <div class="server-tips-head" data-i18n="pn.head">🖥️ پنلِ وبِ مدیریت (اختیاری)</div>
+      <div class="server-tips-body">
+        <p data-i18n="pn.desc">به‌جای ترمینال، یک پنلِ گرافیکی (داشبورد) روی سرورت راه بینداز: مدیریتِ کاربر، آمار، محدودیتِ IP/سرعت، ۲FA و مدیریتِ چندسرور. نام کاربری و رمزِ ادمین را بزن تا دستورِ آماده بگیری.</p>
+        <div class="grid2">
+          <div class="field"><label for="panel-user" data-i18n="pn.user">نام کاربری ادمین</label><input id="panel-user" type="text" value="admin" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label for="panel-pass" data-i18n="pn.pass">رمز عبور ادمین</label><input id="panel-pass" type="text" placeholder="یک رمز قوی" autocomplete="off" spellcheck="false"></div>
+        </div>
+        <button type="button" class="btn-link" id="panel-gen" data-i18n="pn.gen">ساخت دستورِ راه‌اندازی</button>
+        <div id="panel-out" hidden>
+          <label class="hint" data-i18n="pn.cmdlabel">این را روی سرور بزن (نصب باید قبلاً انجام شده باشد):</label>
+          <pre class="term-body mono" id="panel-cmd" style="white-space:pre-wrap;word-break:break-all"></pre>
+          <label class="hint" data-i18n="pn.urllabel">آدرس پنل بعد از راه‌اندازی:</label>
+          <div class="cmdline mono" id="panel-url"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -859,5 +878,6 @@
 <script src="assets/vendor/qrcode.min.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/i18n.js" defer></script>
+<script src="assets/js/panel-cmd.js" defer></script>
 </body>
 </html>
