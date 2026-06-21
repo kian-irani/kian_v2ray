@@ -553,9 +553,9 @@
 <section class="panel-tab" data-panel="domain">
   <div class="card prose">
     <h2 data-i18n="s.domain.h">🌐 راهنمای کامل کانفیگ‌های دامنه‌دار (TLS)</h2>
-    <p class="muted">کانفیگ‌های دامنه‌دار (VLESS-WS، VMess-WS، gRPC، Trojan، HTTPUpgrade) از نظر امنیت و پایداری در ایران <b>بهترین گزینه</b> هستند، چون شبیه ترافیک HTTPS معمولی‌اند. ولی به یک <b>دامنه</b> نیاز دارند. اگر دامنه نداری، حالت Reality (پیش‌فرض) همچنان عالی است.</p>
+    <p class="muted" data-i18n-html="dm.intro">کانفیگ‌های دامنه‌دار (VLESS-WS، VMess-WS، gRPC، Trojan، HTTPUpgrade) از نظر امنیت و پایداری در ایران <b>بهترین گزینه</b> هستند، چون شبیه ترافیک HTTPS معمولی‌اند. ولی به یک <b>دامنه</b> نیاز دارند. اگر دامنه نداری، حالت Reality (پیش‌فرض) همچنان عالی است.</p>
 
-    <h3>🎯 چه دامنه‌ای بگیرم؟</h3>
+    <h3 data-i18n="dm.h.which">🎯 چه دامنه‌ای بگیرم؟</h3>
     <p>هر دامنه‌ای کار می‌کند، ولی <b>پیشنهادها</b>:</p>
     <ul>
       <li><b>دامنه‌های ارزان (~$۲-۱۰ سالانه):</b> <a href="https://www.namecheap.com/" target="_blank">Namecheap</a> · <a href="https://porkbun.com/" target="_blank">Porkbun</a> · <a href="https://www.cloudflare.com/products/registrar/" target="_blank">Cloudflare Registrar</a> (با قیمت اصلی، بدون سود)</li>
@@ -564,7 +564,7 @@
       <li><b>بپرهیز از:</b> <code>.tk</code>, <code>.ml</code>, <code>.ga</code> (فریمنوم — بسیاری از کلاینت‌ها بلاک می‌کنند)</li>
     </ul>
 
-    <h3>📡 تنظیم رکورد A — مهم‌ترین قدم</h3>
+    <h3 data-i18n="dm.h.arecord">📡 تنظیم رکورد A — مهم‌ترین قدم</h3>
     <p>بعد از خرید دامنه، در پنل DNS رجیسترار:</p>
     <ol>
       <li>یک رکورد <b>A</b> بساز.</li>
@@ -574,7 +574,7 @@
     </ol>
     <p class="muted small">انتشار DNS معمولاً ۱-۱۰ دقیقه طول می‌کشد. می‌توانی با <code>nslookup vpn.example.com</code> یا سایت <a href="https://dnschecker.org/" target="_blank">dnschecker.org</a> بررسی کنی.</p>
 
-    <h3>☁️ اگر از Cloudflare استفاده می‌کنی</h3>
+    <h3 data-i18n="dm.h.cf">☁️ اگر از Cloudflare استفاده می‌کنی</h3>
     <div class="cf-warn">
       <p><b>⚠️ مهم:</b> موقع نصب اول، آیکن ابر باید <b>خاکستری (DNS only)</b> باشد، نه نارنجی (Proxied). دلیل: Caddy باید روی پورت ۸۰ گواهی Let's Encrypt بگیرد، که اگر Cloudflare proxy فعال باشد، نمی‌گیرد.</p>
       <p>بعد از نصب موفق و اطمینان از کار کردن کانفیگ‌ها، می‌توانی Cloudflare proxy را <b>روشن</b> کنی (ابر نارنجی) که مزیت‌های اضافی دارد:</p>
@@ -585,33 +585,33 @@
       </ul>
     </div>
 
-    <h3>🔧 پروتکل‌ها — کدام را انتخاب کنم؟</h3>
+    <h3 data-i18n="dm.h.proto">🔧 پروتکل‌ها — کدام را انتخاب کنم؟</h3>
     <div class="proto-guide">
       <div class="proto-item">
         <b>VLESS-WS</b>
-        <span class="badge-rec">پیشنهاد اول</span>
-        <p>پایدارترین، کم‌سربار، عبور عالی از DPI. اگر گیج هستی، فقط همین را تیک بزن.</p>
+        <span class="badge-rec" data-i18n="dm.rec">پیشنهاد اول</span>
+        <p data-i18n="dm.p.vlessws">پایدارترین، کم‌سربار، عبور عالی از DPI. اگر گیج هستی، فقط همین را تیک بزن.</p>
       </div>
       <div class="proto-item">
         <b>VMess-WS</b>
-        <p>مشابه VLESS-WS ولی با امضای امنیتی اضافه. سازگار با کلاینت‌های قدیمی‌تر. کمی سربار بیشتر.</p>
+        <p data-i18n="dm.p.vmessws">مشابه VLESS-WS ولی با امضای امنیتی اضافه. سازگار با کلاینت‌های قدیمی‌تر. کمی سربار بیشتر.</p>
       </div>
       <div class="proto-item">
         <b>VLESS-gRPC / VMess-gRPC</b>
-        <p>مالتی‌پلکس روی HTTP/2. روی شبکه‌های پرتاخیر بهتر، ولی تنظیم سخت‌تر و گاهی توسط DPI شناسایی می‌شود.</p>
+        <p data-i18n="dm.p.grpc">مالتی‌پلکس روی HTTP/2. روی شبکه‌های پرتاخیر بهتر، ولی تنظیم سخت‌تر و گاهی توسط DPI شناسایی می‌شود.</p>
       </div>
       <div class="proto-item">
         <b>Trojan-WS</b>
-        <p>طراحی‌شده برای شبیه‌بودن کامل به ترافیک HTTPS. خوب در ایران، ولی کمی کندتر از VLESS.</p>
+        <p data-i18n="dm.p.trojan">طراحی‌شده برای شبیه‌بودن کامل به ترافیک HTTPS. خوب در ایران، ولی کمی کندتر از VLESS.</p>
       </div>
       <div class="proto-item">
         <b>VLESS-HTTPUpgrade / VMess-HTTPUpgrade</b>
-        <p>سبک‌تر از WebSocket. عبور خوب از پراکسی‌های شرکتی. نسبتاً جدید، در همهٔ کلاینت‌ها پشتیبانی نمی‌شود.</p>
+        <p data-i18n="dm.p.httpupgrade">سبک‌تر از WebSocket. عبور خوب از پراکسی‌های شرکتی. نسبتاً جدید، در همهٔ کلاینت‌ها پشتیبانی نمی‌شود.</p>
       </div>
     </div>
-    <p class="muted small">می‌توانی همه را تیک بزنی — هیچ ضرری ندارد. هر کاربر برای هر پروتکل یک لینک می‌گیرد و در v2rayNG کدام بهتر کار کرد، همان را نگه می‌دارد.</p>
+    <p class="muted small" data-i18n="dm.proto.note">می‌توانی همه را تیک بزنی — هیچ ضرری ندارد. هر کاربر برای هر پروتکل یک لینک می‌گیرد و در v2rayNG کدام بهتر کار کرد، همان را نگه می‌دارد.</p>
 
-    <h3>🚀 ترتیب کار</h3>
+    <h3 data-i18n="dm.h.order">🚀 ترتیب کار</h3>
     <ol>
       <li>دامنه بخر و رکورد A را تنظیم کن.</li>
       <li>صبر کن DNS منتشر شود (~۱-۱۰ دقیقه).</li>
@@ -622,7 +622,7 @@
       <li>تست کن: <code>curl -I https://vpn.example.com</code> باید HTTP 200 برگرداند.</li>
     </ol>
 
-    <h3>❗ عیب‌یابی متداول</h3>
+    <h3 data-i18n="dm.h.trouble">❗ عیب‌یابی متداول</h3>
     <details>
       <summary>Caddy گواهی نگرفت / اتصال نمی‌گیرد</summary>
       <ul>
