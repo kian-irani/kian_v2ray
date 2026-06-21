@@ -14,6 +14,7 @@ jobs:
           bash -n scripts/kian-v2ray
           bash -n scripts/watchdog.sh
           bash -n scripts/kian-protocols.sh
+          bash -n scripts/kian-panel.sh
           bash -n scripts/release.sh
       - name: JS syntax (node --check)
         run: node --check assets/js/app.js
@@ -23,7 +24,7 @@ jobs:
           python3 -m py_compile scripts/kian-backup.py scripts/config-health.py scripts/sub-format.py scripts/kian-bot.py scripts/migrate-import.py scripts/kian-notify-expiry.py
           python3 -m py_compile core/__init__.py core/db.py core/migrate.py core/logging.py core/audit.py core/protocols.py core/censorship.py core/cluster.py core/plugins.py core/notify.py
           python3 -m py_compile node-agent/agent.py
-          python3 -m py_compile panel/__init__.py panel/security.py panel/repo.py panel/schemas.py panel/main.py panel/metrics.py
+          python3 -m py_compile panel/__init__.py panel/security.py panel/repo.py panel/schemas.py panel/main.py panel/metrics.py panel/bridge.py
           python3 -m py_compile kv2m/core.py kv2m/i18n.py kv2m/theme.py kv2m/app.py kv2m/cli.py kv2m/kv2m.py
           python3 -m py_compile kv2m/servers.py kv2m/updater.py kv2m/panel_client.py
       - name: Unit tests (pytest)

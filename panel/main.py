@@ -42,6 +42,7 @@ from pathlib import Path
 from core import cluster
 from core import db as core_db
 from core import migrate
+from . import bridge
 from . import metrics as panel_metrics
 from . import repo, security
 from .schemas import (BulkAction, LoginRequest, NodeCreate, NodeHeartbeat,
@@ -305,6 +306,14 @@ def api_auto_disable(admin: str = Depends(require_admin), conn=Depends(get_db)):
 @app.get("/api/stats", response_model=StatsOut)
 def api_stats(admin: str = Depends(require_admin), conn=Depends(get_db)):
     return repo.stats(conn)
+
+
+@app.post("/api/sync")
+def api_sync(admin: str = Depends(require_admin), conn=Depends(get_db)):
+    """Pull the installer's real users (users.json) into the panel db so the
+    dashboard reflects the live server (bridge)."""
+    result = bridge.import_users(conn)
+    return {"ok": True, "cli_available": bridge.cli_available(), **result}
 
 
 @app.get("/api/audit")

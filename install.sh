@@ -647,6 +647,8 @@ curl -fsSL "$RAW_BASE/scripts/kian-v2ray"  -o /usr/local/bin/kian-v2ray  && chmo
 curl -fsSL "$RAW_BASE/scripts/watchdog.sh" -o /usr/local/bin/kian-v2ray-watchdog.sh && chmod +x /usr/local/bin/kian-v2ray-watchdog.sh
 # پروتکل‌های اضافی (Hysteria2/TUIC روی sing-box) — فقط نصب می‌شود، خودکار اجرا نمی‌شود.
 curl -fsSL "$RAW_BASE/scripts/kian-protocols.sh" -o /usr/local/bin/kian-protocols.sh 2>/dev/null && chmod +x /usr/local/bin/kian-protocols.sh || true
+# پنلِ وب — فقط نصب می‌شود؛ با KIAN_PANEL=1 یا «kian-v2ray panel» راه می‌افتد.
+curl -fsSL "$RAW_BASE/scripts/kian-panel.sh" -o /usr/local/bin/kian-panel.sh 2>/dev/null && chmod +x /usr/local/bin/kian-panel.sh || true
 cat > /etc/cron.d/kian-v2ray-watchdog <<'CRON'
 */10 * * * * root /usr/local/bin/kian-v2ray-watchdog.sh >> /var/log/kian-xray/watchdog.log 2>&1
 CRON
@@ -800,6 +802,12 @@ mark_step firewall
 if [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ] && [ -x /usr/local/bin/kian-protocols.sh ]; then
   inf "فعال‌سازی پروتکل‌های اضافی (Hysteria2/TUIC روی sing-box)"
   bash /usr/local/bin/kian-protocols.sh enable || warn "راه‌اندازی sing-box ناموفق بود — Xray دست‌نخورده است"
+fi
+
+# پنلِ وب (اختیاری — فقط با KIAN_PANEL=1). additive؛ Xray دست‌نخورده.
+if [ "${KIAN_PANEL:-0}" = "1" ] && [ -x /usr/local/bin/kian-panel.sh ]; then
+  inf "راه‌اندازیِ پنلِ وب"
+  bash /usr/local/bin/kian-panel.sh enable || warn "راه‌اندازی پنل ناموفق بود — Xray دست‌نخورده است"
 fi
 
 # --- پایان -----------------------------------------------------------------

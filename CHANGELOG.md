@@ -5,6 +5,23 @@
 
 ---
 
+## [installer 2.4.0] — 2026-06-21  (پنلِ وب: واقعی + آسان — integration)
+
+### چرا
+بررسیِ کامل نشان داد پنل روی DBِ **جدا** کار می‌کرد و به Xrayِ نصب‌شده وصل نبود، و راهِ آسانِ deploy نداشت.
+
+### افزوده شد
+- **`panel/bridge.py`** — پل بینِ پنل و سرورِ واقعی: `import_users` کاربرانِ `users.json`ِ نصب‌کننده را به پنل می‌آورد،
+  `cli()` برای تغییرِ واقعی (`kian-v2ray add/remove`)، + endpointِ **`/api/sync`**. (۳ تستِ جدید.)
+- **`scripts/kian-panel.sh`** — **deployِ یک‌دستوریِ پنل**: venv + نصبِ deps + سرویسِ systemd + پرسیدنِ admin user/pass +
+  sync کاربرانِ واقعی + بازکردنِ پورت + چاپِ **URL و رمز**. دستور: `kian-v2ray panel [enable|url|disable|status]`.
+- **`install.sh`:** با `KIAN_PANEL=1` پنل را موقعِ نصب راه می‌اندازد (additive، Xray دست‌نخورده).
+
+### تأیید
+- `bash -n` همه + `py_compile panel/bridge.py` سبز (به CI اضافه شد) · `pytest -q` → **۵۱ passed**.
+
+---
+
 ## [installer 2.3.1] — 2026-06-21  (اعلان‌ها + سنکِ کاملِ رودمپ — auto-rp)
 
 ### افزوده شد
