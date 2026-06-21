@@ -4,7 +4,7 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "3.2.0"  # 3.2: Hysteria2/TUIC extra protocols in generator (parity with web/app)
+APP_VERSION = "3.2.1"  # 3.2: Hysteria2/TUIC in generator + web-panel deploy from the GUI
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
@@ -298,6 +298,14 @@ def cmd_sub(n=""):         n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return f"kian
 def cmd_installed():       return "command -v kian-v2ray >/dev/null 2>&1 && echo KV2M_OK || echo KV2M_MISSING"
 def cmd_update():          return "kian-v2ray update"
 def cmd_uninstall():       return "echo DELETE | kian-v2ray uninstall"
+def cmd_panel(user="admin",password=""):
+    """Deploy the web panel with the given admin user/pass (empty pass = random
+    on the server). Returns the URL + credentials in its output."""
+    import shlex
+    user=re.sub(r'[^a-zA-Z0-9_-]','',user or 'admin') or 'admin'
+    env=f"KIAN_ADMIN_USER={user} "
+    if password: env+=f"KIAN_ADMIN_PASSWORD={shlex.quote(password)} "  # shell-safe, NOT url-encoded
+    return f"{env}kian-v2ray panel enable"
 
 def parse_users(text):
     rows=[]

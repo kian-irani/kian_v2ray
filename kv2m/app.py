@@ -359,15 +359,19 @@ class MainWindow(QWidget):
         self.m_action = QComboBox()
         for val,lab in [("status","📊 status"),("users","📋 users"),("add","➕ add"),("configs","🔗 configs"),
                         ("sub","⭐ sub"),("renew","🔄 renew"),("reset","♻️ reset"),("remove","🗑️ remove"),
-                        ("update","⬆️ update"),("uninstall","❌ uninstall")]:
+                        ("panel","🌐 web panel"),("update","⬆️ update"),("uninstall","❌ uninstall")]:
             self.m_action.addItem(lab, val)
         self.m_name = QLineEdit(); self.m_name.setPlaceholderText("ali")
         self.m_gb = QLineEdit("100"); self.m_gb.setFixedWidth(80)
         self.m_days = QLineEdit("30"); self.m_days.setFixedWidth(80)
+        # Panel admin password (used only by the 'web panel' action; empty = random)
+        self.m_panelpass = QLineEdit(); self.m_panelpass.setEchoMode(QLineEdit.Password)
+        self.m_panelpass.setPlaceholderText(tr("manage.panelpass"))
         g.addWidget(mut(tr("manage.action")),0,0); g.addWidget(self.m_action,0,1,1,3)
         g.addWidget(mut(tr("manage.name")),1,0); g.addWidget(self.m_name,1,1)
         g.addWidget(mut("GB"),1,2); g.addWidget(self.m_gb,1,3)
         g.addWidget(mut("Days"),2,2); g.addWidget(self.m_days,2,3)
+        g.addWidget(mut(tr("manage.panelpass")),2,0); g.addWidget(self.m_panelpass,2,1)
         v.addWidget(c)
         c2 = card(); c2l = QVBoxLayout(c2); c2l.setContentsMargins(16,12,16,12)
         lbl = QLabel(tr("manage.run")); lbl.setObjectName("muted"); c2l.addWidget(lbl)
@@ -379,6 +383,7 @@ class MainWindow(QWidget):
         v.addWidget(c2); v.addStretch(1)
         self.m_action.currentIndexChanged.connect(self._upd_manage); self.m_name.textChanged.connect(self._upd_manage)
         self.m_gb.textChanged.connect(self._upd_manage); self.m_days.textChanged.connect(self._upd_manage)
+        self.m_panelpass.textChanged.connect(self._upd_manage)
         self._upd_manage()
         return page
 
@@ -393,6 +398,7 @@ class MainWindow(QWidget):
         if a=="renew": return core.cmd_renew(n,num(self.m_days,30))
         if a=="reset": return core.cmd_reset(n,num(self.m_gb,0))
         if a=="remove": return core.cmd_remove(n)
+        if a=="panel": return core.cmd_panel(n or "admin", self.m_panelpass.text().strip())
         return ""
 
     def _upd_manage(self): self.m_out.setPlainText(self._manage_cmd())
