@@ -121,6 +121,7 @@ class ConfigGen {
     int ssPort = 8388,
     String? tlsDomain,
     List<String> tlsProtoKinds = const [],
+    List<String> extraProtocols = const [],
   }) async {
     final (priv, pub, sid) = await genReality();
     final installId = _randHex(16);
@@ -190,6 +191,7 @@ class ConfigGen {
       'install_id': installId,
       'tls_domain': tlsEnabled ? dom : '',
       'caddyfile_b64': tlsEnabled ? _b64(_caddyfile(dom, tls)) : '',
+      'extra_protocols': extraProtocols,   // Hysteria2/TUIC روی sing-box
     };
     final cmd = "export KIAN_PAYLOAD='${_b64(jsonEncode(payload))}'\n"
         "curl -fsSL $rawBase/install.sh -o /tmp/kian-v2ray.sh && "
@@ -213,11 +215,14 @@ class ConfigGen {
     for (var i = 0; i < _ports.length; i++) {
       final tag = 'reality-$channel-${i + 1}';
       realityTags.add(tag);
+      final sni = _snis[i % _snis.length];
       inbounds.add({'tag': tag, 'protocol': 'vless', 'port': _ports[i],
         'settings': {'clients': realityClients, 'decryption': 'none'},
         'streamSettings': {'network': 'tcp', 'security': 'reality',
-          'realitySettings': {'privateKey': priv, 'shortIds': [sid],
-            'serverNames': [_snis[i % _snis.length]]}},
+          // dest is REQUIRED by xray-core 26.x — without it the REALITY inbound
+          // fails to build and xray never starts (see install.sh sanitizer).
+          'realitySettings': {'dest': '$sni:443', 'privateKey': priv,
+            'shortIds': [sid], 'serverNames': [sni]}},
         'sniffing': sniff});
     }
     // TLS inbounds (behind Caddy, on localhost)

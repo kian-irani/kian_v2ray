@@ -387,6 +387,32 @@ mkdir -p "$XRAY_DIR" "$LOG_DIR"
 chmod 777 "$LOG_DIR"   # کانتینر Xray با کاربر غیر-root → نیاز به نوشتن لاگ
 printf '%s' "$PAYLOAD_JSON" | jq -r '.config_b64' | base64 -d > "$XRAY_DIR/config.json"
 jq -e . "$XRAY_DIR/config.json" >/dev/null
+
+# --- اصلاح‌گرِ REALITY dest (بحرانی) ----------------------------------------
+# Xray-core 26.x اگر inboundِ REALITY فیلدِ dest/target نداشته باشد بالا نمی‌آید
+# (خطا: "Failed to build REALITY config"). بعضی تولیدکننده‌های کلاینت (نسخه‌های
+# قدیمیِ اپ موبایل/دسکتاپ) این فیلد را جا می‌اندازند → Xray اصلاً start نمی‌شود و
+# هیچ پورتی گوش نمی‌دهد. اینجا برای هر inboundِ reality اگر dest خالی بود، از روی
+# serverNames[0] آن را می‌سازیم تا Xray همیشه بالا بیاید (idempotent، defensive).
+_tmpdest="$(mktemp)"
+if jq '
+  .inbounds |= map(
+    if ((.streamSettings.security? // "") == "reality")
+       and (((.streamSettings.realitySettings.dest // .streamSettings.realitySettings.target // "") | tostring) == "")
+    then .streamSettings.realitySettings.dest =
+           ((.streamSettings.realitySettings.serverNames[0] // "www.microsoft.com") + ":443")
+    else . end)
+' "$XRAY_DIR/config.json" > "$_tmpdest" 2>/dev/null && jq -e . "$_tmpdest" >/dev/null 2>&1; then
+  if ! cmp -s "$XRAY_DIR/config.json" "$_tmpdest"; then
+    mv "$_tmpdest" "$XRAY_DIR/config.json"
+    inf "اصلاح‌گرِ REALITY: فیلدِ dest برای inboundها افزوده شد (سازگاری با Xray 26.x)"
+  else
+    rm -f "$_tmpdest"
+  fi
+else
+  rm -f "$_tmpdest"
+fi
+
 chmod 644 "$XRAY_DIR/config.json"   # کانتینر Xray با کاربر غیر-root → باید config را بخواند
 
 # --- مشکل ۰.۱: پورت API (آمار) نباید با 3x-ui/Marzban روی همین سرور تداخل کند ---
@@ -450,6 +476,9 @@ SUB_PORT="$(printf '%s' "$PAYLOAD_JSON" | jq -r '(.sub_port // 80) | if type=="a
 SUB_TOKENS="$(printf '%s' "$PAYLOAD_JSON" | jq -c '.sub_tokens // {}')"
 echo "$SUB_TOKENS" > "$ETC_DIR/sub_tokens.json"; chmod 600 "$ETC_DIR/sub_tokens.json"
 echo "$SUB_PORT" > "$ETC_DIR/sub_port.txt"
+# پروتکل‌های اضافی که کاربر در صفحه/اپ انتخاب کرده (Hysteria2/TUIC روی sing-box).
+# مثال: ["hysteria2","tuic"]. اگر env هم ست باشد، فعال می‌شود (هر دو منبع پذیرفته).
+EXTRA_PROTOCOLS="$(printf '%s' "$PAYLOAD_JSON" | jq -r '(.extra_protocols // []) | join(",")')"
 mkdir -p "$ETC_DIR/sub"
 if [ "$(printf '%s' "$SUB_TOKENS" | jq 'length')" -gt 0 ]; then
   # برای هر ایمیل، لینک‌های همان کاربر (که نام کاربر در label لینک هست) را جمع کن
@@ -796,12 +825,41 @@ else
 fi
 mark_step firewall
 
-# --- پروتکل‌های اضافی (اختیاری — فقط با KIAN_EXTRA_PROTOCOLS=1) --------------
-# Hysteria2/TUIC روی sing-box، کنارِ Xray. کاملاً additive؛ پیش‌فرض خاموش است
-# تا مسیرِ کارکنندهٔ Reality/SS/TLS دست‌نخورده بماند.
-if [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ] && [ -x /usr/local/bin/kian-protocols.sh ]; then
-  inf "فعال‌سازی پروتکل‌های اضافی (Hysteria2/TUIC روی sing-box)"
-  bash /usr/local/bin/kian-protocols.sh enable || warn "راه‌اندازی sing-box ناموفق بود — Xray دست‌نخورده است"
+# --- پروتکل‌های اضافی (انتخابِ کاربر در صفحه/اپ، یا KIAN_EXTRA_PROTOCOLS=1) ---
+# Hysteria2/TUIC روی sing-box، کنارِ Xray. کاملاً additive — مسیرِ کارکنندهٔ
+# Reality/SS/TLS دست‌نخورده می‌ماند. حالا با انتخابِ کاربر (payload.extra_protocols)
+# هم فعال می‌شود، و لینک‌های تولیدشده به Subscription هر کاربر اضافه + Gist دوباره
+# همگام می‌شود تا در کلاینت (اپ/صفحه) مستقیماً دیده شوند.
+if { [ -n "$EXTRA_PROTOCOLS" ] || [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ]; } \
+   && [ -x /usr/local/bin/kian-protocols.sh ]; then
+  inf "فعال‌سازی پروتکل‌های اضافی (Hysteria2/TUIC روی sing-box): ${EXTRA_PROTOCOLS:-env}"
+  if bash /usr/local/bin/kian-protocols.sh enable; then
+    # لینک‌های اشتراکیِ hy2/tuic را بگیر (خطوطی که با پروتکل شروع می‌شوند)
+    EXTRA_LINKS="$(bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
+      | grep -oE '(hysteria2|tuic)://[^[:space:]]+' || true)"
+    if [ -n "$EXTRA_LINKS" ]; then
+      printf '%s\n' "$EXTRA_LINKS" >> "$ETC_DIR/links.txt"
+      printf '%s\n' "$EXTRA_LINKS" > "$ETC_DIR/extra_links.txt"
+      # به Subscription هر کاربر اضافه کن (لینک‌ها اشتراکی‌اند) و دوباره base64 کن
+      if [ -d "$ETC_DIR/sub" ]; then
+        for f in "$ETC_DIR/sub"/*.txt; do
+          [ -f "$f" ] || continue
+          { base64 -d "$f" 2>/dev/null; printf '%s\n' "$EXTRA_LINKS"; } \
+            | sed '/^$/d' | base64 -w0 > "${f}.new" && mv "${f}.new" "$f"
+        done
+        # Gist را دوباره همگام کن تا لینکِ HTTPS هم به‌روز شود
+        GIST_PROXY_VAL="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.gist_proxy // ""')"
+        if [ -n "$GIST_PROXY_VAL" ] && [ -x /usr/local/bin/kian-gist-sync.py ]; then
+          python3 /usr/local/bin/kian-gist-sync.py "$GIST_PROXY_VAL" \
+            "$ETC_DIR/install_id" "$ETC_DIR/sub" "$ETC_DIR/gist_map.json" >/dev/null 2>&1 \
+            && say "لینک‌های Hysteria2/TUIC به Subscription اضافه شد ✅" \
+            || warn "به‌روزرسانیِ Gist برای پروتکل‌های اضافی ناموفق بود (sub محلی به‌روز است)"
+        fi
+      fi
+    fi
+  else
+    warn "راه‌اندازی sing-box ناموفق بود — Xray دست‌نخورده است"
+  fi
 fi
 
 # پنلِ وب (اختیاری — فقط با KIAN_PANEL=1). additive؛ Xray دست‌نخورده.

@@ -54,6 +54,13 @@ class Strings {
     'setup.tls': ['دامنه + TLS (پیشرفته)', 'Domain + TLS (advanced)'],
     'setup.tls.d': ['VLESS/VMess/Trojan روی WS پشت Caddy — نیاز به دامنه دارد.', 'VLESS/VMess/Trojan over WS behind Caddy — needs a domain.'],
     'setup.tlsdomain': ['دامنه (رکورد A به IP سرور)', 'Domain (A record to server IP)'],
+    'setup.extra': ['پروتکل‌های اضافه (UDP)', 'Extra protocols (UDP)'],
+    'setup.extra.d': ['روی sing-box کنارِ Xray؛ نیازمندِ بازبودنِ پورت UDP. به Subscription اضافه می‌شوند.', 'On sing-box next to Xray; needs UDP open. Added to your subscription.'],
+    'setup.hy2': ['Hysteria2', 'Hysteria2'],
+    'setup.hy2.d': ['سریع روی شبکهٔ پُرافت، عبورِ عالی از DPI.', 'Fast on lossy networks; great DPI evasion.'],
+    'setup.tuic': ['TUIC v5', 'TUIC v5'],
+    'setup.tuic.d': ['QUIC، 0-RTT، کنترلِ ازدحام BBR.', 'QUIC, 0-RTT, BBR congestion control.'],
+    'setup.gohome': ['بازگشت به خانه و دیدنِ کانفیگ‌ها', 'Back to home & view configs'],
   };
 
   String t(String key) {

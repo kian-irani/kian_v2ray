@@ -319,6 +319,8 @@ function readForm() {
       channel: ($('input[name="tls-channel"]:checked') || {}).value || 'direct',
       protos: $$('input[name="tls-proto"]:checked').map(el => el.value),
     },
+    // پروتکل‌های اضافه روی sing-box (مستقل از TLS/دامنه — UDP، ضدِDPI قوی)
+    extraProtocols: $$('input[name="extra-proto"]:checked').map(el => el.value),
   };
 }
 
@@ -480,6 +482,7 @@ async function generate(f) {
     install_id: installId,             // همان شناسه‌ای که مرورگر استفاده کرده تا URL Gist‌ها یکی بمانند
     tls_domain: tlsProfiles.length ? f.tls.domain : '',
     caddyfile_b64: tlsProfiles.length ? utf8ToB64(buildCaddyfile(f.tls.domain, tlsProfiles)) : '',
+    extra_protocols: f.extraProtocols || [],   // Hysteria2/TUIC روی sing-box (انتخابِ کاربر)
   };
   const payloadB64 = utf8ToB64(JSON.stringify(payload));
 

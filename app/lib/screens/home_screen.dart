@@ -58,6 +58,26 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  /// Reload the server list from cache (after setup auto-imports configs).
+  Future<void> _reloadFromCache() async {
+    final saved = await _cache.loadServers();
+    final sel = await _cache.loadSelected();
+    if (!mounted) return;
+    setState(() {
+      _servers
+        ..clear()
+        ..addAll(saved);
+      ServerProfile? match;
+      for (final srv in _servers) {
+        if (srv.name == sel) {
+          match = srv;
+          break;
+        }
+      }
+      _selected = match ?? (_servers.isNotEmpty ? _servers.first : null);
+    });
+  }
+
   void _importLink(String body) {
     final parsed = parseSubscription(body);
     if (parsed.isEmpty) return;
@@ -111,8 +131,12 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             tooltip: s.t('open.setup'),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => SetupScreen(strings: s))),
+            onPressed: () async {
+              await Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => SetupScreen(strings: s)));
+              // Setup may have auto-imported configs into the cache — reload.
+              await _reloadFromCache();
+            },
             icon: const Icon(Icons.rocket_launch_outlined),
           ),
           IconButton(

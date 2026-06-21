@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../i18n.dart';
+import '../models/server_profile.dart';
+import '../services/cache.dart';
 import '../services/config_gen.dart';
 import '../services/ssh_installer.dart';
 import '../theme.dart';
@@ -27,11 +29,29 @@ class _SetupScreenState extends State<SetupScreen> {
   bool _warp = false;
   bool _ss = false;
   bool _tls = false;
+  bool _hy2 = false;
+  bool _tuic = false;
   bool _busy = false;
   final _log = <String>[];
   String? _subUrl;
+  int _imported = 0;
 
   void _say(String s) => setState(() => _log.add(s));
+
+  /// Turn the generated per-user links into ServerProfiles for the home list.
+  /// Names come from the link label (#KIAN-<name>-<port>) when present.
+  List<ServerProfile> _profilesFromBundle(InstallBundle bundle) {
+    final out = <ServerProfile>[];
+    for (final links in bundle.perUserLinks.values) {
+      for (final link in links) {
+        String? name;
+        final frag = Uri.tryParse(link)?.fragment;
+        if (frag != null && frag.isNotEmpty) name = Uri.decodeComponent(frag);
+        out.add(ServerProfile.fromUri(link, name: name));
+      }
+    }
+    return out;
+  }
 
   Future<void> _run() async {
     setState(() { _busy = true; _log.clear(); _subUrl = null; });
@@ -46,6 +66,7 @@ class _SetupScreenState extends State<SetupScreen> {
         ss: _ss,
         tlsDomain: _tls ? _tlsDomain.text.trim() : null,
         tlsProtoKinds: _tls ? const ['vless-ws', 'vmess-ws', 'trojan-ws'] : const [],
+        extraProtocols: [if (_hy2) 'hysteria2', if (_tuic) 'tuic'],
       );
 
       _say('• ساختِ لینکِ Subscription روی Gist…');
@@ -66,7 +87,18 @@ class _SetupScreenState extends State<SetupScreen> {
       _say(out.trim().split('\n').take(8).join('\n'));
       if (code == 0) {
         _say('✅ نصب کامل شد.');
-        setState(() => _subUrl = firstUrl);
+        // Auto-import the generated configs into the app's server list so the
+        // user doesn't have to copy the sub link by hand (the #1 complaint).
+        final imported = _profilesFromBundle(bundle);
+        if (imported.isNotEmpty) {
+          final cache = Cache();
+          final existing = await cache.loadServers();
+          existing.addAll(imported);
+          await cache.saveServers(existing);
+          await cache.saveSelected(imported.first.name);
+          _say('✅ ${imported.length} کانفیگ به اپ اضافه شد — در صفحهٔ خانه ببین.');
+        }
+        setState(() { _subUrl = firstUrl; _imported = imported.length; });
       } else {
         _say('⚠️ کدِ خروجی $code — لاگ را ببین.');
       }
@@ -114,6 +146,20 @@ class _SetupScreenState extends State<SetupScreen> {
           ),
           if (_tls)
             _field(_tlsDomain, s.t('setup.tlsdomain'), hint: 'vpn.example.com'),
+          const Divider(height: 24),
+          Text(s.t('setup.extra'),
+              style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
+          Text(s.t('setup.extra.d'), style: const TextStyle(fontSize: 12)),
+          SwitchListTile(
+            value: _hy2, onChanged: (v) => setState(() => _hy2 = v),
+            title: Text(s.t('setup.hy2')), subtitle: Text(s.t('setup.hy2.d')),
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            value: _tuic, onChanged: (v) => setState(() => _tuic = v),
+            title: Text(s.t('setup.tuic')), subtitle: Text(s.t('setup.tuic.d')),
+            contentPadding: EdgeInsets.zero,
+          ),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: _busy ? null : _run,
@@ -140,6 +186,14 @@ class _SetupScreenState extends State<SetupScreen> {
                 style: const TextStyle(color: KianTheme.accent)),
             SelectableText(_subUrl!,
                 style: const TextStyle(fontFamily: 'monospace')),
+          ],
+          if (_imported > 0) ...[
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(context, true),
+              icon: const Icon(Icons.home_outlined),
+              label: Text(s.t('setup.gohome')),
+            ),
           ],
         ],
       ),

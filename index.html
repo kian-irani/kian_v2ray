@@ -240,6 +240,17 @@
           <label for="ss-port">پورت Shadowsocks</label>
           <input id="ss-port" type="number" min="1" max="65535" value="8388">
         </div>
+        <div class="field" id="field-extra-protos">
+          <label>پروتکل‌های اضافه (UDP — ضدِ DPI قوی) <span class="muted small">اختیاری</span></label>
+          <p class="muted small" style="margin:.2rem 0 .6rem">
+            روی سرویسِ مستقلِ <b>sing-box</b> کنارِ Xray نصب می‌شوند و مسیرِ Reality/SS/TLS را دست‌نمی‌زنند.
+            نیازمندِ بازبودنِ پورتِ <b>UDP</b> روی سرور. لینک‌ها خودکار به Subscription اضافه می‌شوند.
+          </p>
+          <div class="tls-protos">
+            <label class="proto-chk"><input type="checkbox" name="extra-proto" value="hysteria2"> <b>Hysteria2</b><small>سریع روی شبکهٔ پُرافت/پُرتأخیر، عبورِ عالی از DPI</small></label>
+            <label class="proto-chk"><input type="checkbox" name="extra-proto" value="tuic"> <b>TUIC v5</b><small>QUIC، 0-RTT، کنترلِ ازدحام BBR</small></label>
+          </div>
+        </div>
         <div class="port-info">
           <div class="port-info-head">📋 پورت‌های kian-v2ray — راهنمای کامل</div>
           <div class="port-info-body">
