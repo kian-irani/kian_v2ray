@@ -1,0 +1,71 @@
+name: Build Kv2m Android
+on:
+  push:
+    tags: ['app-v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.24.5'
+
+      - name: Generate boilerplate, keep our custom Android sources
+        working-directory: app
+        run: |
+          # flutter create fills the generated boilerplate (gradle wrapper,
+          # launcher icons, default styles). Our VPN-specific files are tracked
+          # in git, so we restore them over whatever flutter create wrote.
+          flutter create --org com.kianirani --project-name kv2m --platforms=android .
+          git checkout -- \
+            android/app/src/main/AndroidManifest.xml \
+            android/app/src/main/kotlin \
+            android/app/build.gradle \
+            android/app/proguard-rules.pro \
+            android/settings.gradle \
+            android/build.gradle \
+            android/gradle.properties \
+            android/app/src/main/res/values/styles.xml \
+            android/app/src/main/res/drawable/launch_background.xml \
+            2>/dev/null || true
+
+      - name: Build debug APK (preview — UI works; native tunnel core pending)
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter build apk --debug
+          ls -lh build/app/outputs/flutter-apk/
+
+      - name: Rename APK
+        working-directory: app
+        run: |
+          ver="${GITHUB_REF_NAME#app-v}"
+          cp build/app/outputs/flutter-apk/app-debug.apk "Kv2m-${ver}-preview.apk"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Kv2m Android ${{ github.ref_name }} (preview)"
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## Kv2m for Android — preview build
+
+            یک نسخهٔ **پیش‌نمایش**: کلِ رابطِ کاربری کار می‌کند (افزودنِ سرور از لینک/QR،
+            انتخابِ خودکار، تمِ تیره/روشن، دوزبانه) ولی **هستهٔ تونلِ native (xray-core .aar)
+            هنوز bundle نشده** — پس اتصالِ واقعیِ ترافیک در همین build فعال نیست.
+
+            A **preview** build: the full UI works, but the native tunnel core
+            (xray-core `.aar`) isn't bundled yet, so real packet forwarding is not
+            active in this build. For sideloading/testing only.
+          files: app/Kv2m-*-preview.apk
