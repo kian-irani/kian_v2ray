@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../i18n.dart';
+import '../models/install_record.dart';
 import '../models/server_profile.dart';
 import '../services/cache.dart';
 import '../services/config_gen.dart';
@@ -51,19 +52,20 @@ class _SetupScreenState extends State<SetupScreen> {
     return List.generate(14, (_) => chars[r.nextInt(chars.length)]).join();
   }
 
-  /// Pull URL/Username/Password lines out of kian-panel.sh output. Falls back to
-  /// the values we sent if the script didn't echo them.
-  String _parsePanel(String out, {required String fallbackUser, required String fallbackPass}) {
-    String pick(String key, String dflt) {
-      for (final line in out.split('\n')) {
-        final i = line.indexOf(key);
-        if (i != -1) return line.substring(i + key.length).trim();
-      }
-      return dflt;
+  /// Pick the first line containing `key` and return the text after it.
+  String _panelPick(String out, String key, String dflt) {
+    for (final line in out.split('\n')) {
+      final i = line.indexOf(key);
+      if (i != -1) return line.substring(i + key.length).trim();
     }
-    final url = pick('URL:', '');
-    final user = pick('Username:', fallbackUser);
-    final pass = pick('Password:', fallbackPass);
+    return dflt;
+  }
+
+  /// Human-readable panel block for the on-screen result.
+  String _parsePanel(String out, {required String fallbackUser, required String fallbackPass}) {
+    final url = _panelPick(out, 'URL:', '');
+    final user = _panelPick(out, 'Username:', fallbackUser);
+    final pass = _panelPick(out, 'Password:', fallbackPass);
     return [if (url.isNotEmpty) url, 'user: $user', 'pass: $pass'].join('\n');
   }
 
@@ -132,6 +134,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
         // Optionally deploy the web panel over the same SSH session and show
         // the URL + credentials (the user's "no panel / no web UI" complaint).
+        String? panelUrl, panelUser, panelPass;
         if (_panel) {
           _say('• راه‌اندازیِ پنلِ وب…');
           final pass = _panelPass.text.trim().isEmpty
@@ -139,13 +142,36 @@ class _SetupScreenState extends State<SetupScreen> {
           final user = _panelUser.text.trim().isEmpty ? 'admin' : _panelUser.text.trim();
           final (pc, pout) = await ssh.deployPanel(user, pass);
           if (pc == 0) {
-            final info = _parsePanel(pout, fallbackUser: user, fallbackPass: pass);
-            setState(() => _panelInfo = info);
+            panelUser = user;
+            panelPass = _panelPick(pout, 'Password:', pass);
+            panelUrl = _panelPick(pout, 'URL:', '');
+            setState(() => _panelInfo = _parsePanel(pout, fallbackUser: user, fallbackPass: pass));
             _say('✅ پنلِ وب آماده شد.');
           } else {
             _say('⚠️ راه‌اندازیِ پنل ناموفق بود (کد $pc).');
           }
         }
+
+        // Record this install in the app's history so the user never loses the
+        // sub link / panel URL / credentials.
+        await cache.addInstallRecord(InstallRecord(
+          serverIp: _ip.text.trim(),
+          dateIso: DateTime.now().toIso8601String(),
+          subUrl: firstUrl,
+          panelUrl: (panelUrl != null && panelUrl.isNotEmpty) ? panelUrl : null,
+          panelUser: panelUser,
+          panelPass: panelPass,
+          protocols: [
+            'reality',
+            if (_warp) 'warp',
+            if (_ss) 'shadowsocks',
+            if (_tls) 'tls',
+            if (_hy2) 'hysteria2',
+            if (_tuic) 'tuic',
+          ],
+          userCount: imported.isEmpty ? 1 : imported.length,
+        ));
+        _say('🗂️ در تاریخچهٔ نصب ذخیره شد.');
       } else {
         _say('⚠️ کدِ خروجی $code — لاگ را ببین.');
       }

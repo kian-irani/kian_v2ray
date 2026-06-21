@@ -4,7 +4,7 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "3.1.0"  # 3.1: multi-server CLI + persisted settings + auto-update check
+APP_VERSION = "3.2.0"  # 3.2: Hysteria2/TUIC extra protocols in generator (parity with web/app)
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
@@ -267,6 +267,9 @@ def generate(opts):
     ports=[p["port"] for p in profiles]+([ss["port"]] if ss["enabled"] else [])
     tls_wants_warp=tls_enabled and ("warp" in tls_channels)
     warp_needed=("warp" in channels) or tls_wants_warp
+    # پروتکل‌های اضافه (Hysteria2/TUIC روی sing-box) — install.sh آن‌ها را enable
+    # می‌کند و لینک‌هایشان را به Subscription می‌افزاید. مقدارِ معتبر: ["hysteria2","tuic"].
+    extra_protocols=[p for p in (opts.get("extra_protocols") or []) if p in ("hysteria2","tuic")]
     payload={"warp_needed":warp_needed,"server_ip":ip,
              "config_b64":_b64(json.dumps(config)),"users_b64":_b64(json.dumps({"users":users})),
              "links":links,"ports":ports,"api_port":api_port,"sub_port":SUB_PORTS,
@@ -274,7 +277,8 @@ def generate(opts):
              "gist_proxy":GIST_PROXY,"install_id":install_id,
              "ss_password":ss["password"] if ss["enabled"] else "",
              "tls_domain":tls_domain if tls_profiles else "",
-             "caddyfile_b64":_b64(build_caddyfile(tls_domain,tls_profiles)) if tls_profiles else ""}
+             "caddyfile_b64":_b64(build_caddyfile(tls_domain,tls_profiles)) if tls_profiles else "",
+             "extra_protocols":extra_protocols}
     payload_b64=_b64(json.dumps(payload))
     return {"reality":reality,"users":users,"per_user":per_user,"ss_link":ss_out_link,
             "ports":ports,"profiles":profiles,"sni_list":sni_list,"config":config,

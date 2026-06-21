@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/install_record.dart';
 import '../models/server_profile.dart';
 
 /// Offline mode (6.3): persist the server list + last-known stats so the app
@@ -14,6 +15,7 @@ class Cache {
   static const _kLang = 'kv2m.lang';
   static const _kTheme = 'kv2m.theme';
   static const _kSubUrl = 'kv2m.subUrl';
+  static const _kHistory = 'kv2m.installHistory';
 
   Future<void> saveServers(List<ServerProfile> servers) async {
     final prefs = await SharedPreferences.getInstance();
@@ -72,6 +74,31 @@ class Cache {
   Future<String?> loadSubUrl() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_kSubUrl);
+  }
+
+  /// Install history — newest first. Each entry holds the sub link + panel
+  /// URL/credentials so the user never loses access details.
+  Future<List<InstallRecord>> loadInstallHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_kHistory);
+    if (raw == null || raw.isEmpty) return [];
+    final list = jsonDecode(raw) as List<dynamic>;
+    return list
+        .map((e) => InstallRecord.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> saveInstallHistory(List<InstallRecord> records) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        _kHistory, jsonEncode(records.map((r) => r.toJson()).toList()));
+  }
+
+  /// Prepend a record (newest first) and persist.
+  Future<void> addInstallRecord(InstallRecord record) async {
+    final all = await loadInstallHistory();
+    all.insert(0, record);
+    await saveInstallHistory(all);
   }
 
   Future<void> savePrefs({String? lang, String? theme}) async {

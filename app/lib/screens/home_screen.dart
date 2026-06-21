@@ -8,6 +8,7 @@ import '../services/selection.dart';
 import '../services/vpn_service.dart';
 import '../theme.dart';
 import 'config_detail_screen.dart';
+import 'history_screen.dart';
 import 'manage_screen.dart';
 import 'setup_screen.dart';
 
@@ -129,6 +130,18 @@ class _HomeScreenState extends State<HomeScreen> {
     _cache.saveSelected(s.name);
   }
 
+  /// Copy every server's share URI (newline-separated) to the clipboard.
+  Future<void> _copyAllConfigs() async {
+    if (_servers.isEmpty) return;
+    final all = _servers.map((s) => s.uri).join('\n');
+    await Clipboard.setData(ClipboardData(text: all));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(widget.strings.t('copyall.done')),
+          duration: const Duration(seconds: 2)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.strings;
@@ -151,6 +164,12 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => Navigator.push(context, MaterialPageRoute(
                 builder: (_) => ManageScreen(strings: s))),
             icon: const Icon(Icons.admin_panel_settings_outlined),
+          ),
+          IconButton(
+            tooltip: s.t('hist.open'),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => HistoryScreen(strings: s))),
+            icon: const Icon(Icons.history_outlined),
           ),
           IconButton(
             tooltip: s.t('best.auto'),
@@ -216,7 +235,20 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 12),
             ],
-            Text(s.t('tab.servers'), style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(s.t('tab.servers'),
+                      style: Theme.of(context).textTheme.titleMedium),
+                ),
+                if (_servers.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: _copyAllConfigs,
+                    icon: const Icon(Icons.copy_all_outlined, size: 18),
+                    label: Text(s.t('copyall.title')),
+                  ),
+              ],
+            ),
             const SizedBox(height: 8),
             Expanded(
               child: _servers.isEmpty

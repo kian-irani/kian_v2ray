@@ -41,18 +41,25 @@ jobs:
           echo "--- gradle wrapper ---"; cat "$props"
           echo "--- kotlin sources ---"; ls -R android/app/src/main/kotlin
 
-      - name: Build debug APK (preview — UI works; native tunnel core pending)
+      - name: Build APKs — universal + per-ABI (arm64 for new phones)
         working-directory: app
         run: |
           flutter pub get
+          # Universal APK (works on every phone) + split-per-abi (smaller, arm64 etc.)
           flutter build apk --debug
+          flutter build apk --debug --split-per-abi
           ls -lh build/app/outputs/flutter-apk/
 
-      - name: Rename APK
+      - name: Rename APKs (universal + arm64 + armv7)
         working-directory: app
         run: |
           ver="${GITHUB_REF_NAME#app-v}"
-          cp build/app/outputs/flutter-apk/app-debug.apk "Kv2m-${ver}-preview.apk"
+          out=build/app/outputs/flutter-apk
+          cp "$out/app-debug.apk"             "Kv2m-${ver}-universal.apk"
+          # arm64 is what virtually all phones from the last ~8 years use
+          [ -f "$out/app-arm64-v8a-debug.apk" ]   && cp "$out/app-arm64-v8a-debug.apk"   "Kv2m-${ver}-arm64.apk"
+          [ -f "$out/app-armeabi-v7a-debug.apk" ] && cp "$out/app-armeabi-v7a-debug.apk" "Kv2m-${ver}-arm32.apk"
+          ls -lh Kv2m-*.apk
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
@@ -62,11 +69,19 @@ jobs:
           body: |
             ## Kv2m for Android — preview build
 
-            یک نسخهٔ **پیش‌نمایش**: کلِ رابطِ کاربری کار می‌کند (افزودنِ سرور از لینک/QR،
-            انتخابِ خودکار، تمِ تیره/روشن، دوزبانه) ولی **هستهٔ تونلِ native (xray-core .aar)
-            هنوز bundle نشده** — پس اتصالِ واقعیِ ترافیک در همین build فعال نیست.
+            | فایل | برای چه کسی |
+            |------|-------------|
+            | `Kv2m-*-universal.apk` | **همه‌کاره** — روی هر گوشی نصب می‌شود (مطمئن‌ترین انتخاب) |
+            | `Kv2m-*-arm64.apk` | گوشی‌های جدید (۶۴ بیتی، arm64-v8a) — حجمِ کمتر |
+            | `Kv2m-*-arm32.apk` | گوشی‌های خیلی قدیمی (۳۲ بیتی، armeabi-v7a) |
 
-            A **preview** build: the full UI works, but the native tunnel core
-            (xray-core `.aar`) isn't bundled yet, so real packet forwarding is not
-            active in this build. For sideloading/testing only.
-          files: app/Kv2m-*-preview.apk
+            یک نسخهٔ **پیش‌نمایش**: کلِ رابطِ کاربری کار می‌کند (نصبِ روی سرور از داخلِ اپ،
+            ساختِ کانفیگ، QR، تاریخچهٔ نصب، پروتکل‌های Hysteria2/TUIC، پنلِ وب) ولی
+            **هستهٔ تونلِ native (xray-core .aar) هنوز bundle نشده** — پس اتصالِ واقعیِ
+            ترافیک در همین build فعال نیست.
+
+            A **preview** build: the full UI works (in-app server install, config
+            generation, QR, install history, Hysteria2/TUIC, web panel) but the
+            native tunnel core (xray-core `.aar`) isn't bundled yet, so real packet
+            forwarding is not active. For sideloading/testing only.
+          files: app/Kv2m-*.apk

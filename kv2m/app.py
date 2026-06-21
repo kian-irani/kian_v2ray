@@ -208,6 +208,13 @@ class MainWindow(QWidget):
             if k=="vless-ws": cb.setChecked(True)
             pr.addWidget(cb, 1+i//4, i%4)
         ab.addWidget(protrow,6,0,1,4)
+        # Extra protocols (Hysteria2 / TUIC over sing-box) — UDP, strong anti-DPI.
+        # Installed alongside Xray; their links are added to the subscription.
+        exrow = QWidget(); ex = QGridLayout(exrow); ex.setContentsMargins(0,0,0,0); ex.setSpacing(6)
+        ex.addWidget(mut(tr("gen.extra")),0,0,1,4)
+        self.a_hy2 = QCheckBox("Hysteria2"); self.a_tuic = QCheckBox("TUIC v5")
+        ex.addWidget(self.a_hy2,1,0); ex.addWidget(self.a_tuic,1,1)
+        ab.addWidget(exrow,7,0,1,4)
         av.addWidget(self.adv_btn); av.addWidget(self.adv_body)
         self.adv_btn.clicked.connect(self._toggle_adv)
         v.addWidget(adv)
@@ -252,6 +259,8 @@ class MainWindow(QWidget):
             "tls_enabled": self.a_tls.isChecked(), "tls_domain": self.a_domain.text().strip().lower(),
             "tls_channel": self.a_chan.currentData(),
             "tls_protos": [k for k,cb in self.a_protos.items() if cb.isChecked()],
+            "extra_protocols": ([ "hysteria2" ] if self.a_hy2.isChecked() else []) +
+                               ([ "tuic" ] if self.a_tuic.isChecked() else []),
         }
         try: g = core.generate(opts)
         except Exception as e: return self._toast(f"{tr('toast.err')}: {e}", True)

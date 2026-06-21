@@ -73,6 +73,21 @@ class Strings {
     'setup.paneluser': ['کاربرِ پنل', 'Panel user'],
     'setup.panelpass': ['رمزِ پنل (خالی = تصادفی)', 'Panel pass (empty = random)'],
     'setup.panelinfo': ['دسترسیِ پنلِ وب:', 'Web panel access:'],
+    'hist.title': ['تاریخچهٔ نصب', 'Install history'],
+    'hist.open': ['تاریخچهٔ نصب', 'Install history'],
+    'hist.empty': ['هنوز نصبی انجام نشده', 'No installs yet'],
+    'hist.empty.d': ['وقتی از تبِ «نصب روی سرور» نصب کنی، اینجا لینکِ سابسکرایب و دسترسیِ پنل ذخیره می‌شود.', 'When you install from "Set up server", the sub link and panel access are saved here.'],
+    'hist.users': ['کاربر', 'users'],
+    'hist.sub': ['لینکِ Subscription', 'Subscription link'],
+    'hist.panel': ['آدرسِ پنلِ وب', 'Web panel URL'],
+    'hist.user': ['کاربر', 'user'],
+    'hist.pass': ['رمز', 'pass'],
+    'hist.show': ['نمایشِ رمز', 'Show password'],
+    'hist.hide': ['پنهان‌کردنِ رمز', 'Hide password'],
+    'hist.delete': ['حذف', 'Delete'],
+    'hist.delete.confirm': ['این رکوردِ تاریخچه حذف شود؟', 'Delete this history record?'],
+    'copyall.title': ['کپیِ همهٔ کانفیگ‌ها', 'Copy all configs'],
+    'copyall.done': ['همهٔ لینک‌ها کپی شد', 'All links copied'],
   };
 
   String t(String key) {
