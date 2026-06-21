@@ -17,6 +17,16 @@
     "stat.traffic": ["مصرف کل", "Total traffic"],
     "tab.users": ["کاربران", "Users"], "tab.audit": ["گزارش ممیزی", "Audit log"],
     "tab.chart": ["نمودار مصرف", "Usage chart"], "tab.nodes": ["سرورها", "Nodes"],
+    "tab.settings": ["تنظیمات", "Settings"],
+    "set.2fa": ["احراز هویت دومرحله‌ای (2FA)", "Two-factor auth (2FA)"],
+    "set.2fa.d": ["با اپ Google Authenticator / Aegis یک لایه امنیتی اضافه کن.", "Add a security layer with Google Authenticator / Aegis."],
+    "set.2fa.code": ["کد ۶ رقمی اپ:", "6-digit app code:"],
+    "set.pw": ["تغییر رمز عبور", "Change password"],
+    "set.rotate": ["چرخش کلید JWT", "Rotate JWT key"],
+    "set.2fa.on": ["✅ فعال است", "✅ Enabled"], "set.2fa.off": ["غیرفعال", "Disabled"],
+    "set.2fa.setup": ["راه‌اندازی 2FA", "Set up 2FA"], "set.2fa.enable": ["فعال‌سازی", "Enable"],
+    "set.2fa.disable": ["غیرفعال‌سازی", "Disable"],
+    "set.scan": ["این secret را در اپ اضافه کن:", "Add this secret in your app:"],
     "nd.name": ["نام", "name"], "nd.addr": ["آدرس", "address"], "nd.geo": ["کشور", "geo"],
     "nd.token": ["token", "token"], "nd.add": ["افزودن سرور", "Add node"],
     "nd.load": ["بار", "Load"], "nd.alive": ["زنده", "Alive"], "nd.down": ["خاموش", "Down"],
@@ -180,6 +190,50 @@
     } catch (e) {}
   }
 
+  var _2faMode = "setup"; // setup | enable | disable
+  async function refreshSettings() {
+    try {
+      var st = await api("/auth/2fa/status");
+      var enabled = !!st.enabled;
+      $("#twofa-state").textContent = enabled ? t("set.2fa.on") : t("set.2fa.off");
+      $("#twofa-setup").classList.add("hidden");
+      _2faMode = enabled ? "disable" : "setup";
+      $("#twofa-btn").textContent = enabled ? t("set.2fa.disable") : t("set.2fa.setup");
+      $("#twofa-btn").classList.toggle("danger", enabled);
+    } catch (e) {}
+  }
+  $("#twofa-btn").addEventListener("click", async function () {
+    try {
+      if (_2faMode === "setup") {
+        var r = await api("/auth/2fa/setup", { method: "POST" });
+        $("#twofa-secret").textContent = t("set.scan") + " " + r.secret;
+        $("#twofa-setup").classList.remove("hidden");
+        _2faMode = "enable";
+        $("#twofa-btn").textContent = t("set.2fa.enable");
+      } else if (_2faMode === "enable") {
+        var code = $("#twofa-code").value.trim();
+        if (code.length !== 6) return;
+        await api("/auth/2fa/enable", { method: "POST", body: JSON.stringify({ code: code }) });
+        refreshSettings();
+      } else if (_2faMode === "disable") {
+        await api("/auth/2fa/disable", { method: "POST" });
+        refreshSettings();
+      }
+    } catch (e) { $("#twofa-state").textContent = "خطا / error: " + e.message; }
+  });
+  $("#pw-btn").addEventListener("click", async function () {
+    var oldp = prompt("رمز فعلی / current password:"); if (!oldp) return;
+    var newp = prompt("رمز جدید (حداقل ۸) / new password (min 8):"); if (!newp) return;
+    try {
+      await api("/auth/password", { method: "POST", body: JSON.stringify({ old_password: oldp, new_password: newp }) });
+      alert("✅");
+    } catch (e) { alert("خطا / error: " + e.message); }
+  });
+  $("#rotate-btn").addEventListener("click", async function () {
+    if (!confirm("همه توکن‌ها باطل می‌شوند / all tokens will be invalidated. ادامه؟")) return;
+    try { await api("/api/keys/rotate", { method: "POST" }); alert("✅"); } catch (e) { alert("error: " + e.message); }
+  });
+
   function drawChart() {
     var c = $("#chart"), ctx = c.getContext("2d");
     ctx.clearRect(0, 0, c.width, c.height);
@@ -239,9 +293,11 @@
       $("#view-audit").classList.toggle("hidden", state.view !== "audit");
       $("#view-chart").classList.toggle("hidden", state.view !== "chart");
       $("#view-nodes").classList.toggle("hidden", state.view !== "nodes");
+      $("#view-settings").classList.toggle("hidden", state.view !== "settings");
       if (state.view === "audit") refreshAudit();
       if (state.view === "chart") drawChart();
       if (state.view === "nodes") refreshNodes();
+      if (state.view === "settings") refreshSettings();
     });
   });
 

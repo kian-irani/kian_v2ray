@@ -183,6 +183,11 @@ def login(body: LoginRequest, request: Request, conn=Depends(get_db)):
     return _issue_pair(_jwt_secret(conn), admin_user)
 
 
+@app.get("/auth/2fa/status")
+def twofa_status(admin: str = Depends(require_admin), conn=Depends(get_db)):
+    return {"enabled": repo.get_setting(conn, "twofa_enabled") == "1"}
+
+
 @app.post("/auth/2fa/setup")
 def twofa_setup(admin: str = Depends(require_admin), conn=Depends(get_db)):
     """Generate (but don't yet enable) a TOTP secret + otpauth URI."""

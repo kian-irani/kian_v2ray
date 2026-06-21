@@ -53,7 +53,7 @@ project: kian-v2ray
 - [x] ۲.۶ Export (JSON/CSV) + Session Management (`/auth/sessions`) + Password Recovery (`/auth/password`).
 - [x] ۲.۷ Frontend پنل (`panel/web/index.html` + `app.js`): UI Dark/Glass (OLED، اکسنتِ سبزِ #22C55E، طبق ui-ux-pro-max)، دوزبانه FA/EN + RTL/LTR، لاگین+refreshِ توکن، جدولِ CRUD + bulk + جستجو + toggle، مودالِ ساخت/ویرایش، نمودارِ canvas، **تبِ سرورها (Nodes): افزودن/حذف + مسیریابی/failover/هشدارِ پهنای‌باند**، آیکنِ SVG (نه ایموجی). در FastAPI روی `/app` mount شد.
 - [x] ۲.۸ System Monitor (CPU load + RAM از `/proc` → `/api/system` + pill) + Audit Log Viewer (`/api/audit` + تبِ گزارش) + Export CSV. (Backup/Restore از UI = follow-on؛ اسکریپتِ `kian-backup.py` موجود.)
-- [x] ۲.۹ امنیت: Rate-Limit + Security Headers (nosniff/DENY/HSTS/CSP) + CORSِ صریح + **2FA TOTP** (RFC 6238 دست‌ساز، `/auth/2fa/{setup,enable,disable}`) + **IP whitelistِ ادمین**. (Fail2ban = لایهٔ سیستمی/ops، خارج از کدِ پنل.)
+- [x] ۲.۹ امنیت: Rate-Limit + Security Headers + CORS + **2FA TOTP** (backend + **UIِ تبِ تنظیمات**: setup/enable/disable با نمایشِ secret) + **IP whitelist** + تغییرِ رمز + چرخشِ کلید از UI. (Fail2ban = لایهٔ سیستمی/ops.)
 - [x] ۲.۱۰ Key Rotation (`/api/keys/rotate` — چرخشِ secretِ JWT، ابطالِ همه توکن‌ها).
 
 ---

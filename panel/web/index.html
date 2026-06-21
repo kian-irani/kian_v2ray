@@ -138,6 +138,7 @@
           <button class="tab" data-view="nodes" data-i18n="tab.nodes">سرورها</button>
           <button class="tab" data-view="audit" data-i18n="tab.audit">گزارش ممیزی</button>
           <button class="tab" data-view="chart" data-i18n="tab.chart">نمودار مصرف</button>
+          <button class="tab" data-view="settings" data-i18n="tab.settings">تنظیمات</button>
         </div>
         <span class="spacer"></span>
         <input class="search" id="search" placeholder="جستجوی نام…" data-i18n-ph="search.ph">
@@ -203,6 +204,25 @@
           <tbody id="nodes-body"></tbody>
         </table>
         <div class="muted" id="nodes-route" style="padding:12px 16px;font-size:13px"></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="view-settings" class="hidden" style="padding:18px;max-width:520px">
+        <h3 style="margin-top:0" data-i18n="set.2fa">احراز هویت دومرحله‌ای (2FA)</h3>
+        <p class="muted" data-i18n="set.2fa.d">با اپ Google Authenticator / Aegis یک لایه امنیتی اضافه کن.</p>
+        <div id="twofa-state" class="muted" style="margin:10px 0"></div>
+        <div id="twofa-setup" class="hidden">
+          <div class="mono" id="twofa-secret" style="background:#0b1426;border:1px solid var(--border);border-radius:10px;padding:10px;margin:10px 0;word-break:break-all"></div>
+          <div class="field" style="display:flex;flex-direction:column;gap:6px;max-width:220px">
+            <label data-i18n="set.2fa.code">کد ۶ رقمی اپ:</label>
+            <input id="twofa-code" inputmode="numeric" maxlength="6" placeholder="123456">
+          </div>
+        </div>
+        <div class="row" style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn primary sm" id="twofa-btn"></button>
+          <button class="btn sm" id="pw-btn" data-i18n="set.pw">تغییر رمز عبور</button>
+          <button class="btn sm danger" id="rotate-btn" data-i18n="set.rotate">چرخش کلید JWT</button>
+        </div>
       </div>
     </div>
   </main>
