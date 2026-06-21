@@ -24,21 +24,16 @@ jobs:
       - name: Generate boilerplate, keep our custom Android sources
         working-directory: app
         run: |
-          # flutter create fills the generated boilerplate (gradle wrapper,
-          # launcher icons, default styles). Our VPN-specific files are tracked
-          # in git, so we restore them over whatever flutter create wrote.
+          # flutter create fills the generated boilerplate (gradle wrapper +
+          # matching AGP, launcher icons, default styles) as a CONSISTENT set.
+          # We only restore our VPN-specific sources (manifest + Kotlin) on top,
+          # so we don't reintroduce a Gradle/AGP version mismatch.
           flutter create --org com.kianirani --project-name kv2m --platforms=android .
           git checkout -- \
             android/app/src/main/AndroidManifest.xml \
             android/app/src/main/kotlin \
-            android/app/build.gradle \
-            android/app/proguard-rules.pro \
-            android/settings.gradle \
-            android/build.gradle \
-            android/gradle.properties \
-            android/app/src/main/res/values/styles.xml \
-            android/app/src/main/res/drawable/launch_background.xml \
             2>/dev/null || true
+          echo "=== restored files ===" && ls -R android/app/src/main/kotlin
 
       - name: Build debug APK (preview — UI works; native tunnel core pending)
         working-directory: app
