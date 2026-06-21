@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../i18n.dart';
 import '../models/server_profile.dart';
+import '../services/cache.dart';
+import '../services/selection.dart';
+import '../services/vpn_service.dart';
 import '../theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,8 +24,37 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final List<ServerProfile> _servers = [];
+  final _cache = Cache();
+  final _vpn = VpnController();
+  final _selection = const SmartSelection();
   ServerProfile? _selected;
   bool _connected = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restore();
+  }
+
+  Future<void> _restore() async {
+    final saved = await _cache.loadServers();
+    final sel = await _cache.loadSelected();
+    final status = await _vpn.status();
+    if (!mounted) return;
+    setState(() {
+      _servers.addAll(saved);
+      ServerProfile? match;
+      for (final s in _servers) {
+        if (s.name == sel) {
+          match = s;
+          break;
+        }
+      }
+      _selected = match ?? (_servers.isNotEmpty ? _servers.first : null);
+      _connected = status == 'connected';
+    });
+  }
 
   void _importLink(String body) {
     final parsed = parseSubscription(body);
@@ -31,6 +63,41 @@ class _HomeScreenState extends State<HomeScreen> {
       _servers.addAll(parsed);
       _selected ??= _servers.first;
     });
+    _cache.saveServers(_servers);
+  }
+
+  Future<void> _toggleConnection() async {
+    if (_selected == null || _busy) return;
+    setState(() => _busy = true);
+    try {
+      if (_connected) {
+        await _vpn.stop();
+        if (mounted) setState(() => _connected = false);
+      } else {
+        final ok = await _vpn.start(_selected!);
+        if (mounted) setState(() => _connected = ok);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _pickBest() async {
+    if (_servers.isEmpty) return;
+    final ranked = await _selection.rank(_servers);
+    if (!mounted) return;
+    setState(() {
+      _servers
+        ..clear()
+        ..addAll(ranked);
+      if (ranked.first.latencyMs != null) _selected = ranked.first;
+    });
+    _cache.saveServers(_servers);
+  }
+
+  void _select(ServerProfile s) {
+    setState(() => _selected = s);
+    _cache.saveSelected(s.name);
   }
 
   @override
@@ -40,6 +107,11 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(s.t('app.title')),
         actions: [
+          IconButton(
+            tooltip: s.t('best.auto'),
+            onPressed: _servers.isEmpty ? null : _pickBest,
+            icon: const Icon(Icons.speed_outlined),
+          ),
           IconButton(onPressed: widget.onToggleTheme, icon: const Icon(Icons.brightness_6_outlined)),
           TextButton(onPressed: widget.onToggleLang, child: Text(s.lang == 'fa' ? 'EN' : 'FA')),
         ],
@@ -51,8 +123,11 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _ConnectButton(
               connected: _connected,
-              label: _connected ? s.t('connected') : s.t('disconnected'),
-              onTap: _selected == null ? null : () => setState(() => _connected = !_connected),
+              busy: _busy,
+              label: _busy
+                  ? '…'
+                  : (_connected ? s.t('connected') : s.t('disconnected')),
+              onTap: _selected == null ? null : _toggleConnection,
             ),
             const SizedBox(height: 22),
             Text(s.t('tab.servers'), style: Theme.of(context).textTheme.titleMedium),
@@ -72,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             title: Text(srv.name),
                             subtitle: Text('${srv.protocol ?? '?'} · ${srv.host ?? ''}'),
                             trailing: srv.latencyMs != null ? Text('${srv.latencyMs} ms') : null,
-                            onTap: () => setState(() => _selected = srv),
+                            onTap: () => _select(srv),
                           ),
                         );
                       },
@@ -127,14 +202,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _ConnectButton extends StatelessWidget {
   final bool connected;
+  final bool busy;
   final String label;
   final VoidCallback? onTap;
-  const _ConnectButton({required this.connected, required this.label, this.onTap});
+  const _ConnectButton({
+    required this.connected,
+    required this.label,
+    this.busy = false,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: busy ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         height: 160,
@@ -150,8 +231,14 @@ class _ConnectButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(connected ? Icons.shield : Icons.shield_outlined, size: 48,
-                color: connected ? KianTheme.navy : Colors.white),
+            if (busy)
+              const SizedBox(
+                width: 48, height: 48,
+                child: CircularProgressIndicator(color: Colors.white),
+              )
+            else
+              Icon(connected ? Icons.shield : Icons.shield_outlined, size: 48,
+                  color: connected ? KianTheme.navy : Colors.white),
             const SizedBox(height: 8),
             Text(label, style: TextStyle(
                 fontWeight: FontWeight.bold,

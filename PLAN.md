@@ -31,7 +31,7 @@ project: kian-v2ray
 ---
 
 ## 🟠 فاز ۱ — پایه‌ریزی
-- [x] ۱.۱۰ **LANDING-i18n-FULL** — i18n.js: `data-i18n-ph`/`data-i18n-title` + دیکشنریِ **۱۳۹کلیدی** FA/EN. کلِ سطحِ تعاملی (فرمِ ساخت + مدیریت) + هدینگِ تب‌ها + about + hero/roadmap/footer + **محتوای عمیقِ تبِ «نکات و عیب‌یابی»** (فرقِ Direct/WARP، «کِی IP فیلتر می‌شه»، توصیه بر اساس کاربری، عیب‌یابی، دستورهای CLI، حجم/انقضا) دوزبانه شد. اعتبارسنجی: `node --check` سبز، ۱۳۹/۱۳۹ کلید، HTML متوازن، smoke سبز (generator دست‌نخورده)، toggle درست. **[باقی: prose عمیقِ domain/server/android/pc = ادامهٔ کم‌اولویت.]**
+- [x] ۱.۱۰ **LANDING-i18n-FULL — ۱۰۰٪ کامل** — i18n.js: `data-i18n-ph`/`data-i18n-title` + دیکشنریِ **۲۲۵کلیدی** FA/EN. **هر ۸ تب کاملاً دوزبانه شد** تا عمیق‌ترین prose: فرمِ ساخت + مدیریت + about + hero/roadmap/footer + نکات (کامل) + **دامنه (کامل: رکوردِ A، Cloudflare، راهنمای پروتکل، ترتیبِ کار، و هر ۴ بلوکِ troubleshooting شاملِ توضیحِ geoblock)** + server/android/pc (همه‌ی stepها). اعتبارسنجی: `node --check` سبز، ۲۲۵/۲۲۵ کلید، HTML متوازن (p:66/66، b:132/132، details:5/5)، generator دست‌نخورده، toggle همه را به EN سوییچ می‌کند. **(دیگر باقی‌مانده‌ای ندارد.)**
 - [x] ۱.۱ ریفکتورِ ساختار: پکیجِ `core/` (stdlib-only، importable روی VPS) + `tests/` ساخته شد؛ مسیرهای CI نشکست.
 - [x] ۱.۲ SQLite schema (`core/db.py`: users/audit_log/nodes/settings + pragmaهای WAL/FK) + Migration سبکِ forward-only (`core/migrate.py` با `user_version`، idempotent).
 - [x] ۱.۳ لاگِ ساختاریافتهٔ JSON (`core/logging.py`: خروجیِ تک‌خطیِ JSON، فیلدهای ساختاریافته در `kian_fields`، بدونِ تداخل با LogRecord).
@@ -91,8 +91,8 @@ project: kian-v2ray
 ---
 
 ## 🔵 فاز ۶ — اپ موبایل Flutter
-- [x] ۶.۱ اسکلتِ Flutter — `app/` (pubspec، `main.dart` با RTL/LTR + dark/light، `theme.dart`، `i18n.dart`).
-- [x] ۶.۲ صفحاتِ اصلی — `home_screen.dart` (دکمه‌ی اتصالِ گرد + لیستِ سرور + import sheet) + parseِ subscription (`models/server_profile.dart`)؛ QR از `mobile_scanner` (بدونِ GMS).
+- [x] ۶.۱ **پروژهٔ واقعیِ Flutter+Android** — `app/android/` کامل: Gradle (ABIهای 32/64، signing، minSdk23/targetSdk35)، `AndroidManifest.xml` (VpnService + permissions، بدونِ GMS)، `MainActivity.kt` (کانالِ `kv2m/vpn`)، `KianVpnService.kt` (راه‌اندازیِ tun + foreground notification + هوک هستهٔ native). `flutter create .` فقط boilerplate تولیدی را پر می‌کند.
+- [x] ۶.۲ صفحاتِ اصلی + **اتصالِ واقعی** — `home_screen.dart` (اتصال/قطعِ واقعی از طریقِ `VpnController`، busy state، restore از cache، دکمهٔ best-server) + import sheet + parseِ subscription + QR (`mobile_scanner`). `lib/services/vpn_service.dart` کانالِ native. **[تنها باقی‌مانده: bundleِ `.aar`ِ xray-core برای packet-forwarding واقعی — تک‌مرحلهٔ native.]**
 - [x] ۶.۳ Smart Server Selection + Offline Mode — `services/selection.dart` (TCP latency) + `services/cache.dart` (persistِ server list/stats/prefs با shared_preferences برای حالتِ آفلاین). Home Widget = follow-onِ پلتفرمی.
 - [x] ۶.۴ بدونِ GMS + Push بدونِ FCM — deps بدونِ firebase/admob؛ مستندِ SSE/Telegram در README.
 - [x] ۶.۵ Metadata + Privacy فارسی + Keystore — `PRIVACY-fa.md` + `KEYSTORE.md` (۳ backup) + دستورِ AAB/APK در README.

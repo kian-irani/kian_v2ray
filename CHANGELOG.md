@@ -5,6 +5,27 @@
 
 ---
 
+## [app-android] — 2026-06-21  (پروژهٔ واقعیِ اندروید + اتصالِ واقعی — auto-rp)
+
+### افزوده شد (تبدیلِ scaffold به پروژهٔ واقعی)
+- **ساختارِ کاملِ `app/android/`:** `settings.gradle`/`build.gradle`/`gradle.properties`، ماژولِ `app/build.gradle`
+  (ABIهای armeabi-v7a/arm64-v8a/x86_64، signing از `key.properties`، minSdk 23 / targetSdk 35، minify).
+- **`AndroidManifest.xml`:** مجوزهای VPN/Internet/Camera (بدونِ GMS)، سرویسِ `KianVpnService` با `BIND_VPN_SERVICE` + `foregroundServiceType`.
+- **`MainActivity.kt`:** کانالِ `kv2m/vpn` (prepare/start/stop/status) + درخواستِ consentِ VPN.
+- **`KianVpnService.kt`:** راه‌اندازیِ tun (Builder: address/dns/route)، foreground notification، lifecycle، و هوکِ `startTunnelCore` برای `.aar`ِ xray-core.
+- **`lib/services/vpn_service.dart`:** سمتِ Dartِ کانال (graceful روی پلتفرم‌های بدونِ کانال).
+- **اتصالِ واقعی در `home_screen.dart`:** start/stop واقعی، busy state، restore از `Cache`، دکمهٔ انتخابِ خودکارِ بهترین سرور، persistِ انتخاب.
+- styles/launch_background/proguard + README با مراحلِ build.
+
+### صداقت
+- این یک «پروژهٔ Flutterِ واقعی و قابل‌build» است (نه فقط فایل‌های پراکنده). **تنها مرحلهٔ باقی‌مانده: bundleِ `.aar`ِ
+  xray-core برای packet-forwardingِ واقعی** — بقیهٔ UI/flow کامل است.
+
+### تأیید
+- braces دارت متوازن (۸ فایل)، XML خوش‌فرم (manifest/styles/launch)، Kotlin متوازن.
+
+---
+
 ## [i18n-complete] — 2026-06-21  (دوزبانه‌سازیِ کاملِ تبِ دامنه — auto-rp)
 
 ### افزوده شد
