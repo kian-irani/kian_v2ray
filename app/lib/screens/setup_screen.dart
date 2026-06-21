@@ -22,7 +22,11 @@ class _SetupScreenState extends State<SetupScreen> {
   final _sshUser = TextEditingController(text: 'root');
   final _sshPass = TextEditingController();
   final _username = TextEditingController(text: 'ali');
+  final _tlsDomain = TextEditingController();
 
+  bool _warp = false;
+  bool _ss = false;
+  bool _tls = false;
   bool _busy = false;
   final _log = <String>[];
   String? _subUrl;
@@ -38,6 +42,10 @@ class _SetupScreenState extends State<SetupScreen> {
       final bundle = await gen.build(
         serverIp: _ip.text.trim(),
         userPrefix: _username.text.trim().isEmpty ? 'user' : _username.text.trim(),
+        warp: _warp,
+        ss: _ss,
+        tlsDomain: _tls ? _tlsDomain.text.trim() : null,
+        tlsProtoKinds: _tls ? const ['vless-ws', 'vmess-ws', 'trojan-ws'] : const [],
       );
 
       _say('• ساختِ لینکِ Subscription روی Gist…');
@@ -88,6 +96,24 @@ class _SetupScreenState extends State<SetupScreen> {
           ]),
           _field(_sshPass, s.t('setup.sshpass'), obscure: true),
           _field(_username, s.t('setup.username')),
+          const SizedBox(height: 4),
+          SwitchListTile(
+            value: _warp, onChanged: (v) => setState(() => _warp = v),
+            title: Text(s.t('setup.warp')), subtitle: Text(s.t('setup.warp.d')),
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            value: _ss, onChanged: (v) => setState(() => _ss = v),
+            title: Text(s.t('setup.ss')), subtitle: Text(s.t('setup.ss.d')),
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            value: _tls, onChanged: (v) => setState(() => _tls = v),
+            title: Text(s.t('setup.tls')), subtitle: Text(s.t('setup.tls.d')),
+            contentPadding: EdgeInsets.zero,
+          ),
+          if (_tls)
+            _field(_tlsDomain, s.t('setup.tlsdomain'), hint: 'vpn.example.com'),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: _busy ? null : _run,
@@ -139,6 +165,7 @@ class _SetupScreenState extends State<SetupScreen> {
     _sshUser.dispose();
     _sshPass.dispose();
     _username.dispose();
+    _tlsDomain.dispose();
     super.dispose();
   }
 }

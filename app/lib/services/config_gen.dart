@@ -5,32 +5,35 @@ import 'package:cryptography/cryptography.dart';
 import 'package:http/http.dart' as http;
 
 /// Client-side config generation (C8) — the SAME mechanism as the web page
-/// (assets/js/app.js) and the desktop (kv2m/core.py):
-///   * X25519 reality keypair generated ON THE DEVICE (never sent to a server),
-///   * a base64 install payload identical in shape to the web one,
-///   * the install command (export KIAN_PAYLOAD=... ; curl install.sh | bash),
-///   * the per-user **Gist** subscription created via OUR Cloudflare Worker.
-///
-/// So a user created from the mobile app gets the same gist.githubusercontent.com
-/// subscription links as one created from the web page.
+/// (assets/js/app.js) and desktop (kv2m/core.py): X25519 reality keys made on
+/// the device, a base64 install payload identical in shape to the web one, the
+/// install command, and per-user **Gist** subscriptions via OUR Cloudflare
+/// Worker. Now also supports WARP, Shadowsocks and domain TLS, matching the web.
 class ConfigGen {
   static const rawBase =
       'https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main';
   static const gistProxy = 'https://kian-sub.kian-mhrv.workers.dev';
-  // Default reality SNIs + ports (mirror the web defaults).
-  static const _snis = [
-    'www.speedtest.net', 'www.bing.com', 'www.microsoft.com'
-  ];
-  static const _ports = [443, 2083, 2087];
+  static const ssMethod = 'chacha20-ietf-poly1305';
   static const _apiPort = 10085;
   static const _warpPort = 40000;
+  static const _snis = ['www.speedtest.net', 'www.bing.com', 'www.microsoft.com'];
+  static const _ports = [443, 2083, 2087];
+
+  // kind -> (proto, net, label) — mirrors TLS_PROTOS in app.js.
+  static const Map<String, List<String>> tlsProtos = {
+    'vless-ws': ['vless', 'ws', 'VLESS-WS'],
+    'vmess-ws': ['vmess', 'ws', 'VMess-WS'],
+    'vless-grpc': ['vless', 'grpc', 'VLESS-gRPC'],
+    'vmess-grpc': ['vmess', 'grpc', 'VMess-gRPC'],
+    'trojan-ws': ['trojan', 'ws', 'Trojan-WS'],
+    'vless-httpupgrade': ['vless', 'httpupgrade', 'VLESS-HTTPUpgrade'],
+    'vmess-httpupgrade': ['vmess', 'httpupgrade', 'VMess-HTTPUpgrade'],
+  };
 
   final _rnd = Random.secure();
 
-  String _randHex(int bytes) {
-    final b = List<int>.generate(bytes, (_) => _rnd.nextInt(256));
-    return b.map((x) => x.toRadixString(16).padLeft(2, '0')).join();
-  }
+  String _randHex(int bytes) => List<int>.generate(bytes, (_) => _rnd.nextInt(256))
+      .map((x) => x.toRadixString(16).padLeft(2, '0')).join();
 
   String _uuid() {
     final b = List<int>.generate(16, (_) => _rnd.nextInt(256));
@@ -41,41 +44,110 @@ class ConfigGen {
         '-${h.substring(16, 20)}-${h.substring(20)}';
   }
 
-  String _b64url(List<int> bytes) =>
-      base64Url.encode(bytes).replaceAll('=', '');
+  String _b64url(List<int> bytes) => base64Url.encode(bytes).replaceAll('=', '');
+  String _b64(String s) => base64.encode(utf8.encode(s));
+  String _host(String ip) =>
+      ip.contains(':') && !ip.startsWith('[') ? '[$ip]' : ip;
 
-  /// Generate the reality X25519 keypair (private kept locally; only public +
-  /// shortId travel to the server, exactly like the web).
   Future<(String priv, String pub, String shortId)> genReality() async {
-    final algo = X25519();
-    final kp = await algo.newKeyPair();
-    final privBytes = await kp.extractPrivateKeyBytes();
+    final kp = await X25519().newKeyPair();
+    final priv = await kp.extractPrivateKeyBytes();
     final pub = await kp.extractPublicKey();
-    return (_b64url(privBytes), _b64url(pub.bytes), _randHex(4));
+    return (_b64url(priv), _b64url(pub.bytes), _randHex(4));
   }
 
-  String _vlessLink(String uuid, String ip, int port, String sni, String pbk,
+  // ---- link builders (match app.js) ----
+  String _vlessReality(String uuid, String ip, int port, String sni, String pbk,
       String sid, String label) {
-    final host = ip.contains(':') && !ip.startsWith('[') ? '[$ip]' : ip;
     final q = {
       'encryption': 'none', 'flow': 'xtls-rprx-vision', 'security': 'reality',
       'sni': sni, 'fp': 'chrome', 'pbk': pbk, 'sid': sid, 'type': 'tcp',
     }.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
-    return 'vless://$uuid@$host:$port?$q#${Uri.encodeComponent(label)}';
+    return 'vless://$uuid@${_host(ip)}:$port?$q#${Uri.encodeComponent(label)}';
   }
 
-  /// Build everything for one install: returns the install command + the per-user
-  /// links + the data needed to create the Gist subscriptions.
+  String _ssLink(String ip, int port, String pw, String label) {
+    final userinfo = base64.encode(utf8.encode('$ssMethod:$pw'));
+    return 'ss://$userinfo@${_host(ip)}:$port#${Uri.encodeComponent(label)}';
+  }
+
+  String _tlsLink(String kind, String uuid, String domain, String path, String label) {
+    final proto = tlsProtos[kind]![0], net = tlsProtos[kind]![1];
+    if (proto == 'vmess') {
+      final v = {
+        'v': '2', 'ps': label, 'add': domain, 'port': '443', 'id': uuid,
+        'aid': '0', 'scy': 'auto',
+        'net': net == 'httpupgrade' ? 'httpupgrade' : net, 'type': 'none',
+        'host': domain, 'path': net == 'grpc' ? path.replaceFirst('/', '') : path,
+        'tls': 'tls', 'sni': domain, 'alpn': '', 'fp': 'chrome',
+      };
+      return 'vmess://${base64.encode(utf8.encode(jsonEncode(v)))}';
+    }
+    final q = <String, String>{
+      if (proto == 'vless') 'encryption': 'none',
+      'security': 'tls', 'sni': domain, 'fp': 'chrome', 'type': net, 'host': domain,
+    };
+    if (net == 'ws' || net == 'httpupgrade') q['path'] = path;
+    if (net == 'grpc') { q['serviceName'] = path.replaceFirst('/', ''); q['mode'] = 'gun'; }
+    final qs = q.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+    final scheme = proto == 'trojan' ? 'trojan' : 'vless';
+    return '$scheme://$uuid@$domain:443?$qs#${Uri.encodeComponent(label)}';
+  }
+
+  String _caddyfile(String domain, List<Map<String, dynamic>> tls) {
+    final l = <String>['$domain {'];
+    for (final t in tls) {
+      final tag = t['tag'], port = t['intPort'], net = t['net'], path = t['path'] as String;
+      if (net == 'grpc') {
+        final svc = path.replaceFirst('/', '');
+        l.addAll(['\t@$tag {', '\t\tpath /$svc/*', '\t}',
+          '\thandle @$tag {', '\t\treverse_proxy h2c://127.0.0.1:$port', '\t}']);
+      } else {
+        l.addAll(['\t@$tag {', '\t\tpath $path', '\t}',
+          '\thandle @$tag {', '\t\treverse_proxy 127.0.0.1:$port', '\t}']);
+      }
+    }
+    l.addAll(['\thandle {', '\t\trespond "It works!" 200', '\t}', '}']);
+    return l.join('\n');
+  }
+
+  /// Build the whole install for one server.
   Future<InstallBundle> build({
     required String serverIp,
     required String userPrefix,
     int count = 1,
+    bool warp = false,
+    bool ss = false,
+    int ssPort = 8388,
+    String? tlsDomain,
+    List<String> tlsProtoKinds = const [],
   }) async {
     final (priv, pub, sid) = await genReality();
     final installId = _randHex(16);
+    final channel = warp ? 'warp' : 'direct';
+    final ssPassword = ss ? _b64url(List<int>.generate(16, (_) => _rnd.nextInt(256))).substring(0, 22) : '';
+
+    // TLS profiles (internal localhost ports behind Caddy)
+    final tlsEnabled = tlsDomain != null && tlsDomain.isNotEmpty && tlsProtoKinds.isNotEmpty;
+    final tls = <Map<String, dynamic>>[];
+    if (tlsEnabled) {
+      final safeStart = [20810, (ss ? ssPort : 0) + 100, _ports.reduce(max) + 100].reduce(max);
+      var ip2 = safeStart;
+      final rnd = _randHex(3);
+      for (var i = 0; i < tlsProtoKinds.length; i++) {
+        final kind = tlsProtoKinds[i];
+        if (!tlsProtos.containsKey(kind)) continue;
+        final net = tlsProtos[kind]![1];
+        tls.add({'kind': kind, 'tag': 'tls-$kind', 'intPort': ip2++, 'net': net,
+          'proto': tlsProtos[kind]![0], 'path': '/$rnd$i${net == 'grpc' ? 'grpc' : ''}'});
+      }
+    }
+
     final users = <Map<String, dynamic>>[];
-    final subItems = <String, String>{};      // subtoken -> base64 content
+    final subItems = <String, String>{};
+    final subTokens = <String, String>{};
     final perUserLinks = <String, List<String>>{};
+    final allLinks = <String>[];
 
     for (var i = 0; i < count; i++) {
       final name = count == 1 ? userPrefix : '$userPrefix-${i + 1}';
@@ -83,121 +155,135 @@ class ConfigGen {
       users.add({'id': uuid, 'email': name, 'active': true});
       final links = <String>[];
       for (var p = 0; p < _ports.length; p++) {
-        links.add(_vlessLink(uuid, serverIp, _ports[p], _snis[p % _snis.length],
+        links.add(_vlessReality(uuid, serverIp, _ports[p], _snis[p % _snis.length],
             pub, sid, 'KIAN-$name-${_ports[p]}'));
       }
+      for (final t in tls) {
+        links.add(_tlsLink(t['kind'] as String, uuid, tlsDomain, t['path'] as String,
+            'KIAN-$name-${tlsProtos[t['kind']]![2]}'));
+      }
+      if (ss) links.add(_ssLink(serverIp, ssPort, ssPassword, 'KIAN-$name-SS'));
       perUserLinks[name] = links;
-      subItems[_randHex(16)] = base64.encode(utf8.encode(links.join('\n')));
+      allLinks.addAll(links);
+      final token = _randHex(16);
+      subTokens[name] = token;
+      subItems[token] = _b64(links.join('\n'));
     }
 
-    final subTokens = <String, String>{};
-    var idx = 0;
-    for (final u in users) {
-      subTokens[u['email'] as String] = subItems.keys.elementAt(idx++);
-    }
-
-    final config = _realityConfig(users, priv, sid);
+    final config = _buildConfig(users, priv, sid, channel, ss, ssPort,
+        ssPassword, tls, warp);
     final payload = {
-      'warp_needed': false,
+      'warp_needed': warp,
       'server_ip': serverIp,
-      'config_b64': base64.encode(utf8.encode(jsonEncode(config))),
-      'users_b64': base64.encode(utf8.encode(jsonEncode({'users': users}))),
-      'links': perUserLinks.values.expand((l) => l).toList(),
-      'ports': _ports,
+      'config_b64': _b64(jsonEncode(config)),
+      'users_b64': _b64(jsonEncode({'users': users})),
+      'links': allLinks,
+      'ports': [..._ports, if (ss) ssPort],
+      'api_port': _apiPort,
       'sub_port': [80, 8888, 2086],
       'sub_tokens': subTokens,
-      'api_port': _apiPort,
       'reality_pbk': pub,
       'reality_sid': sid,
-      'ss_password': '',
+      'ss_password': ssPassword,
       'gist_proxy': gistProxy,
       'install_id': installId,
-      'tls_domain': '',
+      'tls_domain': tlsEnabled ? tlsDomain : '',
+      'caddyfile_b64': tlsEnabled ? _b64(_caddyfile(tlsDomain, tls)) : '',
     };
-    final payloadB64 = base64.encode(utf8.encode(jsonEncode(payload)));
-    final cmd = "export KIAN_PAYLOAD='$payloadB64'\n"
+    final cmd = "export KIAN_PAYLOAD='${_b64(jsonEncode(payload))}'\n"
         "curl -fsSL $rawBase/install.sh -o /tmp/kian-v2ray.sh && "
         "bash /tmp/kian-v2ray.sh";
-    return InstallBundle(
-      installCommand: cmd,
-      installId: installId,
-      subItems: subItems,
-      perUserLinks: perUserLinks,
-    );
+    return InstallBundle(installCommand: cmd, installId: installId,
+        subItems: subItems, perUserLinks: perUserLinks);
   }
 
-  /// Full Xray config, matching assets/js/app.js buildConfig() for the
-  /// reality-direct case: api inbound + stats/policy (per-user quota tracking),
-  /// sniffing, routing (api->api, geoip:private->block, reality->direct), and
-  /// the block outbound. (WARP/SS/TLS options are generated by the web/desktop;
-  /// the mobile generator covers the default Reality install.)
-  Map<String, dynamic> _realityConfig(
-      List<Map<String, dynamic>> users, String priv, String sid) {
-    final clients = users
+  Map<String, dynamic> _buildConfig(
+      List<Map<String, dynamic>> users, String priv, String sid, String channel,
+      bool ss, int ssPort, String ssPw, List<Map<String, dynamic>> tls, bool warp) {
+    final sniff = {'enabled': true, 'destOverride': ['http', 'tls', 'quic']};
+    final realityClients = users
         .map((u) => {'id': u['id'], 'email': u['email'], 'flow': 'xtls-rprx-vision'})
         .toList();
-    final sniff = {'enabled': true, 'destOverride': ['http', 'tls', 'quic']};
-
     final inbounds = <Map<String, dynamic>>[
-      // stats/handler API (required so the watchdog can read per-user usage)
-      {
-        'listen': '127.0.0.1', 'port': _apiPort, 'protocol': 'dokodemo-door',
-        'settings': {'address': '127.0.0.1'}, 'tag': 'api',
-      },
+      {'listen': '127.0.0.1', 'port': _apiPort, 'protocol': 'dokodemo-door',
+        'settings': {'address': '127.0.0.1'}, 'tag': 'api'},
     ];
     final realityTags = <String>[];
     for (var i = 0; i < _ports.length; i++) {
-      final tag = 'reality-direct-${i + 1}';
+      final tag = 'reality-$channel-${i + 1}';
       realityTags.add(tag);
-      inbounds.add({
-        'tag': tag, 'protocol': 'vless', 'port': _ports[i],
-        'settings': {'clients': clients, 'decryption': 'none'},
-        'streamSettings': {
-          'network': 'tcp', 'security': 'reality',
-          'realitySettings': {
-            'privateKey': priv, 'shortIds': [sid],
-            'serverNames': [_snis[i % _snis.length]],
-          },
-        },
-        'sniffing': sniff,
-      });
+      inbounds.add({'tag': tag, 'protocol': 'vless', 'port': _ports[i],
+        'settings': {'clients': realityClients, 'decryption': 'none'},
+        'streamSettings': {'network': 'tcp', 'security': 'reality',
+          'realitySettings': {'privateKey': priv, 'shortIds': [sid],
+            'serverNames': [_snis[i % _snis.length]]}},
+        'sniffing': sniff});
+    }
+    // TLS inbounds (behind Caddy, on localhost)
+    final tlsTags = <String>[];
+    for (final t in tls) {
+      tlsTags.add(t['tag'] as String);
+      final net = t['net'] as String, proto = t['proto'] as String, path = t['path'] as String;
+      final stream = <String, dynamic>{'network': net, 'security': 'none'};
+      if (net == 'ws') stream['wsSettings'] = {'path': path};
+      else if (net == 'grpc') stream['grpcSettings'] = {'serviceName': path.replaceFirst('/', '')};
+      else if (net == 'httpupgrade') stream['httpupgradeSettings'] = {'path': path};
+      Map<String, dynamic> settings;
+      if (proto == 'trojan') {
+        settings = {'clients': users.map((u) => {'password': u['id'], 'email': u['email']}).toList()};
+      } else {
+        settings = {'clients': users.map((u) => {'id': u['id'], 'email': u['email']}).toList(),
+          if (proto == 'vless') 'decryption': 'none'};
+      }
+      inbounds.add({'listen': '127.0.0.1', 'port': t['intPort'], 'protocol': proto,
+        'tag': t['tag'], 'settings': settings, 'streamSettings': stream, 'sniffing': sniff});
+    }
+    if (ss) {
+      inbounds.add({'listen': '0.0.0.0', 'port': ssPort, 'protocol': 'shadowsocks',
+        'tag': 'shadowsocks',
+        'settings': {'method': ssMethod, 'password': ssPw, 'network': 'tcp,udp'},
+        'sniffing': sniff});
     }
 
+    final anyWarp = warp; // reality channel warp (TLS warp not exposed in app yet)
+    final outbounds = <Map<String, dynamic>>[
+      {'tag': 'direct', 'protocol': 'freedom', 'settings': {'domainStrategy': 'UseIP'}},
+    ];
+    if (anyWarp) {
+      outbounds.add({'tag': 'warp', 'protocol': 'socks',
+        'settings': {'servers': [{'address': '127.0.0.1', 'port': _warpPort}]}});
+    }
+    outbounds.add({'tag': 'block', 'protocol': 'blackhole', 'settings': {}});
+
+    final ssOut = (channel == 'direct' || !anyWarp) ? 'direct' : 'warp';
+    final rules = <Map<String, dynamic>>[
+      {'type': 'field', 'inboundTag': ['api'], 'outboundTag': 'api'},
+      {'type': 'field', 'ip': ['geoip:private'], 'outboundTag': 'block'},
+      {'type': 'field', 'inboundTag': realityTags, 'outboundTag': channel},
+    ];
+    if (tlsTags.isNotEmpty) {
+      rules.add({'type': 'field', 'inboundTag': tlsTags, 'outboundTag': 'direct'});
+    }
+    if (ss) rules.add({'type': 'field', 'inboundTag': ['shadowsocks'], 'outboundTag': ssOut});
+
     return {
-      'log': {
-        'loglevel': 'warning',
-        'access': '/var/log/xray/access.log',
-        'error': '/var/log/xray/error.log',
-      },
+      'log': {'loglevel': 'warning', 'access': '/var/log/xray/access.log',
+        'error': '/var/log/xray/error.log'},
       'dns': {'servers': ['1.1.1.1', '8.8.8.8']},
       'api': {'tag': 'api', 'services': ['HandlerService', 'StatsService']},
       'stats': {},
-      'policy': {
-        'levels': {'0': {'statsUserUplink': true, 'statsUserDownlink': true}},
-        'system': {'statsInboundUplink': true, 'statsInboundDownlink': true},
-      },
+      'policy': {'levels': {'0': {'statsUserUplink': true, 'statsUserDownlink': true}},
+        'system': {'statsInboundUplink': true, 'statsInboundDownlink': true}},
       'inbounds': inbounds,
-      'outbounds': [
-        {'tag': 'direct', 'protocol': 'freedom', 'settings': {'domainStrategy': 'UseIP'}},
-        {'tag': 'block', 'protocol': 'blackhole', 'settings': {}},
-      ],
-      'routing': {
-        'rules': [
-          {'type': 'field', 'inboundTag': ['api'], 'outboundTag': 'api'},
-          {'type': 'field', 'ip': ['geoip:private'], 'outboundTag': 'block'},
-          {'type': 'field', 'inboundTag': realityTags, 'outboundTag': 'direct'},
-        ],
-      },
+      'outbounds': outbounds,
+      'routing': {'rules': rules},
     };
   }
 
-  /// Create the per-user Gist subscriptions via OUR Worker (same as the web).
-  /// Returns { subtoken: httpsUrl }.
   Future<Map<String, String>> createGistSubs(
       String installId, Map<String, String> subItems) async {
     try {
-      final res = await http.post(
-        Uri.parse('$gistProxy/sync'),
+      final res = await http.post(Uri.parse('$gistProxy/sync'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'install_id': installId, 'items': subItems}),
       ).timeout(const Duration(seconds: 25));
@@ -213,12 +299,8 @@ class ConfigGen {
 class InstallBundle {
   final String installCommand;
   final String installId;
-  final Map<String, String> subItems;       // subtoken -> base64 content
+  final Map<String, String> subItems;
   final Map<String, List<String>> perUserLinks;
-  InstallBundle({
-    required this.installCommand,
-    required this.installId,
-    required this.subItems,
-    required this.perUserLinks,
-  });
+  InstallBundle({required this.installCommand, required this.installId,
+    required this.subItems, required this.perUserLinks});
 }

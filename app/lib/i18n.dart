@@ -47,6 +47,13 @@ class Strings {
     'setup.username': ['نام کاربر (برای کانفیگ)', 'User name (for the config)'],
     'setup.install': ['ساخت و نصب', 'Build & install'],
     'setup.sublink': ['لینک Subscription (روی Gist):', 'Subscription link (on Gist):'],
+    'setup.warp': ['WARP (همه‌چیز باز)', 'WARP (everything open)'],
+    'setup.warp.d': ['ترافیک از WARP کلودفلر رد می‌شود؛ کمی کندتر.', 'Routes via Cloudflare WARP; a bit slower.'],
+    'setup.ss': ['Shadowsocks (پشتیبان)', 'Shadowsocks (backup)'],
+    'setup.ss.d': ['یک پروتکل ساده‌ی پشتیبان اضافه می‌کند.', 'Adds a simple backup protocol.'],
+    'setup.tls': ['دامنه + TLS (پیشرفته)', 'Domain + TLS (advanced)'],
+    'setup.tls.d': ['VLESS/VMess/Trojan روی WS پشت Caddy — نیاز به دامنه دارد.', 'VLESS/VMess/Trojan over WS behind Caddy — needs a domain.'],
+    'setup.tlsdomain': ['دامنه (رکورد A به IP سرور)', 'Domain (A record to server IP)'],
   };
 
   String t(String key) {
