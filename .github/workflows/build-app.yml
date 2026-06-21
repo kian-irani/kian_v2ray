@@ -21,19 +21,25 @@ jobs:
           channel: stable
           flutter-version: '3.24.5'
 
-      - name: Generate boilerplate, keep our custom Android sources
+      - name: Build a clean Android project + overlay our VPN sources
         working-directory: app
         run: |
-          # flutter create fills the generated boilerplate (gradle wrapper +
-          # matching AGP, launcher icons, default styles) as a CONSISTENT set.
-          # We only restore our VPN-specific sources (manifest + Kotlin) on top,
-          # so we don't reintroduce a Gradle/AGP version mismatch.
+          set -e
+          # 1) stash our VPN-specific sources (manifest + Kotlin channel/service)
+          mkdir -p /tmp/vpn
+          cp android/app/src/main/AndroidManifest.xml /tmp/vpn/
+          cp -r android/app/src/main/kotlin /tmp/vpn/kotlin
+          # 2) regenerate a clean, internally-consistent android/ project
+          rm -rf android
           flutter create --org com.kianirani --project-name kv2m --platforms=android .
-          git checkout -- \
-            android/app/src/main/AndroidManifest.xml \
-            android/app/src/main/kotlin \
-            2>/dev/null || true
-          echo "=== restored files ===" && ls -R android/app/src/main/kotlin
+          # 3) overlay our manifest (VpnService) + Kotlin (kv2m/vpn channel)
+          cp /tmp/vpn/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          cp -r /tmp/vpn/kotlin/com android/app/src/main/kotlin/
+          # 4) ensure Gradle satisfies the AGP plugin (flutter's wrapper can lag)
+          props=android/gradle/wrapper/gradle-wrapper.properties
+          sed -i -E 's#gradle-[0-9.]+-(all|bin)\.zip#gradle-8.7-all.zip#' "$props"
+          echo "--- gradle wrapper ---"; cat "$props"
+          echo "--- kotlin sources ---"; ls -R android/app/src/main/kotlin
 
       - name: Build debug APK (preview — UI works; native tunnel core pending)
         working-directory: app
