@@ -18,8 +18,8 @@ class KianTheme {
         surface: const Color(0xFF111C33),
         error: danger,
       ),
-      cardTheme: CardThemeData(
-        color: Colors.white.withValues(alpha: 0.04),
+      cardTheme: CardTheme(
+        color: Colors.white.withOpacity(0.04),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       filledButtonTheme: FilledButtonThemeData(
