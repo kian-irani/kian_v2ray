@@ -151,6 +151,7 @@
         '<td class="hide muted">' + esc(lim) + '</td>' +
         '<td><span class="tag ' + (u.enabled ? "on" : "off") + '">' + (u.enabled ? t("enable") : t("disable")) + '</span></td>' +
         '<td><div class="row-actions">' +
+          '<a class="btn sm ghost act-sub" title="config" aria-label="config" target="_blank" href="sub.html?name=' + encodeURIComponent(u.name) + '"><svg class="icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></a>' +
           '<button class="btn sm ghost act-toggle" title="toggle" aria-label="toggle"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.8 0"/></svg></button>' +
           '<button class="btn sm ghost act-edit" aria-label="edit"><svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>' +
           '<button class="btn sm danger act-del" aria-label="delete"><svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>' +
