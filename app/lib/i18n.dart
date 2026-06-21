@@ -61,6 +61,18 @@ class Strings {
     'setup.tuic': ['TUIC v5', 'TUIC v5'],
     'setup.tuic.d': ['QUIC، 0-RTT، کنترلِ ازدحام BBR.', 'QUIC, 0-RTT, BBR congestion control.'],
     'setup.gohome': ['بازگشت به خانه و دیدنِ کانفیگ‌ها', 'Back to home & view configs'],
+    'cfg.view': ['نمایشِ کانفیگ (QR)', 'View config (QR)'],
+    'cfg.uri': ['لینکِ کانفیگ', 'Config link'],
+    'cfg.copy': ['کپیِ لینک', 'Copy link'],
+    'cfg.copied': ['کپی شد', 'Copied'],
+    'cfg.port': ['پورت', 'port'],
+    'sub.title': ['لینکِ Subscription', 'Subscription link'],
+    'sub.copy': ['کپیِ لینکِ Subscription', 'Copy subscription link'],
+    'setup.panel': ['راه‌اندازیِ پنلِ وب', 'Deploy web panel'],
+    'setup.panel.d': ['پنلِ مدیریتِ کاربر/آمار را روی سرور نصب می‌کند و آدرس+رمز می‌دهد.', 'Installs the user/stats admin panel on the server and gives URL+password.'],
+    'setup.paneluser': ['کاربرِ پنل', 'Panel user'],
+    'setup.panelpass': ['رمزِ پنل (خالی = تصادفی)', 'Panel pass (empty = random)'],
+    'setup.panelinfo': ['دسترسیِ پنلِ وب:', 'Web panel access:'],
   };
 
   String t(String key) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../i18n.dart';
 import '../models/server_profile.dart';
@@ -6,6 +7,7 @@ import '../services/cache.dart';
 import '../services/selection.dart';
 import '../services/vpn_service.dart';
 import '../theme.dart';
+import 'config_detail_screen.dart';
 import 'manage_screen.dart';
 import 'setup_screen.dart';
 
@@ -30,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _vpn = VpnController();
   final _selection = const SmartSelection();
   ServerProfile? _selected;
+  String? _subUrl;
   bool _connected = false;
   bool _busy = false;
 
@@ -42,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _restore() async {
     final saved = await _cache.loadServers();
     final sel = await _cache.loadSelected();
+    final sub = await _cache.loadSubUrl();
     final status = await _vpn.status();
     if (!mounted) return;
     setState(() {
@@ -54,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
       _selected = match ?? (_servers.isNotEmpty ? _servers.first : null);
+      _subUrl = sub;
       _connected = status == 'connected';
     });
   }
@@ -62,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _reloadFromCache() async {
     final saved = await _cache.loadServers();
     final sel = await _cache.loadSelected();
+    final sub = await _cache.loadSubUrl();
     if (!mounted) return;
     setState(() {
       _servers
@@ -75,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
       _selected = match ?? (_servers.isNotEmpty ? _servers.first : null);
+      _subUrl = sub;
     });
   }
 
@@ -167,7 +174,48 @@ class _HomeScreenState extends State<HomeScreen> {
                   : (_connected ? s.t('connected') : s.t('disconnected')),
               onTap: _selected == null ? null : _toggleConnection,
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
+            if (_subUrl != null && _subUrl!.isNotEmpty) ...[
+              Card(
+                color: const Color(0xFF0E1B33),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.link_outlined, color: KianTheme.accent, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(s.t('sub.title'),
+                                style: const TextStyle(
+                                    color: KianTheme.accent, fontSize: 12,
+                                    fontWeight: FontWeight.bold)),
+                            Text(_subUrl!,
+                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: s.t('sub.copy'),
+                        icon: const Icon(Icons.copy_outlined, size: 20),
+                        onPressed: () async {
+                          await Clipboard.setData(ClipboardData(text: _subUrl!));
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(s.t('cfg.copied')),
+                                duration: const Duration(seconds: 2)),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Text(s.t('tab.servers'), style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             Expanded(
@@ -184,7 +232,25 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: sel ? KianTheme.accent : null),
                             title: Text(srv.name),
                             subtitle: Text('${srv.protocol ?? '?'} · ${srv.host ?? ''}'),
-                            trailing: srv.latencyMs != null ? Text('${srv.latencyMs} ms') : null,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (srv.latencyMs != null)
+                                  Text('${srv.latencyMs} ms',
+                                      style: const TextStyle(fontSize: 12)),
+                                IconButton(
+                                  tooltip: s.t('cfg.view'),
+                                  icon: const Icon(Icons.qr_code_2_outlined),
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ConfigDetailScreen(
+                                          strings: s, server: srv),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                             onTap: () => _select(srv),
                           ),
                         );

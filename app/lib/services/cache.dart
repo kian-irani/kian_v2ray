@@ -13,6 +13,7 @@ class Cache {
   static const _kStats = 'kv2m.lastStats';
   static const _kLang = 'kv2m.lang';
   static const _kTheme = 'kv2m.theme';
+  static const _kSubUrl = 'kv2m.subUrl';
 
   Future<void> saveServers(List<ServerProfile> servers) async {
     final prefs = await SharedPreferences.getInstance();
@@ -55,6 +56,22 @@ class Cache {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_kStats);
     return raw == null ? null : jsonDecode(raw) as Map<String, dynamic>;
+  }
+
+  /// The subscription URL (Gist) produced at install time, so the user can copy
+  /// or refresh it later — managed from the home screen.
+  Future<void> saveSubUrl(String? url) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (url == null || url.isEmpty) {
+      await prefs.remove(_kSubUrl);
+    } else {
+      await prefs.setString(_kSubUrl, url);
+    }
+  }
+
+  Future<String?> loadSubUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kSubUrl);
   }
 
   Future<void> savePrefs({String? lang, String? theme}) async {

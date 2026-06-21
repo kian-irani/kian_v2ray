@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../i18n.dart';
@@ -31,12 +33,39 @@ class _SetupScreenState extends State<SetupScreen> {
   bool _tls = false;
   bool _hy2 = false;
   bool _tuic = false;
+  bool _panel = false;
   bool _busy = false;
+  final _panelUser = TextEditingController(text: 'admin');
+  final _panelPass = TextEditingController();
   final _log = <String>[];
   String? _subUrl;
+  String? _panelInfo;
   int _imported = 0;
 
   void _say(String s) => setState(() => _log.add(s));
+
+  /// A short random panel password when the user leaves the field empty.
+  String _randPass() {
+    const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final r = Random.secure();
+    return List.generate(14, (_) => chars[r.nextInt(chars.length)]).join();
+  }
+
+  /// Pull URL/Username/Password lines out of kian-panel.sh output. Falls back to
+  /// the values we sent if the script didn't echo them.
+  String _parsePanel(String out, {required String fallbackUser, required String fallbackPass}) {
+    String pick(String key, String dflt) {
+      for (final line in out.split('\n')) {
+        final i = line.indexOf(key);
+        if (i != -1) return line.substring(i + key.length).trim();
+      }
+      return dflt;
+    }
+    final url = pick('URL:', '');
+    final user = pick('Username:', fallbackUser);
+    final pass = pick('Password:', fallbackPass);
+    return [if (url.isNotEmpty) url, 'user: $user', 'pass: $pass'].join('\n');
+  }
 
   /// Turn the generated per-user links into ServerProfiles for the home list.
   /// Names come from the link label (#KIAN-<name>-<port>) when present.
@@ -90,15 +119,33 @@ class _SetupScreenState extends State<SetupScreen> {
         // Auto-import the generated configs into the app's server list so the
         // user doesn't have to copy the sub link by hand (the #1 complaint).
         final imported = _profilesFromBundle(bundle);
+        final cache = Cache();
         if (imported.isNotEmpty) {
-          final cache = Cache();
           final existing = await cache.loadServers();
           existing.addAll(imported);
           await cache.saveServers(existing);
           await cache.saveSelected(imported.first.name);
           _say('✅ ${imported.length} کانفیگ به اپ اضافه شد — در صفحهٔ خانه ببین.');
         }
+        if (firstUrl != null) await cache.saveSubUrl(firstUrl);
         setState(() { _subUrl = firstUrl; _imported = imported.length; });
+
+        // Optionally deploy the web panel over the same SSH session and show
+        // the URL + credentials (the user's "no panel / no web UI" complaint).
+        if (_panel) {
+          _say('• راه‌اندازیِ پنلِ وب…');
+          final pass = _panelPass.text.trim().isEmpty
+              ? _randPass() : _panelPass.text.trim();
+          final user = _panelUser.text.trim().isEmpty ? 'admin' : _panelUser.text.trim();
+          final (pc, pout) = await ssh.deployPanel(user, pass);
+          if (pc == 0) {
+            final info = _parsePanel(pout, fallbackUser: user, fallbackPass: pass);
+            setState(() => _panelInfo = info);
+            _say('✅ پنلِ وب آماده شد.');
+          } else {
+            _say('⚠️ راه‌اندازیِ پنل ناموفق بود (کد $pc).');
+          }
+        }
       } else {
         _say('⚠️ کدِ خروجی $code — لاگ را ببین.');
       }
@@ -160,6 +207,18 @@ class _SetupScreenState extends State<SetupScreen> {
             title: Text(s.t('setup.tuic')), subtitle: Text(s.t('setup.tuic.d')),
             contentPadding: EdgeInsets.zero,
           ),
+          const Divider(height: 24),
+          SwitchListTile(
+            value: _panel, onChanged: (v) => setState(() => _panel = v),
+            title: Text(s.t('setup.panel')), subtitle: Text(s.t('setup.panel.d')),
+            contentPadding: EdgeInsets.zero,
+          ),
+          if (_panel)
+            Row(children: [
+              Expanded(child: _field(_panelUser, s.t('setup.paneluser'))),
+              const SizedBox(width: 10),
+              Expanded(child: _field(_panelPass, s.t('setup.panelpass'), obscure: true)),
+            ]),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: _busy ? null : _run,
@@ -186,6 +245,21 @@ class _SetupScreenState extends State<SetupScreen> {
                 style: const TextStyle(color: KianTheme.accent)),
             SelectableText(_subUrl!,
                 style: const TextStyle(fontFamily: 'monospace')),
+          ],
+          if (_panelInfo != null) ...[
+            const SizedBox(height: 14),
+            Text(s.t('setup.panelinfo'),
+                style: const TextStyle(color: KianTheme.accent)),
+            Container(
+              margin: const EdgeInsets.only(top: 6),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1426),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: SelectableText(_panelInfo!,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+            ),
           ],
           if (_imported > 0) ...[
             const SizedBox(height: 16),
@@ -220,6 +294,8 @@ class _SetupScreenState extends State<SetupScreen> {
     _sshPass.dispose();
     _username.dispose();
     _tlsDomain.dispose();
+    _panelUser.dispose();
+    _panelPass.dispose();
     super.dispose();
   }
 }
