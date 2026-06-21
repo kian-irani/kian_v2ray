@@ -5,6 +5,21 @@
 
 ---
 
+## [installer 2.3.1] — 2026-06-21  (اعلان‌ها + سنکِ کاملِ رودمپ — auto-rp)
+
+### افزوده شد
+- **`core/notify.py`** — اعلان‌های رویداد: **Telegram + Email(SMTP) + Webhook** (fan-out، stdlib، graceful).
+- **`scripts/kian-notify-expiry.py`** — **Push انقضا/سهمیه سمت‌سرور (بدون FCM)**: اسکنِ db برای کاربرانِ روبه‌انقضا/پرمصرف → اعلان؛ cron-ready. (۵ تستِ جدید.)
+
+### به‌روزرسانیِ ROADMAP (سنکِ واقعیت)
+- **`repo/ROADMAP.md`:** ۱۱۲ آیتم که در کد پیاده شده بودند ولی هنوز `[ ]` بودند، به `[x]`/`[~]` به‌روز شد +
+  legendِ وضعیت. **۳۱ آیتمِ باقی‌مانده همگی اقدامِ انسانیِ مارکت/حساب/Keystore/پلتفرم‌اند، نه کدنویسی.**
+
+### تأیید
+- `py_compile core/notify.py + kian-notify-expiry.py` سبز · `pytest -q` → **۴۸ passed**.
+
+---
+
 ## [installer 2.3.0] — 2026-06-21  (Hysteria2 + TUIC در نصب‌کننده — auto-rp)
 
 ### افزوده شد (وایرِ پروتکل‌های جدید به `install.sh` — additive/opt-in)

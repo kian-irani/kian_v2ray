@@ -76,7 +76,7 @@ project: kian-v2ray
 - [x] ۴.۷ ضدِDPI کامل — Fragment + uTLS (`fragment_settings`/`utls_settings`/`is_valid_fingerprint`) + **TTL** (`ttl_settings`) + **Noise padding** (`noise_settings`).
 - [x] ۴.۸ REALITY SNI Scanner (offline brain) — `core/censorship.score_sni`/`rank_sni_candidates`/`best_sni`.
 - [x] ۴.۹ Tor Bridge Fallback — `core/censorship.tor_bridge_outbound` (obfs4/snowflake) + `fallback_routing_rule`.
-- [x] ۴.۱۰ بات تلگرام — `scripts/kian-bot.py` (long-poll، admin-gated، status/users/add/remove/usage روی core.db). Webhook/Email = follow-on.
+- [x] ۴.۱۰ بات تلگرام + **Webhook + Email + Push انقضا** — `scripts/kian-bot.py` + `core/notify.py` (Telegram/SMTP/Webhook، fan-out، graceful) + `scripts/kian-notify-expiry.py` (اسکنِ انقضا/سهمیه → اعلانِ سمت‌سرور، بدون FCM؛ cron-ready). ۵ تستِ سبز.
 
 ---
 
