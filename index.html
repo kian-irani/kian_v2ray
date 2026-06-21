@@ -565,23 +565,23 @@
     </ul>
 
     <h3 data-i18n="dm.h.arecord">📡 تنظیم رکورد A — مهم‌ترین قدم</h3>
-    <p>بعد از خرید دامنه، در پنل DNS رجیسترار:</p>
+    <p data-i18n="dm.ar.lead">بعد از خرید دامنه، در پنل DNS رجیسترار:</p>
     <ol>
-      <li>یک رکورد <b>A</b> بساز.</li>
-      <li><b>Name</b> (نام ساب‌دامنه): مثلاً <code>vpn</code> (یعنی <code>vpn.example.com</code>)، یا <code>@</code> برای دامنهٔ اصلی.</li>
-      <li><b>Value / IP Address</b>: <b>IP سرورت</b> (دقیقاً همان که در صفحه وارد کردی).</li>
-      <li><b>TTL</b>: پیش‌فرض (Auto یا 300) خوب است.</li>
+      <li data-i18n-html="dm.ar.1">یک رکورد <b>A</b> بساز.</li>
+      <li data-i18n-html="dm.ar.2"><b>Name</b> (نام ساب‌دامنه): مثلاً <code>vpn</code> (یعنی <code>vpn.example.com</code>)، یا <code>@</code> برای دامنهٔ اصلی.</li>
+      <li data-i18n-html="dm.ar.3"><b>Value / IP Address</b>: <b>IP سرورت</b> (دقیقاً همان که در صفحه وارد کردی).</li>
+      <li data-i18n-html="dm.ar.4"><b>TTL</b>: پیش‌فرض (Auto یا 300) خوب است.</li>
     </ol>
-    <p class="muted small">انتشار DNS معمولاً ۱-۱۰ دقیقه طول می‌کشد. می‌توانی با <code>nslookup vpn.example.com</code> یا سایت <a href="https://dnschecker.org/" target="_blank">dnschecker.org</a> بررسی کنی.</p>
+    <p class="muted small" data-i18n-html="dm.ar.note">انتشار DNS معمولاً ۱-۱۰ دقیقه طول می‌کشد. می‌توانی با <code>nslookup vpn.example.com</code> یا سایت <a href="https://dnschecker.org/" target="_blank">dnschecker.org</a> بررسی کنی.</p>
 
     <h3 data-i18n="dm.h.cf">☁️ اگر از Cloudflare استفاده می‌کنی</h3>
     <div class="cf-warn">
-      <p><b>⚠️ مهم:</b> موقع نصب اول، آیکن ابر باید <b>خاکستری (DNS only)</b> باشد، نه نارنجی (Proxied). دلیل: Caddy باید روی پورت ۸۰ گواهی Let's Encrypt بگیرد، که اگر Cloudflare proxy فعال باشد، نمی‌گیرد.</p>
-      <p>بعد از نصب موفق و اطمینان از کار کردن کانفیگ‌ها، می‌توانی Cloudflare proxy را <b>روشن</b> کنی (ابر نارنجی) که مزیت‌های اضافی دارد:</p>
+      <p data-i18n-html="dm.cf.1"><b>⚠️ مهم:</b> موقع نصب اول، آیکن ابر باید <b>خاکستری (DNS only)</b> باشد، نه نارنجی (Proxied). دلیل: Caddy باید روی پورت ۸۰ گواهی Let's Encrypt بگیرد، که اگر Cloudflare proxy فعال باشد، نمی‌گیرد.</p>
+      <p data-i18n-html="dm.cf.2">بعد از نصب موفق و اطمینان از کار کردن کانفیگ‌ها، می‌توانی Cloudflare proxy را <b>روشن</b> کنی (ابر نارنجی) که مزیت‌های اضافی دارد:</p>
       <ul>
-        <li>پنهان شدن IP واقعی سرور (در برابر فیلتر شدن)</li>
-        <li>دسترسی از طریق IP‌های Cloudflare که در ایران اغلب باز هستند</li>
-        <li>محدودیت: فقط روی پورت‌های <a href="https://developers.cloudflare.com/fundamentals/reference/network-ports/" target="_blank">۴۴۳، ۲۰۵۳، ۲۰۸۳، ۲۰۸۷، ۲۰۹۶، ۸۴۴۳</a> کار می‌کند. کانفیگ‌های ما روی ۴۴۳ هستند، پس مشکلی نیست.</li>
+        <li data-i18n="dm.cf.l1">پنهان شدن IP واقعی سرور (در برابر فیلتر شدن)</li>
+        <li data-i18n="dm.cf.l2">دسترسی از طریق IP‌های Cloudflare که در ایران اغلب باز هستند</li>
+        <li data-i18n-html="dm.cf.l3">محدودیت: فقط روی پورت‌های <a href="https://developers.cloudflare.com/fundamentals/reference/network-ports/" target="_blank">۴۴۳، ۲۰۵۳، ۲۰۸۳، ۲۰۸۷، ۲۰۹۶، ۸۴۴۳</a> کار می‌کند. کانفیگ‌های ما روی ۴۴۳ هستند، پس مشکلی نیست.</li>
       </ul>
     </div>
 
@@ -613,54 +613,54 @@
 
     <h3 data-i18n="dm.h.order">🚀 ترتیب کار</h3>
     <ol>
-      <li>دامنه بخر و رکورد A را تنظیم کن.</li>
-      <li>صبر کن DNS منتشر شود (~۱-۱۰ دقیقه).</li>
-      <li>برگرد به تب «ساخت کانفیگ»، گزینه «🌐 کانفیگ‌های دامنه‌دار» را باز کن و فعال کن.</li>
-      <li>دامنه و پروتکل‌ها را وارد کن.</li>
-      <li>دستور نصب را روی سرورت اجرا کن.</li>
-      <li>نصب‌کنندهٔ Caddy نصب می‌کند و گواهی Let's Encrypt را خودکار می‌گیرد (~۳۰ ثانیه - ۲ دقیقه).</li>
-      <li>تست کن: <code>curl -I https://vpn.example.com</code> باید HTTP 200 برگرداند.</li>
+      <li data-i18n="dm.o.1">دامنه بخر و رکورد A را تنظیم کن.</li>
+      <li data-i18n="dm.o.2">صبر کن DNS منتشر شود (~۱-۱۰ دقیقه).</li>
+      <li data-i18n="dm.o.3">برگرد به تب «ساخت کانفیگ»، گزینه «🌐 کانفیگ‌های دامنه‌دار» را باز کن و فعال کن.</li>
+      <li data-i18n="dm.o.4">دامنه و پروتکل‌ها را وارد کن.</li>
+      <li data-i18n="dm.o.5">دستور نصب را روی سرورت اجرا کن.</li>
+      <li data-i18n="dm.o.6">نصب‌کنندهٔ Caddy نصب می‌کند و گواهی Let's Encrypt را خودکار می‌گیرد (~۳۰ ثانیه - ۲ دقیقه).</li>
+      <li data-i18n-html="dm.o.7">تست کن: <code>curl -I https://vpn.example.com</code> باید HTTP 200 برگرداند.</li>
     </ol>
 
     <h3 data-i18n="dm.h.trouble">❗ عیب‌یابی متداول</h3>
     <details>
-      <summary>Caddy گواهی نگرفت / اتصال نمی‌گیرد</summary>
+      <summary data-i18n="dm.t1.s">Caddy گواهی نگرفت / اتصال نمی‌گیرد</summary>
       <ul>
-        <li>مطمئن شو رکورد A به IP درست اشاره می‌کند: <code>nslookup vpn.example.com</code></li>
-        <li>پورت‌های ۸۰ و ۴۴۳ سرور آزاد باشند: <code>ss -tlnp | grep -E ':80|:443'</code></li>
-        <li>اگر Cloudflare proxy فعال است، موقتاً خاموش کن.</li>
-        <li>لاگ Caddy: <code>journalctl -u caddy -n 50</code></li>
+        <li data-i18n-html="dm.t1.1">مطمئن شو رکورد A به IP درست اشاره می‌کند: <code>nslookup vpn.example.com</code></li>
+        <li data-i18n-html="dm.t1.2">پورت‌های ۸۰ و ۴۴۳ سرور آزاد باشند: <code>ss -tlnp | grep -E ':80|:443'</code></li>
+        <li data-i18n="dm.t1.3">اگر Cloudflare proxy فعال است، موقتاً خاموش کن.</li>
+        <li data-i18n-html="dm.t1.4">لاگ Caddy: <code>journalctl -u caddy -n 50</code></li>
       </ul>
     </details>
     <details>
-      <summary>کانفیگ TLS وصل می‌شود ولی نت نمی‌آید</summary>
+      <summary data-i18n="dm.t2.s">کانفیگ TLS وصل می‌شود ولی نت نمی‌آید</summary>
       <ul>
-        <li>چک کن کانتینر Xray بالا است: <code>docker ps | grep kian-xray</code></li>
-        <li>کانفیگ‌های Reality کار می‌کنند؟ اگر آن‌ها هم نه، مشکل از خروجی سرور است (WARP/Direct).</li>
-        <li>پشت Cloudflare proxy هستی؟ گاهی نیاز است <code>fp=chrome</code> را به <code>fp=ios</code> یا <code>fp=firefox</code> عوض کنی.</li>
+        <li data-i18n-html="dm.t2.1">چک کن کانتینر Xray بالا است: <code>docker ps | grep kian-xray</code></li>
+        <li data-i18n="dm.t2.2">کانفیگ‌های Reality کار می‌کنند؟ اگر آن‌ها هم نه، مشکل از خروجی سرور است (WARP/Direct).</li>
+        <li data-i18n-html="dm.t2.3">پشت Cloudflare proxy هستی؟ گاهی نیاز است <code>fp=chrome</code> را به <code>fp=ios</code> یا <code>fp=firefox</code> عوض کنی.</li>
       </ul>
     </details>
     <details>
-      <summary>دامنه فیلتر شد</summary>
-      <p>اگر دامنه‌ات از ایران بسته شد، یا Cloudflare proxy را روشن کن (ابر نارنجی) یا یک ساب‌دامنهٔ جدید بساز با همان رکورد A. کانفیگ‌ها همچنان روی همان IP کار می‌کنند، فقط دامنهٔ مرجع عوض می‌شود.</p>
+      <summary data-i18n="dm.t3.s">دامنه فیلتر شد</summary>
+      <p data-i18n="dm.t3.p">اگر دامنه‌ات از ایران بسته شد، یا Cloudflare proxy را روشن کن (ابر نارنجی) یا یک ساب‌دامنهٔ جدید بساز با همان رکورد A. کانفیگ‌ها همچنان روی همان IP کار می‌کنند، فقط دامنهٔ مرجع عوض می‌شود.</p>
     </details>
     <details>
-      <summary>سایت‌هایی مثل PornHub / استریم باز نمی‌شوند (با اینکه کانفیگ وصل است)</summary>
-      <p><b>این باگِ کانفیگ نیست — ماهیتِ IP خروجی است.</b> یک نکتهٔ مهم که اغلب اشتباه فهمیده می‌شود:</p>
+      <summary data-i18n="dm.t4.s">سایت‌هایی مثل PornHub / استریم باز نمی‌شوند (با اینکه کانفیگ وصل است)</summary>
+      <p data-i18n-html="dm.t4.p1"><b>این باگِ کانفیگ نیست — ماهیتِ IP خروجی است.</b> یک نکتهٔ مهم که اغلب اشتباه فهمیده می‌شود:</p>
       <ul>
-        <li><b>Cloudflare (ابر نارنجی) فقط مسیرِ ورودی را پنهان می‌کند</b>، نه خروجی. مسیر واقعی این است: کلاینت → Cloudflare → <b>سرورِ تو</b> → سایت مقصد. درخواست به PornHub از <b>IP سرورِ خودت</b> بیرون می‌رود، نه از IP کلودفلر. پس CDN فقط کمک می‌کند که «IP سرورت از داخل ایران بسته نباشد»، اما «اینکه سایت مقصد IP سرورت را بپذیرد» را عوض نمی‌کند.</li>
-        <li><b>سایت‌هایی مثل PornHub / Xvideos / بعضی استریم‌ها</b> رنج IP دیتاسنترها را بلاک می‌کنند و چند کشور را هم به‌خاطر قوانین تأیید سن جئوبلاک می‌کنند (آلمان، فرانسه، چند ایالت آمریکا). اگر IP/کشورِ سرورت در لیست بلاکِ آن سایت باشد، با <b>هیچ</b> کانفیگی (Reality، دامنه، CDN) باز نمی‌شود، چون همه از همان IP سرور خارج می‌شوند.</li>
+        <li data-i18n-html="dm.t4.l1"><b>Cloudflare (ابر نارنجی) فقط مسیرِ ورودی را پنهان می‌کند</b>، نه خروجی. مسیر واقعی این است: کلاینت → Cloudflare → <b>سرورِ تو</b> → سایت مقصد. درخواست به PornHub از <b>IP سرورِ خودت</b> بیرون می‌رود، نه از IP کلودفلر. پس CDN فقط کمک می‌کند که «IP سرورت از داخل ایران بسته نباشد»، اما «اینکه سایت مقصد IP سرورت را بپذیرد» را عوض نمی‌کند.</li>
+        <li data-i18n-html="dm.t4.l2"><b>سایت‌هایی مثل PornHub / Xvideos / بعضی استریم‌ها</b> رنج IP دیتاسنترها را بلاک می‌کنند و چند کشور را هم به‌خاطر قوانین تأیید سن جئوبلاک می‌کنند (آلمان، فرانسه، چند ایالت آمریکا). اگر IP/کشورِ سرورت در لیست بلاکِ آن سایت باشد، با <b>هیچ</b> کانفیگی (Reality، دامنه، CDN) باز نمی‌شود، چون همه از همان IP سرور خارج می‌شوند.</li>
       </ul>
-      <p><b>تستِ قطعی (روی خودِ سرور):</b></p>
+      <p data-i18n-html="dm.t4.p2"><b>تستِ قطعی (روی خودِ سرور):</b></p>
       <pre class="mono">curl -I -s -o /dev/null -w "%{http_code} %{redirect_url}\n" https://www.pornhub.com</pre>
-      <p>اگر همین دستور روی سرور <code>403</code> / ریدایرکت به صفحهٔ «در کشور شما در دسترس نیست» داد، یعنی مشکل از IP سرور است و ربطی به کانفیگ ندارد.</p>
-      <p><b>راه‌حل‌ها:</b></p>
+      <p data-i18n-html="dm.t4.p3">اگر همین دستور روی سرور <code>403</code> / ریدایرکت به صفحهٔ «در کشور شما در دسترس نیست» داد، یعنی مشکل از IP سرور است و ربطی به کانفیگ ندارد.</p>
+      <p data-i18n-html="dm.t4.p4"><b>راه‌حل‌ها:</b></p>
       <ul>
-        <li><b>کانال آن کانفیگ را روی WARP بگذار</b> (نه «سریع/مستقیم»). خروجی به IP کلودفلر WARP عوض می‌شود؛ گاهی جواب می‌دهد (ولی PornHub خیلی از IPهای WARP را هم بلاک می‌کند).</li>
-        <li><b>سروری در کشور/دیتاسنترِ بازتر</b> بگیر (IPهای residential یا کشورهایی که این سایت بلاک نکرده). مؤثرترین راه همین است.</li>
-        <li>اگر فقط چند سایت خاص مدنظر است، می‌توان قانون routing گذاشت که همان دامنه‌ها از WARP بروند و بقیه مستقیم (سریع‌تر بماند).</li>
+        <li data-i18n-html="dm.t4.sl1"><b>کانال آن کانفیگ را روی WARP بگذار</b> (نه «سریع/مستقیم»). خروجی به IP کلودفلر WARP عوض می‌شود؛ گاهی جواب می‌دهد (ولی PornHub خیلی از IPهای WARP را هم بلاک می‌کند).</li>
+        <li data-i18n-html="dm.t4.sl2"><b>سروری در کشور/دیتاسنترِ بازتر</b> بگیر (IPهای residential یا کشورهایی که این سایت بلاک نکرده). مؤثرترین راه همین است.</li>
+        <li data-i18n="dm.t4.sl3">اگر فقط چند سایت خاص مدنظر است، می‌توان قانون routing گذاشت که همان دامنه‌ها از WARP بروند و بقیه مستقیم (سریع‌تر بماند).</li>
       </ul>
-      <p class="muted small">خلاصه: کانفیگِ دامنه‌دار «فیلترشکنیِ سمتِ ورود» را حل می‌کند، نه «پذیرش IP سرورت توسط سایت مقصد» را.</p>
+      <p class="muted small" data-i18n="dm.t4.sum">خلاصه: کانفیگِ دامنه‌دار «فیلترشکنیِ سمتِ ورود» را حل می‌کند، نه «پذیرش IP سرورت توسط سایت مقصد» را.</p>
     </details>
   </div>
 </section>
