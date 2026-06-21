@@ -259,9 +259,10 @@
     /* ---------- Roadmap / Vision section ---------- */
     "rm.eyebrow":   { fa: "نقشه‌ی راه", en: "Roadmap" },
     "rm.title":     { fa: "از یک نصب‌کننده، به یک پلتفرمِ کاملِ VPN", en: "From an installer to a full VPN platform" },
-    "rm.sub":       { fa: "امروز ساده و رایگان نصب می‌کنی؛ مسیر، یک اکوسیستمِ چندسرور با پنل و اپ موبایل است. این‌ها در دست ساخت‌اند:", en: "Today it installs free and simple; the path is a multi-server ecosystem with a panel and a mobile app. These are in progress:" },
+    "rm.sub":       { fa: "امروز ساده و رایگان نصب می‌کنی؛ و مسیر به یک اکوسیستمِ چندسرور با پنل و اپ رسیده — بیشترِ این‌ها حالا ساخته شده‌اند:", en: "Today it installs free and simple; and the path has reached a multi-server ecosystem with a panel and apps — most of these are now built:" },
     "rm.now":       { fa: "موجود", en: "Available" },
     "rm.soon":      { fa: "به‌زودی", en: "Coming soon" },
+    "rm.ready":     { fa: "آماده", en: "Ready" },
     "rm.privacy.t": { fa: "حریمِ خصوصیِ واقعی", en: "Real privacy" },
     "rm.privacy.d": { fa: "کلیدهای خصوصی در مرورگرِ خودت ساخته می‌شوند و هرگز به سرور نمی‌رسند — مزیتی که قابلِ کپی نیست.", en: "Private keys are generated in your own browser and never reach a server — an advantage that can't be copied." },
     "rm.multi.t":   { fa: "مدیریتِ چندسرور", en: "Multi-server management" },

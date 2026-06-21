@@ -2,8 +2,8 @@
 
 # ⚡ KIAN ⟶ V2RAY
 
-**Build your own V2Ray server config in one minute — Reality · WARP · Shadowsocks · domain TLS — with a single command.**
-**سازندهٔ کانفیگ V2Ray روی سرور خودت — با یک دستور.**
+**A privacy-first, open-source anti-censorship platform — from a one-command installer to a full multi-server VPN stack with a web panel, mobile & desktop apps, new protocols and monitoring.**
+**از نصب‌کنندهٔ تک‌دستوری تا پلتفرمِ کاملِ VPN چندسروره — با پنلِ وب، اپِ موبایل/دسکتاپ، پروتکل‌های جدید و پایش.**
 
 [![Latest release](https://img.shields.io/github/v/release/kian-irani/kian_v2ray?style=for-the-badge&logo=github&color=76B900&label=release)](https://github.com/kian-irani/kian_v2ray/releases/latest)
 [![Site](https://img.shields.io/badge/Live-kianirani.github.io-1f6feb?style=for-the-badge)](https://kian-irani.github.io/kian_v2ray/)
@@ -25,25 +25,26 @@
 
 ## What is it?
 
-A **free, open-source** tool to build a V2Ray service on **your own server** (a personal VPS). No central server, no dependency, no monthly subscription. You enter your server IP, get one **install command**, run it over SSH, and receive ready configs plus an **HTTPS Subscription link**.
+A **free, open-source** stack to run your own anti-censorship VPN on **your own server(s)**. No central server, no subscription. At its core: you enter your server IP, get one **install command**, run it over SSH, and receive ready configs + an **HTTPS Subscription link**. Around that core there's now a **web panel**, **multi-server management**, **desktop & mobile apps**, **new UDP protocols**, and **monitoring**.
 
-> **The advantage that can't be copied:** your private keys (X25519 / UUID) are generated **in your own browser** and are **never sent to any server** — not even ours (we have none).
+> **The advantage that can't be copied:** your private keys (X25519 / UUID) are generated **in your own browser/device** and are **never sent to any server** — not even ours (we have none).
 
-## Features
+## 🧩 Platform components
 
-| Feature | Description |
-|---|---|
-| **VLESS Reality + Vision** | Default mode — works without a domain, multiple auto SNI |
-| **WARP outbound** | Bypass server-side egress blocks (WireGuard/MASQUE + auto-fallback to direct) |
-| **Shadowsocks** | Backup / no-SNI mode (chacha20-ietf-poly1305) |
-| **Domain TLS** | VLESS/VMess/Trojan over WS/gRPC/HTTPUpgrade behind Caddy on :443 (auto Let's Encrypt) |
-| **HTTPS Subscription** | Deterministic link on `gist.githubusercontent.com` via a Cloudflare Worker — works on any provider |
-| **Multi-user** | Per-user UUID + sub token + name |
-| **Quota & expiry** | Per-user data quota and expiry date; watchdog every 10 min |
-| **BBR + tuning** | Safe, idempotent network optimization at install |
-| **Self-diagnosing status** | `kian-v2ray status` (or `health` / `doctor`) detects crashloop / WARP / port / SS issues and prints the exact fix command |
+| Component | What it is | Status |
+|---|---|---|
+| **Installer + CLI** | One-command Reality/WARP/SS/TLS install; `kian-v2ray` management CLI with self-diagnosis | ✅ stable |
+| **Web generator** | In-browser config builder, 100% bilingual (FA/EN), client-side keys | ✅ stable |
+| **Web panel** (`panel/`) | FastAPI + JWT/2FA · dark-glass dashboard (users/nodes/audit/charts/settings) · IP/speed/HWID limits · WebSocket stats · `/metrics` | ✅ code-complete |
+| **Multi-server** (`core/cluster.py` + `node-agent/`) | One panel → many VPS · health/failover/load-balance/GeoIP · Marzban/3X-UI import | ✅ code-complete |
+| **New protocols** (`scripts/kian-protocols.sh`) | **Hysteria2 + TUIC v5** via a sing-box companion (opt-in) · Fragment/uTLS/TTL/Noise · sing-box/Clash sub export · REALITY SNI scanner · Tor fallback | ✅ code · ⏳ server test |
+| **Kv2m desktop** (`kv2m/`) | PySide6/Qt app, **multi-server** CLI, auto-update — Windows installer + portable | ✅ **v3.1.0** |
+| **Kv2m mobile** (`app/`) | Flutter Android client, VpnService, GMS-free, offline mode | ✅ project · ⏳ native core |
+| **Monitoring** (`monitoring/`) | Prometheus + node/Xray exporters + Grafana dashboard + alert rules | ✅ configs |
+| **Notifications** (`core/notify.py`) | Telegram + Email(SMTP) + Webhook · server-side expiry/quota push (no FCM) | ✅ code-complete |
+| **CI/CD** | Validate (bash/js/py/pytest/smoke) + CodeQL + Trivy + auto-release | ✅ green |
 
-## Quick start
+## Quick start (the installer)
 
 1. Get an **Ubuntu** VPS (any provider).
 2. Open the [web generator](https://kian-irani.github.io/kian_v2ray/) or the **Kv2m** app.
@@ -51,7 +52,7 @@ A **free, open-source** tool to build a V2Ray service on **your own server** (a 
 4. Paste the install command into your server's SSH (or hit "run on server" in Kv2m).
 5. Import the **Subscription** link into v2rayNG (Android) or v2rayN (Windows).
 
-## Server commands
+### Server commands
 
 ```bash
 kian-v2ray status              # service status + self-diagnosis (alias: health, doctor)
@@ -59,40 +60,53 @@ kian-v2ray configs             # all users' configs
 kian-v2ray sub <name>          # one user's Subscription link
 kian-v2ray users               # users + quota
 kian-v2ray add <name> [GB] [days]
-kian-v2ray remove <name>
-kian-v2ray renew <name> [days]
-kian-v2ray reset <name> [GB]
+kian-v2ray protocols enable    # add Hysteria2 + TUIC (sing-box companion, opt-in)
 kian-v2ray update              # update Xray
 kian-v2ray uninstall           # full removal
 ```
 
-## 💻 Kv2m desktop app (v3.0)
+## 🖥️ Web panel
 
-A modern **PySide6/Qt** UI (Termius-style + NVIDIA green), **bilingual** (EN/FA). It SSHes into your server to install, generate configs (Reality/WARP/SS/TLS), manage users, render QR, and produce the HTTPS Subscription link. Windows installer + portable builds are on the [releases page](https://github.com/kian-irani/kian_v2ray/releases/latest).
+A **FastAPI** backend reusing the installer's SQLite schema (one source of truth) + a **dark-glass dashboard** (`panel/web/`).
+
+```bash
+python3 -m pip install -r panel/requirements.txt
+export KIAN_ADMIN_PASSWORD='change-me-strong'
+uvicorn panel.main:app --host 0.0.0.0 --port 8443     # open /app  ·  Swagger at /docs
+```
+
+Features: JWT + refresh + **TOTP 2FA** (with UI) · user CRUD + search + **bulk actions** · per-user **IP / speed / HWID** limits + **auto-disable** · WebSocket live stats · CSV/JSON export · **audit log** · **node management** (health/route/failover) · key rotation · security headers + rate-limit + CORS · `/metrics` for Prometheus. One-click stack: `docker compose up -d`.
 
 ## Supported protocols
 
 **No domain (Reality):** VLESS + Reality + Vision (TCP) · Shadowsocks
 **With domain (TLS):** VLESS-WS · VMess-WS · VLESS-gRPC · VMess-gRPC · Trojan-WS · VLESS-HTTPUpgrade · VMess-HTTPUpgrade
+**Opt-in companion (sing-box):** Hysteria2 · TUIC v5
+**Anti-DPI:** Fragment · uTLS fingerprint · TTL · Noise padding · Tor bridge fallback
+
+## 💻 Kv2m apps
+
+- **Desktop v3.1.0** — PySide6/Qt, bilingual, now **multi-server** (saved profiles, auto-update). Windows installer + portable on [releases](https://github.com/kian-irani/kian_v2ray/releases/latest).
+- **Mobile (Kv2m, Flutter)** — Android-first, **GMS-free** (Cafe Bazaar / Myket / F-Droid friendly), VpnService, QR import, smart server selection, offline mode. Native tunnel core is the last build step.
 
 ## 🗺️ Roadmap
 
-From a one-command installer to a full multi-server VPN platform. Detailed plan: [`ROADMAP.md`](ROADMAP.md).
+From a one-command installer to a full multi-server VPN platform. Full plan & status: [`ROADMAP.md`](ROADMAP.md).
 
-- ✅ **Now** — Reality/WARP/SS/TLS installer · HTTPS Subscription · multi-user · Kv2m desktop · self-diagnosing `status` · in-browser keys.
-- 🟠 **Next** — structured logging · pytest · IPv6 · automated backup.
-- 🔭 **Coming** — **multi-server management** (one panel, many VPS; health/failover/geo-routing) · **full web panel** (FastAPI + JWT, IP/speed/HWID limits) · **Flutter mobile app** (Cafe Bazaar → Myket → F-Droid → Play) · **new protocols** (Hysteria2, TUIC v5, WireGuard, Fragment/uTLS) · **monitoring** (Prometheus + Grafana, audit log).
+- ✅ **Done (in code)** — Phases 1–5 & 7: core infra (SQLite/audit/logging), web panel + 2FA, multi-server cluster + node agent, new protocols, 100% bilingual site, CI/CD + monitoring, notifications.
+- ⏳ **Needs a live server** — real Hysteria2/TUIC/TLS connection tests.
+- 🙋 **Needs you** — market accounts (Google Play / Cafe Bazaar / Myket / F-Droid), Keystore, app-store submissions, the mobile native tunnel `.aar`.
 
 ## Security & privacy
 
 - **No secret ever lives on our servers** — keys are generated in your browser/device and only land on **your** server.
-- The **Gist token** lives only in the Cloudflare Worker (secret); never visible on the page or the user's server.
-- The Worker isolates users with a random 128-bit `install_id`. The repo is public — the code is auditable.
+- The **Gist token** lives only in the Cloudflare Worker (secret); never on the page or the user's server.
+- Public repo, auditable code. CI runs a secret-scan + CodeQL + Trivy on every push.
 - See the [Privacy Policy](privacy.html) and [Terms of Service](terms.html).
 
 ## Contributing & license
 
-Issues and suggestions welcome — open an issue or write in the [channel](https://t.me/kian_irani_cdn_f). License: **MIT**.
+Issues and suggestions welcome — see [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md), open an issue, or write in the [channel](https://t.me/kian_irani_cdn_f). License: **MIT**.
 
 ---
 
@@ -100,50 +114,57 @@ Issues and suggestions welcome — open an issue or write in the [channel](https
 
 ## 🇮🇷 فارسی
 
-ابزار **متن‌باز و رایگان** برای ساخت کانفیگ V2Ray روی **سرور خودت** (VPS شخصی). هیچ سرور مرکزی، هیچ وابستگی، هیچ اشتراک ماهانه. IP سرورت را می‌دهی، یک **دستور نصب** می‌گیری، روی سرور می‌زنی، و کانفیگ‌های آماده + **لینک Subscription روی HTTPS** تحویل می‌گیری.
+پلتفرمِ **متن‌باز و رایگانِ** ضدسانسور برای اجرای VPN روی **سرور(های) خودت**. هیچ سرور مرکزی، هیچ اشتراک. هسته: IP سرورت را می‌دهی، یک **دستور نصب** می‌گیری، روی سرور می‌زنی، و کانفیگِ آماده + **لینک Subscription روی HTTPS** می‌گیری. حالا دورِ این هسته یک **پنلِ وب**، **مدیریتِ چندسرور**، **اپِ موبایل/دسکتاپ**، **پروتکل‌های جدید** و **پایش** هم هست.
 
-> **مزیتِ غیرقابلِ‌کپی:** کلیدهای خصوصی (X25519/UUID) **در مرورگرِ خودت** ساخته می‌شوند و **هرگز به هیچ سروری نمی‌رسند** — حتی به ما (که اصلاً سروری نداریم).
+> **مزیتِ غیرقابلِ‌کپی:** کلیدهای خصوصی **در مرورگر/دستگاهِ خودت** ساخته می‌شوند و **هرگز به هیچ سروری نمی‌رسند** — حتی به ما (که اصلاً سروری نداریم).
 
-### چه چیزهایی دارد؟
+### 🧩 اجزای پلتفرم
 
-| ویژگی | توضیح |
-|------|------|
-| **VLESS Reality + Vision** | حالت پیش‌فرض — بدون دامنه کار می‌کند، چند SNI خودکار |
-| **WARP outbound** | دور زدن بلاک‌های خروجی سرور (WireGuard/MASQUE + بازگشت خودکار به direct) |
-| **Shadowsocks** | پشتیبان یا حالت بدون SNI (chacha20-ietf-poly1305) |
-| **TLS با دامنه** | VLESS/VMess/Trojan روی WS/gRPC/HTTPUpgrade پشت Caddy روی :443 (+ گواهی خودکار) |
-| **Subscription روی HTTPS** | لینک قطعی روی `gist.githubusercontent.com` از طریق Cloudflare Worker — روی هر پروایدری |
-| **مدیریت چند کاربر** | هر کاربر UUID + توکن sub + نام |
-| **حجم و انقضا** | سهمیه و تاریخ انقضا برای هر کاربر، watchdog هر ۱۰ دقیقه |
-| **خودتشخیصیِ status** | `kian-v2ray status` (یا `health`/`doctor`): تشخیصِ کرش‌لوپ/WARP/پورت/SS + چاپِ دستورِ رفع |
+| جزء | چیست | وضعیت |
+|---|---|---|
+| **نصب‌کننده + CLI** | نصبِ تک‌دستوریِ Reality/WARP/SS/TLS + CLIِ `kian-v2ray` با خودتشخیصی | ✅ پایدار |
+| **صفحهٔ تعاملی** | سازندهٔ کانفیگ در مرورگر، **۱۰۰٪ دوزبانه**، کلید سمتِ کاربر | ✅ پایدار |
+| **پنلِ وب** | FastAPI + JWT/**2FA** · داشبوردِ dark-glass (کاربران/سرورها/ممیزی/نمودار/تنظیمات) · محدودیتِ IP/سرعت/HWID · آمارِ زنده | ✅ کد کامل |
+| **چندسرور** | یک پنل → چند VPS · health/failover/load-balance/GeoIP · مهاجرت از Marzban/3X-UI | ✅ کد کامل |
+| **پروتکل‌های جدید** | **Hysteria2 + TUIC v5** روی sing-box (اختیاری) · Fragment/uTLS/TTL/Noise · خروجیِ sing-box/Clash · REALITY scanner · Tor fallback | ✅ کد · ⏳ تستِ سرور |
+| **Kv2m دسکتاپ** | اپِ PySide6/Qt، **چندسرور**، auto-update — ویندوز | ✅ **v3.1.0** |
+| **Kv2m موبایل** | کلاینتِ Flutter اندروید، VpnService، بدونِ GMS، حالتِ آفلاین | ✅ پروژه · ⏳ هستهٔ native |
+| **پایش** | Prometheus + اکسپورترها + داشبوردِ Grafana + قوانینِ هشدار | ✅ پیکربندی |
+| **اعلان‌ها** | Telegram + Email + Webhook · Push انقضا/سهمیه (بدونِ FCM) | ✅ کد کامل |
 
 ### شروع سریع
 
-۱. سرور **Ubuntu** بگیر · ۲. برو به [صفحهٔ تعاملی](https://kian-irani.github.io/kian_v2ray/) یا **Kv2m** · ۳. IP سرور (+ نام) را وارد کن · ۴. دستور نصب را در SSH بزن · ۵. لینک **Subscription** را در v2rayNG/v2rayN وارد کن.
-
-### دستورهای مدیر روی سرور
+۱. سرور **Ubuntu** بگیر · ۲. برو به [صفحهٔ تعاملی](https://kian-irani.github.io/kian_v2ray/) یا **Kv2m** · ۳. IP سرور (+ نام) · ۴. دستور نصب را در SSH بزن · ۵. لینک **Subscription** را در v2rayNG/v2rayN وارد کن.
 
 ```bash
-kian-v2ray status      # وضعیت + خودتشخیصی (alias: health, doctor)
-kian-v2ray configs     # کانفیگ همهٔ کاربران
+kian-v2ray status                 # وضعیت + خودتشخیصی (alias: health, doctor)
 kian-v2ray add <نام> [GB] [روز]   # افزودن کاربر
-kian-v2ray users       # لیست کاربران + سهمیه
-kian-v2ray update      # آپدیت Xray  ·  kian-v2ray uninstall  # حذف کامل
+kian-v2ray protocols enable       # افزودنِ Hysteria2 + TUIC (sing-box، اختیاری)
+kian-v2ray update | uninstall
 ```
+
+### پنلِ وب
+
+```bash
+python3 -m pip install -r panel/requirements.txt
+export KIAN_ADMIN_PASSWORD='یک-رمزِ-قوی'
+uvicorn panel.main:app --host 0.0.0.0 --port 8443   # داشبورد: /app  ·  Swagger: /docs
+```
+ویژگی‌ها: JWT + **2FA** + CRUD + bulk + محدودیتِ IP/سرعت/HWID + auto-disable + آمارِ زنده + export + **ممیزی** + **مدیریتِ نود** + چرخشِ کلید + هدرهای امنیتی. اجرای کامل: `docker compose up -d`.
 
 ### 🗺️ نقشهٔ راه
 
-از یک نصب‌کنندهٔ تک‌دستوری به یک **پلتفرمِ کاملِ VPN چندسروره**. جزئیات: [`ROADMAP.md`](ROADMAP.md).
+از نصب‌کنندهٔ تک‌دستوری به **پلتفرمِ کاملِ چندسروره**. جزئیات و وضعیت: [`ROADMAP.md`](ROADMAP.md).
 
-- ✅ **اکنون** — نصب‌کنندهٔ Reality/WARP/SS/TLS · Subscription روی HTTPS · چندکاربره · Kv2m دسکتاپ · `status`ِ خودتشخیص · کلید در مرورگر.
-- 🟠 **بعدی** — لاگِ ساختاریافته · pytest · IPv6 · بکاپِ خودکار.
-- 🔭 **در دست ساخت** — **مدیریتِ چندسرور** (یک پنل، چند VPS) · **پنلِ وبِ کامل** (FastAPI + JWT، محدودیتِ IP/سرعت/HWID) · **اپِ موبایلِ Flutter** (کافه‌بازار → مایکت → F-Droid → پلی) · **پروتکل‌های جدید** (Hysteria2، TUIC v5، WireGuard) · **پایش** (Prometheus + Grafana).
+- ✅ **انجام‌شده (در کد)** — فاز ۱ تا ۵ و ۷: زیرساختِ core، پنلِ وب + 2FA، چندسرور + node agent، پروتکل‌های جدید، صفحهٔ ۱۰۰٪ دوزبانه، CI/CD + پایش، اعلان‌ها.
+- ⏳ **نیازِ سرورِ زنده** — تستِ واقعیِ اتصالِ Hysteria2/TUIC/TLS.
+- 🙋 **نیازِ تو** — حساب‌های مارکت (گوگل‌پلی/کافه‌بازار/مایکت/F-Droid)، Keystore، انتشار، هستهٔ nativeِ موبایل.
 
 ### امنیت و حریم خصوصی
 
-هیچ راز روی سرور ما نیست — کلیدها در دستگاهِ تو ساخته می‌شوند. توکنِ Gist فقط در Cloudflare Worker (secret) است. ریپو پابلیک و قابل‌بازبینی. → [سیاست حریم خصوصی](privacy.html) · [شرایط استفاده](terms.html). لایسنس: **MIT**.
+هیچ راز روی سرور ما نیست — کلیدها در دستگاهِ تو ساخته می‌شوند. توکنِ Gist فقط در Cloudflare Worker (secret). ریپو پابلیک و قابل‌بازبینی؛ CI روی هر پوش secret-scan + CodeQL + Trivy می‌زند. → [حریم خصوصی](privacy.html) · [شرایط استفاده](terms.html). لایسنس: **MIT**.
 
-> ℹ️ کانفیگ‌های دامنه/CDN خروجی را از **IP سرورِ تو** می‌فرستند؛ Cloudflare فقط مسیر ورودی را پنهان می‌کند. برای گرفتن گواهی TLS موقع نصب، ابر Cloudflare باید خاکستری (DNS-only) باشد؛ بعد می‌توانی نارنجی کنی.
+> ℹ️ کانفیگ‌های دامنه/CDN خروجی را از **IP سرورِ تو** می‌فرستند؛ Cloudflare فقط مسیر ورودی را پنهان می‌کند. موقعِ نصب ابر باید خاکستری (DNS-only) باشد؛ بعد می‌توانی نارنجی کنی.
 
 <div align="center">
 
