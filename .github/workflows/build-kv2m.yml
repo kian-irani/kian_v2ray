@@ -36,6 +36,8 @@ jobs:
             --paths kv2m `
             --hidden-import app --hidden-import core --hidden-import theme `
             --hidden-import i18n --hidden-import cli `
+            --hidden-import servers --hidden-import settings `
+            --hidden-import updater --hidden-import panel_client `
             --hidden-import paramiko --hidden-import cryptography `
             --hidden-import qrcode --hidden-import PIL `
             --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy `

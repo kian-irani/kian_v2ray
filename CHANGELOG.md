@@ -5,6 +5,21 @@
 
 ---
 
+## [kv2m v3.1.0] — 2026-06-21  (دسکتاپِ چندسرور — وایرِ واقعی + انتشار)
+
+### تغییر کرد (ماژول‌های فاز ۳ حالا واقعاً استفاده می‌شوند)
+- **`kv2m/cli.py` بازنویسی شد → چندسرور:** منویِ سرورها (انتخاب/افزودن/حذف) از `servers.ServerStore`،
+  persistِ آخرین سرور با `settings.Settings`، و بررسیِ آپدیت با `updater.check` در شروع.
+- **`APP_VERSION` → `3.1.0`** (از 3.0.2).
+- **`build-kv2m.yml`:** `servers`/`settings`/`updater`/`panel_client` به hidden-importهای PyInstaller اضافه شد
+  تا در .exe باندل شوند. انتشار با tagِ `kv2m-v3.1.0`.
+
+### تأیید
+- `py_compile kv2m/cli.py kv2m/core.py` سبز · `pytest -q` → **۴۳ passed**.
+- **[باقی: server-pickerِ گرافیکی در `app.py` (GUI) — CLI کاملاً چندسرور شد.]**
+
+---
+
 ## [app-android] — 2026-06-21  (پروژهٔ واقعیِ اندروید + اتصالِ واقعی — auto-rp)
 
 ### افزوده شد (تبدیلِ scaffold به پروژهٔ واقعی)
