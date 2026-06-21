@@ -491,60 +491,60 @@
   <div class="card prose">
     <h2 data-i18n="s.tips.h">💡 نکات و عیب‌یابی</h2>
 
-    <h3>فرق «سریع» و «WARP» چیه؟</h3>
+    <h3 data-i18n="tp.h.diff">فرق «سریع» و «WARP» چیه؟</h3>
     <ul class="tips">
-      <li><b>سریع (Direct):</b> ترافیک مستقیم از سرورت می‌ره بیرون. سریع‌ترینه، ولی بعضی سایت‌ها رو ممکنه پروایدرِ سرور بسته باشه.</li>
-      <li><b>WARP:</b> ترافیک از WARP کلودفلر رد می‌شه و تقریباً همه‌چیز باز می‌شه، فقط کمی کندتره.</li>
-      <li>پیشنهاد: حالت <b>«هر دو»</b> رو بساز و هرکدوم بهتر جواب داد استفاده کن.</li>
+      <li data-i18n-html="tp.diff.1"><b>سریع (Direct):</b> ترافیک مستقیم از سرورت می‌ره بیرون. سریع‌ترینه، ولی بعضی سایت‌ها رو ممکنه پروایدرِ سرور بسته باشه.</li>
+      <li data-i18n-html="tp.diff.2"><b>WARP:</b> ترافیک از WARP کلودفلر رد می‌شه و تقریباً همه‌چیز باز می‌شه، فقط کمی کندتره.</li>
+      <li data-i18n-html="tp.diff.3">پیشنهاد: حالت <b>«هر دو»</b> رو بساز و هرکدوم بهتر جواب داد استفاده کن.</li>
     </ul>
 
-    <h3>🚨 آی‌پی سرورت کِی فیلتر می‌شه؟ (مهم‌ترین نکته)</h3>
-    <p>سامانه فیلترینگ ایران الگوی ترافیک رو تحلیل می‌کنه. هر چی <b>الگوی ترافیک یک IP "مشکوک‌تر"</b> باشه، احتمال فیلتر شدنش بیشتره. عوامل اصلی:</p>
+    <h3 data-i18n="tp.h.filter">🚨 آی‌پی سرورت کِی فیلتر می‌شه؟ (مهم‌ترین نکته)</h3>
+    <p data-i18n-html="tp.filter.lead">سامانه فیلترینگ ایران الگوی ترافیک رو تحلیل می‌کنه. هر چی <b>الگوی ترافیک یک IP "مشکوک‌تر"</b> باشه، احتمال فیلتر شدنش بیشتره. عوامل اصلی:</p>
     <ul class="tips">
-      <li><b>تعداد کاربران روی یک IP:</b> ۱-۳ نفر معمولاً امن. <b>بیشتر از ۵ نفر</b> ⟵ ریسک بالا. ۲۰+ نفر ⟵ تقریباً قطعاً فیلتر می‌شه.</li>
-      <li><b>حجم ترافیک:</b> چند گیگ در هفته OK. <b>چند صد گیگ در هفته</b> روی یک IP ⟵ خطر جدی.</li>
-      <li><b>مدت اتصال:</b> اتصال‌های طولانی و پایدار به یک پورت غیرمعمول، الگوی واضحی به DPI می‌ده.</li>
-      <li><b>نوع کانفیگ:</b>
+      <li data-i18n-html="tp.filter.1"><b>تعداد کاربران روی یک IP:</b> ۱-۳ نفر معمولاً امن. <b>بیشتر از ۵ نفر</b> ⟵ ریسک بالا. ۲۰+ نفر ⟵ تقریباً قطعاً فیلتر می‌شه.</li>
+      <li data-i18n-html="tp.filter.2"><b>حجم ترافیک:</b> چند گیگ در هفته OK. <b>چند صد گیگ در هفته</b> روی یک IP ⟵ خطر جدی.</li>
+      <li data-i18n-html="tp.filter.3"><b>مدت اتصال:</b> اتصال‌های طولانی و پایدار به یک پورت غیرمعمول، الگوی واضحی به DPI می‌ده.</li>
+      <li><b data-i18n="tp.filter.type">نوع کانفیگ:</b>
         <ul>
-          <li><b>Reality (TCP، IP لخت):</b> چون پورت غیرمعمول و IP مستقیمه، ریسک متوسط تا بالا.</li>
-          <li><b>Shadowsocks (بدون SNI):</b> چون استتار TLS نداره، <b>بیشترین ریسک</b> ⟵ فقط برای استفادهٔ شخصی.</li>
-          <li><b>TLS با دامنه پشت Cloudflare:</b> ترافیک به IPهای Cloudflare می‌ره نه IP سرورت ⟵ <b>کم‌ترین ریسک</b>. اگر یک IP CF بسته شد، خودش IP دیگه می‌ده.</li>
+          <li data-i18n-html="tp.filter.reality"><b>Reality (TCP، IP لخت):</b> چون پورت غیرمعمول و IP مستقیمه، ریسک متوسط تا بالا.</li>
+          <li data-i18n-html="tp.filter.ss"><b>Shadowsocks (بدون SNI):</b> چون استتار TLS نداره، <b>بیشترین ریسک</b> ⟵ فقط برای استفادهٔ شخصی.</li>
+          <li data-i18n-html="tp.filter.tls"><b>TLS با دامنه پشت Cloudflare:</b> ترافیک به IPهای Cloudflare می‌ره نه IP سرورت ⟵ <b>کم‌ترین ریسک</b>. اگر یک IP CF بسته شد، خودش IP دیگه می‌ده.</li>
         </ul>
       </li>
     </ul>
 
-    <h3>📊 توصیه بر اساس کاربری</h3>
+    <h3 data-i18n="tp.h.advice">📊 توصیه بر اساس کاربری</h3>
     <ul class="tips">
-      <li><b>فقط خودت (۱ نفر):</b> هر کدام از حالت‌ها OK. Reality کافیه.</li>
-      <li><b>۲-۳ نفر (خانواده/دوستان نزدیک):</b> Reality + WARP کافیه. مصرف معمولی مشکلی نمی‌سازه.</li>
-      <li><b>۴ نفر به بالا، یا پخش عمومی:</b> <b>حتماً</b> دامنه بگیر و حالت TLS رو فعال کن. ابر Cloudflare رو نارنجی کن (Proxied). این‌طوری IP اصلیت مخفی می‌مونه.</li>
-      <li><b>اگر آی‌پی فیلتر شد:</b> یا یک سرور جدید بگیر (~$۲/ماه)، یا اگر دامنه داری، فقط رکورد A رو به IP جدید عوض کن — کاربران چیزی نمی‌فهمن.</li>
+      <li data-i18n-html="tp.advice.1"><b>فقط خودت (۱ نفر):</b> هر کدام از حالت‌ها OK. Reality کافیه.</li>
+      <li data-i18n-html="tp.advice.2"><b>۲-۳ نفر (خانواده/دوستان نزدیک):</b> Reality + WARP کافیه. مصرف معمولی مشکلی نمی‌سازه.</li>
+      <li data-i18n-html="tp.advice.3"><b>۴ نفر به بالا، یا پخش عمومی:</b> <b>حتماً</b> دامنه بگیر و حالت TLS رو فعال کن. ابر Cloudflare رو نارنجی کن (Proxied). این‌طوری IP اصلیت مخفی می‌مونه.</li>
+      <li data-i18n-html="tp.advice.4"><b>اگر آی‌پی فیلتر شد:</b> یا یک سرور جدید بگیر (~$۲/ماه)، یا اگر دامنه داری، فقط رکورد A رو به IP جدید عوض کن — کاربران چیزی نمی‌فهمن.</li>
     </ul>
 
-    <h3>اتصال برقرار نمی‌شه؟</h3>
+    <h3 data-i18n="tp.h.noconn">اتصال برقرار نمی‌شه؟</h3>
     <ul class="tips">
-      <li>مطمئن شو آی‌پی سرور درست وارد شده و سرور روشنه.</li>
-      <li>صبر کن نصب کامل بشه (با <span class="mono">status</span> چک کن کانتینر Xray بالا باشه).</li>
-      <li>توی تب «ساخت کانفیگ» → تنظیمات پیشرفته → یک <b>SNI</b> دیگه امتحان کن.</li>
-      <li>اگه سرور فایروال (ufw) داره، پورت‌های ۸۴۴۳ و ۸۴۴۴ باید باز باشن.</li>
+      <li data-i18n="tp.noconn.1">مطمئن شو آی‌پی سرور درست وارد شده و سرور روشنه.</li>
+      <li data-i18n-html="tp.noconn.2">صبر کن نصب کامل بشه (با <span class="mono">status</span> چک کن کانتینر Xray بالا باشه).</li>
+      <li data-i18n-html="tp.noconn.3">توی تب «ساخت کانفیگ» → تنظیمات پیشرفته → یک <b>SNI</b> دیگه امتحان کن.</li>
+      <li data-i18n="tp.noconn.4">اگه سرور فایروال (ufw) داره، پورت‌های ۸۴۴۳ و ۸۴۴۴ باید باز باشن.</li>
     </ul>
 
-    <h3>دستورهای مدیریت (روی سرور)</h3>
-    <p>بعد از نصب، این دستورها رو داری:</p>
+    <h3 data-i18n="tp.h.cmds">دستورهای مدیریت (روی سرور)</h3>
+    <p data-i18n="tp.cmds.lead">بعد از نصب، این دستورها رو داری:</p>
     <div class="cmdtable">
-      <div><span class="mono">kian-v2ray status</span><i>وضعیت سرویس و کاربرها</i></div>
-      <div><span class="mono">kian-v2ray configs</span><i>نمایش لینک‌ها + QR</i></div>
-      <div><span class="mono">kian-v2ray users</span><i>لیست کاربرها و مصرف</i></div>
-      <div><span class="mono">kian-v2ray add علی 100 30</span><i>کاربر جدید: ۱۰۰گیگ، ۳۰روز</i></div>
-      <div><span class="mono">kian-v2ray renew علی 30</span><i>تمدید ۳۰ روزه</i></div>
-      <div><span class="mono">kian-v2ray remove علی</span><i>حذف کاربر</i></div>
-      <div><span class="mono">kian-v2ray update</span><i>آپدیت Xray به آخرین نسخه</i></div>
+      <div><span class="mono">kian-v2ray status</span><i data-i18n="tp.cmd.status">وضعیت سرویس و کاربرها</i></div>
+      <div><span class="mono">kian-v2ray configs</span><i data-i18n="tp.cmd.configs">نمایش لینک‌ها + QR</i></div>
+      <div><span class="mono">kian-v2ray users</span><i data-i18n="tp.cmd.users">لیست کاربرها و مصرف</i></div>
+      <div><span class="mono">kian-v2ray add علی 100 30</span><i data-i18n="tp.cmd.add">کاربر جدید: ۱۰۰گیگ، ۳۰روز</i></div>
+      <div><span class="mono">kian-v2ray renew علی 30</span><i data-i18n="tp.cmd.renew">تمدید ۳۰ روزه</i></div>
+      <div><span class="mono">kian-v2ray remove علی</span><i data-i18n="tp.cmd.remove">حذف کاربر</i></div>
+      <div><span class="mono">kian-v2ray update</span><i data-i18n="tp.cmd.update">آپدیت Xray به آخرین نسخه</i></div>
     </div>
 
-    <h3>حجم و انقضا</h3>
+    <h3 data-i18n="tp.h.quota">حجم و انقضا</h3>
     <ul class="tips">
-      <li>سیستم هر ۱۰ دقیقه مصرف هر کاربر رو چک می‌کنه و اگه حجمش تموم شد یا منقضی شد، خودکار غیرفعالش می‌کنه.</li>
-      <li>برای فعال‌کردن دوباره: <span class="mono">kian-v2ray reset نام</span> یا <span class="mono">renew نام</span>.</li>
+      <li data-i18n="tp.quota.1">سیستم هر ۱۰ دقیقه مصرف هر کاربر رو چک می‌کنه و اگه حجمش تموم شد یا منقضی شد، خودکار غیرفعالش می‌کنه.</li>
+      <li data-i18n-html="tp.quota.2">برای فعال‌کردن دوباره: <span class="mono">kian-v2ray reset نام</span> یا <span class="mono">renew نام</span>.</li>
     </ul>
   </div>
 </section>

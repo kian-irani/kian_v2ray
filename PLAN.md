@@ -31,7 +31,7 @@ project: kian-v2ray
 ---
 
 ## 🟠 فاز ۱ — پایه‌ریزی
-- [x] ۱.۱۰ **LANDING-i18n-FULL** — i18n.js بازنویسی شد: پشتیبانیِ `data-i18n-ph` (placeholder) + `data-i18n-title` + دیکشنریِ ۱۰۴کلیدی FA/EN. کلِ سطحِ تعاملی (فرمِ ساخت: لیبل/placeholder/option/mode/دکمه + فرمِ مدیریت: اکشن‌ها/فیلدها) + همه‌ی هدینگِ تب‌ها + about + hero/roadmap/footer دوزبانه شد. اعتبارسنجی: `node --check` سبز، ۱۰۴/۱۰۴ کلید تعریف‌شده، تگ‌های HTML متوازن، smoke test سبز (generator دست‌نخورده)، toggle درست FA↔EN را سوییچ می‌کند. **[باقی: ترجمه‌ی عمیقِ پاراگراف‌های troubleshooting در tips/domain = ادامه.]**
+- [x] ۱.۱۰ **LANDING-i18n-FULL** — i18n.js: `data-i18n-ph`/`data-i18n-title` + دیکشنریِ **۱۳۹کلیدی** FA/EN. کلِ سطحِ تعاملی (فرمِ ساخت + مدیریت) + هدینگِ تب‌ها + about + hero/roadmap/footer + **محتوای عمیقِ تبِ «نکات و عیب‌یابی»** (فرقِ Direct/WARP، «کِی IP فیلتر می‌شه»، توصیه بر اساس کاربری، عیب‌یابی، دستورهای CLI، حجم/انقضا) دوزبانه شد. اعتبارسنجی: `node --check` سبز، ۱۳۹/۱۳۹ کلید، HTML متوازن، smoke سبز (generator دست‌نخورده)، toggle درست. **[باقی: prose عمیقِ domain/server/android/pc = ادامهٔ کم‌اولویت.]**
 - [x] ۱.۱ ریفکتورِ ساختار: پکیجِ `core/` (stdlib-only، importable روی VPS) + `tests/` ساخته شد؛ مسیرهای CI نشکست.
 - [x] ۱.۲ SQLite schema (`core/db.py`: users/audit_log/nodes/settings + pragmaهای WAL/FK) + Migration سبکِ forward-only (`core/migrate.py` با `user_version`، idempotent).
 - [x] ۱.۳ لاگِ ساختاریافتهٔ JSON (`core/logging.py`: خروجیِ تک‌خطیِ JSON، فیلدهای ساختاریافته در `kian_fields`، بدونِ تداخل با LogRecord).
