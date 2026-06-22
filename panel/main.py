@@ -120,7 +120,15 @@ async def security_headers(request: Request, call_next):
     resp.headers["X-Frame-Options"] = "DENY"
     resp.headers["Referrer-Policy"] = "no-referrer"
     resp.headers["Strict-Transport-Security"] = "max-age=63072000"
-    resp.headers["Content-Security-Policy"] = "default-src 'self'"
+    resp.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com data:; "
+        "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self' ws: wss:; "
+        "worker-src blob:;"
+    )
     return resp
 
 
@@ -483,6 +491,20 @@ def sub_info(name: str, conn=Depends(get_db)):
 _web_dir = Path(__file__).parent / "web"
 if _web_dir.is_dir():
     app.mount("/app", StaticFiles(directory=str(_web_dir), html=True), name="web")
+
+
+@app.get("/")
+def root():
+    """Redirect root to the dashboard."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("/app")
+
+
+@app.get("/api/config")
+def api_config():
+    """Return runtime config for the frontend SPA (API base URL, etc.)."""
+    base = os.environ.get("KIAN_PUBLIC_URL", "").rstrip("/")
+    return {"api_base": base}
 
 
 @app.websocket("/ws/stats")
