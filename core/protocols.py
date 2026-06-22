@@ -54,6 +54,78 @@ def mux_settings(enabled: bool = True, protocol: str = "h2mux",
 
 
 # --------------------------------------------------------------------------- #
+# phase-10 companion protocols (sing-box only — run beside the default REALITY
+# path via the opt-in sing-box companion, never replacing it). Pure data here;
+# the companion shell (scripts/kian-protocols.sh) is what materializes them.
+# --------------------------------------------------------------------------- #
+def shadowtls_inbound(port: int, password: str, handshake_server: str, *,
+                      version: int = 3, handshake_port: int = 443,
+                      detour: str = "shadowtls-ss") -> dict:
+    """ShadowTLS v3 (10.2): wraps a real TLS handshake to a decoy server, then
+    tunnels the inner connection. ``detour`` is the tag of the inner inbound
+    (usually a Shadowsocks listener) that carries the real traffic."""
+    if version not in (1, 2, 3):
+        raise ValueError("shadowtls version must be 1, 2 or 3")
+    ib: dict[str, Any] = {
+        "type": "shadowtls", "tag": "shadowtls-in", "listen": "::",
+        "listen_port": port, "version": version, "detour": detour,
+        "handshake": {"server": handshake_server, "server_port": handshake_port},
+    }
+    if version >= 2:
+        ib["password"] = password
+    if version == 3:
+        ib["users"] = [{"name": "kian", "password": password}]
+    return ib
+
+
+def anytls_inbound(port: int, password: str, *,
+                   padding_scheme: list[str] | None = None) -> dict:
+    """AnyTLS (10.3): adaptive padding over TLS to defeat traffic-shape
+    fingerprinting. ``padding_scheme`` overrides the default packet-padding."""
+    ib: dict[str, Any] = {
+        "type": "anytls", "tag": "anytls-in", "listen": "::",
+        "listen_port": port, "users": [{"password": password}],
+    }
+    if padding_scheme:
+        ib["padding_scheme"] = list(padding_scheme)
+    return ib
+
+
+def ssh_outbound(server: str, port: int, user: str, *,
+                 password: str | None = None,
+                 private_key: str | None = None,
+                 host_key: list[str] | None = None) -> dict:
+    """SSH outbound (10.4): tunnel client traffic out through an SSH server.
+    Client-side only — this is an outbound, not one of our server inbounds.
+    Provide either a password or a private key."""
+    if not password and not private_key:
+        raise ValueError("ssh_outbound needs a password or private_key")
+    ob: dict[str, Any] = {
+        "type": "ssh", "tag": "ssh-out", "server": server,
+        "server_port": int(port), "user": user,
+    }
+    if password:
+        ob["password"] = password
+    if private_key:
+        ob["private_key"] = private_key
+    if host_key:
+        ob["host_key"] = list(host_key)
+    return ob
+
+
+def ech_settings(config: str | None = None, *, pq_signature: bool = False) -> dict:
+    """Encrypted Client Hello (10.1): hides the real SNI inside an encrypted
+    ClientHello. ``config`` is the server's base64 ECHConfigList (from DNS/cert
+    provisioning). With no config this returns ``{"enabled": False}`` — a no-op,
+    so wiring it in never breaks a working REALITY/TLS config until a real
+    ECHConfigList is supplied (HITL, needs DNS HTTPS RR)."""
+    if not config:
+        return {"enabled": False}
+    return {"enabled": True, "pq_signature_schemes_enabled": bool(pq_signature),
+            "config": config}
+
+
+# --------------------------------------------------------------------------- #
 # anti-DPI stream options (Fragment / uTLS)
 # --------------------------------------------------------------------------- #
 def fragment_settings(packets: str = "tlshello", length: str = "100-200",

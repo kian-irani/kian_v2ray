@@ -27,6 +27,9 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+_ROUTING = r"^(global|bypass-lan|bypass-iran|bypass-both)$"
+
+
 class UserCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=32,
                       pattern=r"^[A-Za-z0-9._-]+$")
@@ -35,6 +38,8 @@ class UserCreate(BaseModel):
     ip_limit: int = Field(0, ge=0)
     speed_kbps: int = Field(0, ge=0)
     hwid: Optional[str] = None
+    routing: Optional[str] = Field(None, pattern=_ROUTING)  # per-user routing (11.2)
+    dns: Optional[str] = None                               # per-user DNS (11.2)
 
 
 class UserUpdate(BaseModel):
@@ -45,6 +50,8 @@ class UserUpdate(BaseModel):
     speed_kbps: Optional[int] = Field(None, ge=0)
     hwid: Optional[str] = None
     enabled: Optional[bool] = None
+    routing: Optional[str] = Field(None, pattern=_ROUTING)
+    dns: Optional[str] = None
 
 
 class UserOut(BaseModel):
@@ -59,6 +66,8 @@ class UserOut(BaseModel):
     hwid: Optional[str]
     enabled: int
     created_at: int
+    routing: Optional[str] = None
+    dns: Optional[str] = None
 
 
 class BulkAction(BaseModel):

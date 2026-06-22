@@ -5,6 +5,29 @@
 
 ---
 
+## [installer 2.7.0 · app 0.5.0 · kv2m 3.6.0] — 2026-06-22  (فاز ۹–۱۲: تکمیلِ parity + Reality spiderX)
+
+### افزوده شد — پروتکل/transport (فاز ۱۰)
+- **Reality advanced — spiderX (`spx=/`)** به لینک‌های REALITY در **هر سه نسخه** (اپ `config_gen.dart`،
+  صفحه `assets/js/app.js`، دسکتاپ `kv2m/core.py`) → ترافیکِ fallback شبیهِ مرورگرِ واقعی، مقاوم‌تر در برابرِ probe. (۱۰.۶)
+- **builderهای companion (sing-box، pure-data + تست):** `protocols.shadowtls_inbound()` (ShadowTLS v3، ۱۰.۲)،
+  `protocols.anytls_inbound()` (AnyTLS، ۱۰.۳)، `protocols.ssh_outbound()` (SSH outboundِ کلاینت-ساید، ۱۰.۴)،
+  `protocols.ech_settings()` (ECH plumbing — بدونِ ECHConfigList یک no-op است، ۱۰.۱). وایرینگِ نهاییِ runtime روی سرور (HITL).
+
+### افزوده شد — پنل (فاز ۱۱)
+- **per-user routing/DNS:** migration 0006 (ستون‌های `routing`/`dns`)، schemaها، repo، endpointها،
+  `bridge.per_user_routing()` (ساختِ fragmentِ rules/DNS، تست سبز)، و فرمِ پنل (select مسیریابی + DNS سفارشی) دوزبانه. (۱۱.۲)
+
+### رفع شد — اپ (فاز ۹)
+- **Per-app proxy / split-tunnel (۹.۲):** doc-commentِ گمراه‌کننده («apps go THROUGH VPN» / «blockedApps inverse»)
+  اصلاح شد تا با رفتارِ واقعی (لیستِ bypass به `blockedApps`) و رشته‌های i18n یکی باشد.
+
+### کیفیت
+- pytest **۵۸ سبز** (۲ تستِ جدید: companion protocols + per-user routing). secret-scan تمیز.
+  مهاجرتِ 0006 روی DBِ موجود (v5→v6) بدونِ از‌دست‌رفتنِ داده تأیید شد. node --check سبز.
+
+---
+
 ## [app 0.2.0] — 2026-06-22  (اتصالِ روی‌دستگاه: اپ خودش وصل می‌شود — بدونِ v2rayNG)
 
 ### افزوده شد — هستهٔ nativeِ تونل

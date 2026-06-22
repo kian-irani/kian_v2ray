@@ -82,11 +82,16 @@ def test_repo_user_lifecycle(tmp_path):
     migrate.migrate_path(path)
     with db.session(path) as conn:
         u = repo.create_user(conn, actor="root", name="ali",
-                             quota_bytes=100, ip_limit=2)
+                             quota_bytes=100, ip_limit=2,
+                             routing="bypass-iran", dns="1.1.1.1")
         assert u["name"] == "ali" and u["uuid"]
         assert repo.get_user(conn, "ali")["ip_limit"] == 2
-        repo.update_user(conn, actor="root", name="ali", speed_kbps=500)
+        # per-user routing/DNS persist (11.2)
+        assert u["routing"] == "bypass-iran" and u["dns"] == "1.1.1.1"
+        repo.update_user(conn, actor="root", name="ali", speed_kbps=500,
+                         routing="global")
         assert repo.get_user(conn, "ali")["speed_kbps"] == 500
+        assert repo.get_user(conn, "ali")["routing"] == "global"
         assert repo.stats(conn)["total_users"] == 1
         assert repo.delete_user(conn, actor="root", name="ali")
         assert repo.get_user(conn, "ali") is None

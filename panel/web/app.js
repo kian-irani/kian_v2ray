@@ -45,6 +45,10 @@
     "f.days": ["اعتبار (روز — ۰ دائمی)", "Validity (days — 0 forever)"],
     "f.iplimit": ["سقف IP همزمان", "Concurrent IP limit"],
     "f.speed": ["سقف سرعت (KB/s — ۰ نامحدود)", "Speed cap (KB/s — 0 unlimited)"],
+    "f.routing": ["مسیریابی", "Routing"], "f.dns": ["DNS سفارشی (اختیاری)", "Custom DNS (optional)"],
+    "f.routing.default": ["پیش‌فرض سرور", "Server default"], "f.routing.global": ["سراسری", "Global"],
+    "f.routing.lan": ["عبور از LAN", "Bypass LAN"], "f.routing.iran": ["عبور از ایران", "Bypass Iran"],
+    "f.routing.both": ["LAN + ایران", "LAN + Iran"],
     "cancel": ["انصراف", "Cancel"], "save": ["ذخیره", "Save"],
     "enable": ["فعال", "On"], "disable": ["غیرفعال", "Off"],
     "del.confirm": ["این کاربر حذف شود؟", "Delete this user?"],
@@ -332,6 +336,8 @@
     $("#f-days").value = 0;
     $("#f-iplimit").value = u ? u.ip_limit : 0;
     $("#f-speed").value = u ? u.speed_kbps : 0;
+    $("#f-routing").value = (u && u.routing) ? u.routing : "";
+    $("#f-dns").value = (u && u.dns) ? u.dns : "";
     $("#modal").classList.remove("hidden");
   }
   $("#new-user").addEventListener("click", function () { openModal(null); });
@@ -344,6 +350,10 @@
       ip_limit: Math.max(0, +$("#f-iplimit").value),
       speed_kbps: Math.max(0, +$("#f-speed").value)
     };
+    var routing = $("#f-routing").value;
+    if (routing) payload.routing = routing;
+    var dns = $("#f-dns").value.trim();
+    if (dns) payload.dns = dns;
     var days = Math.max(0, +$("#f-days").value);
     if (days > 0) payload.expires_at = Math.floor(Date.now() / 1000) + days * 86400;
     try {

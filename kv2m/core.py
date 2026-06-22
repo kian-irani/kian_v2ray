@@ -4,7 +4,7 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "3.5.0"  # 3.5: English-default UI + phase 9-12 parity
+APP_VERSION = "3.6.0"  # 3.6: Reality spiderX (spx) + phase 10/11 parity (ShadowTLS/AnyTLS/SSH core, per-user routing/DNS)
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
@@ -58,7 +58,8 @@ def re_expiry(days):
     return (datetime.now(timezone.utc)+timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 def vless_link(uuid_,ip,port,sni,pubkey,short_id,label):
-    q=f"encryption=none&flow=xtls-rprx-vision&security=reality&sni={sni}&fp=chrome&pbk={pubkey}&sid={short_id}&type=tcp"
+    # spx=/ : spiderX (Reality advanced 10.6) — browser-like fallback probe path.
+    q=f"encryption=none&flow=xtls-rprx-vision&security=reality&sni={sni}&fp=chrome&pbk={pubkey}&sid={short_id}&spx=%2F&type=tcp"
     return f"vless://{uuid_}@{ip}:{port}?{q}#{_quote(label)}"
 
 def ss_link(ip,port,password,label):

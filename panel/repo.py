@@ -38,12 +38,14 @@ def get_user(conn: sqlite3.Connection, name: str) -> Optional[dict[str, Any]]:
 def create_user(conn: sqlite3.Connection, *, actor: str, name: str,
                 quota_bytes: int = 0, expires_at: Optional[int] = None,
                 ip_limit: int = 0, speed_kbps: int = 0,
-                hwid: Optional[str] = None) -> dict[str, Any]:
+                hwid: Optional[str] = None, routing: Optional[str] = None,
+                dns: Optional[str] = None) -> dict[str, Any]:
     user_uuid = str(_uuid.uuid4())
     conn.execute(
         "INSERT INTO users (name, uuid, quota_bytes, expires_at, ip_limit, "
-        "speed_kbps, hwid) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (name, user_uuid, quota_bytes, expires_at, ip_limit, speed_kbps, hwid),
+        "speed_kbps, hwid, routing, dns) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (name, user_uuid, quota_bytes, expires_at, ip_limit, speed_kbps, hwid,
+         routing, dns),
     )
     audit.record(conn, actor=actor, action="user.add", target=name,
                  detail=f"quota={quota_bytes} ip_limit={ip_limit}")
@@ -53,7 +55,7 @@ def create_user(conn: sqlite3.Connection, *, actor: str, name: str,
 def update_user(conn: sqlite3.Connection, *, actor: str, name: str,
                 **fields: Any) -> Optional[dict[str, Any]]:
     allowed = {"quota_bytes", "used_bytes", "expires_at", "ip_limit",
-               "speed_kbps", "hwid", "enabled"}
+               "speed_kbps", "hwid", "enabled", "routing", "dns"}
     sets = {k: v for k, v in fields.items() if k in allowed and v is not None}
     if not sets:
         return get_user(conn, name)

@@ -79,6 +79,12 @@ MIGRATIONS: list[str] = [
     ALTER TABLE nodes ADD COLUMN bandwidth_gb REAL NOT NULL DEFAULT 0;
     ALTER TABLE nodes ADD COLUMN healthy INTEGER NOT NULL DEFAULT 1;
     """,
+    # 0006 — per-user routing + DNS (phase-11 panel parity). NULL = use the
+    # server default. routing: global|bypass-lan|bypass-iran|bypass-both.
+    """
+    ALTER TABLE users ADD COLUMN routing TEXT;
+    ALTER TABLE users ADD COLUMN dns TEXT;
+    """,
 ]
 
 

@@ -21,7 +21,7 @@ SSH نصب از اپ · پنلِ وب · تاریخچهٔ نصب · QR · auto-r
 
 ### فاز ۹ — کلاینتِ موبایلِ کامل (parity با v2rayNG/Hiddify)
 - [x] ۹.۱ **صفحهٔ تنظیماتِ اختصاصی** — theme (system/dark/light)، زبان، routing، DNS، kill-switch، auto-connect، auto-refresh + راهنما.
-- [ ] ۹.۲ **Per-app proxy / split-tunnel** — نیازِ installed-apps picker (پلتفرمی). [بعدی]
+- [x] ۹.۲ **Per-app proxy / split-tunnel** — `per_app_screen.dart` با پکیجِ `installed_apps` (لیستِ اپ‌های کاربر + جستجو + آیکن)، ذخیره در `AppSettings.perAppProxy`، اعمال در connect به‌عنوانِ `blockedApps` (لیستِ bypass). doc-commentِ غلط («go through»/«inverse») اصلاح شد تا با رفتارِ واقعی (bypass) و i18n یکی شود.
 - [x] ۹.۳ **Routing presets** — global / bypass-LAN / bypass-Iran / both → `bypassSubnets` در connect.
 - [x] ۹.۴ **DNS سفارشی** — remote/direct DNS در تنظیمات (اعمال در connect/config).
 - [x] ۹.۵ **Kill-switch** — گزینه در تنظیمات (flutter_v2ray).
@@ -40,23 +40,23 @@ SSH نصب از اپ · پنلِ وب · تاریخچهٔ نصب · QR · auto-r
 > ShadowTLS/AnyTLS نیازِ sing-box که اینجا قابلِ اجرا نیست. مجموعهٔ عملیِ پروتکل‌ها (Reality/VLESS/VMess/Trojan/SS/
 > Hysteria2/TUIC/WireGuard/**XHTTP**/WS/gRPC/HTTPUpgrade) کامل و تأییدشده است.
 - [x] ۱۰.۰ **VLESS-XHTTP** — اضافه و روی xray 26.5.9 تأیید شد.
-- [ ] ۱۰.۱ **ECH** — نیازِ cert/DNS؛ موقعِ راه‌اندازیِ TLS واقعی روی سرور (HITL). [deferred با دلیل]
-- [ ] ۱۰.۲ **ShadowTLS v3** — sing-box companion؛ نیازِ تستِ runtime. [deferred]
-- [ ] ۱۰.۳ **AnyTLS** — sing-box؛ نیازِ تستِ runtime. [deferred]
-- [ ] ۱۰.۴ **SSH outbound** — کلاینت-ساید (نه inboundِ ما). [deferred]
+- [~] ۱۰.۱ **ECH** — plumbingِ `protocols.ech_settings()` اضافه شد (opt-in؛ بدونِ ECHConfigList یک no-op است پس چیزی را نمی‌شکند). فعال‌سازیِ واقعی نیازِ ECHConfigList از DNS/cert روی سرور دارد (HITL).
+- [~] ۱۰.۲ **ShadowTLS v3** — `protocols.shadowtls_inbound()` (v3، detour به SS، تست سبز). وایرینگِ نهایی در companionِ sing-box نیازِ تستِ runtime روی سرور (همان گیتِ hy2/tuic).
+- [~] ۱۰.۳ **AnyTLS** — `protocols.anytls_inbound()` (padding adaptive، تست سبز). همان گیتِ runtimeِ companion.
+- [x] ۱۰.۴ **SSH outbound** — `protocols.ssh_outbound()` (کلاینت-ساید outbound، password/private_key، تست سبز). کاملاً code-complete.
 - [x] ۱۰.۵ **mKCP** — تست شد؛ schemaِ xray 26.x عوض شده → **اضافه نشد** (low-value، در حالِ تغییر).
-- [ ] ۱۰.۶ **Reality advanced (shortId/spiderX)** — بهبودِ آینده. [deferred]
+- [x] ۱۰.۶ **Reality advanced (shortId/spiderX)** — `spx=/` (spiderX) به لینک‌های REALITY در **هر سه نسخه** افزوده شد (app `config_gen.dart`، صفحه `app.js`، دسکتاپ `kv2m/core.py`). shortId از قبل تصادفی است.
 
 ### فاز ۱۱ — وب/صفحه و پنل (کامل‌تر و یکدست)
 - [x] ۱۱.۱ **صفحهٔ تعاملی: XHTTP** در فرم (DNS/routing روی اپ پیاده شد؛ صفحه کانفیگِ سروری می‌سازد).
-- [ ] ۱۱.۲ **پنل: per-user routing/DNS** — تغییرِ بک‌اند. [deferred]
+- [x] ۱۱.۲ **پنل: per-user routing/DNS** — migration 0006 (ستون‌های `routing`/`dns`) + schemaهای UserCreate/Update/Out + repo + endpointها + `bridge.per_user_routing()` (ساختِ fragmentِ rules/dns، تست سبز) + فرمِ پنل (select مسیریابی + فیلدِ DNS) دوزبانه.
 - [x] ۱۱.۳ **دوزبانهٔ کاملِ صفحه (۲۴۶ کلید) و پنل (۵۲ کلید)** — صفرِ کلیدِ گم‌شده؛ توضیحاتِ پروتکل هم اضافه شد.
 - [x] ۱۱.۴ **بازبینیِ طراحی (ui-ux-pro-max)** — empty-stateِ غنی، آیکن‌های Material outlined، help cardها، انگلیسیِ پیش‌فرض.
 
 ### فاز ۱۲ — کیفیت
 - [x] ۱۲.۱ **چکِ کلیِ باگ** — همهٔ syntax/dart/yaml سبز، pytest ۵۶، پنل تستِ زنده ۹/۹، xray واقعی. (ادامه‌دار)
 - [x] ۱۲.۲ **همه‌جا دوزبانه** — صفحه (۲۴۶ کلید، صفرِ گم‌شده)/اپ (صفرِ گم‌شده)/نصب (KIAN_LANG)؛ انگلیسیِ پیش‌فرض.
-- [ ] ۱۲.۳ **تستِ end-to-end** روی سرورِ زنده (`(srv)`).
+- [ ] ۱۲.۳ **تستِ end-to-end** روی سرورِ زنده (`(srv)`). سرورِ `37.221.79.91` در دسترس است، اما اجرای کاملِ `install.sh` روی باکسِ تولیدی (که MHRV هم روی آن است) نیازِ credential + تأییدِ کاربر دارد — HITL، محافظه‌کارانه باز نگه داشته شد.
 
 ## 2. اولویت اجرا
 ۹.۱ (تنظیمات) → ۹.۶ (پینگ) → ۹.۲/۹.۳ (per-app/routing) → ۹.۷ (آمار) → ۹.۱۲ (help) →

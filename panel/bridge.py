@@ -97,3 +97,37 @@ def add_user(name: str, quota_gb: int = 0, days: int = 0) -> tuple[int, str]:
 
 def remove_user(name: str) -> tuple[int, str]:
     return cli("remove", name)
+
+
+# --------------------------------------------------------------------------- #
+# per-user routing / DNS (phase 11.2)
+# --------------------------------------------------------------------------- #
+# Private/LAN subnets bypassed in bypass-lan/both — kept in sync with the mobile
+# app's AppSettings._lan so the panel and the client agree on "LAN".
+_LAN = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8",
+        "169.254.0.0/16", "224.0.0.0/4", "fc00::/7", "::1/128"]
+
+
+def per_user_routing(name: str, routing: str | None = None,
+                     dns: str | None = None) -> dict:
+    """Build the per-user routing + DNS fragment the installer merges into the
+    user's block (11.2). Pure data, testable without a running Xray.
+
+    ``routing`` in {global, bypass-lan, bypass-iran, bypass-both}; None/""/global
+    means "server default" and yields no routing rules. ``dns`` is a comma/space
+    separated server list. Returns ``{}`` when nothing is overridden.
+    """
+    frag: dict[str, Any] = {}
+    rules: list[dict[str, Any]] = []
+    if routing in ("bypass-lan", "bypass-both"):
+        rules.append({"type": "field", "ip": list(_LAN), "outboundTag": "direct"})
+    if routing in ("bypass-iran", "bypass-both"):
+        rules.append({"type": "field", "ip": ["geoip:ir"], "outboundTag": "direct"})
+        rules.append({"type": "field", "domain": ["geosite:category-ir"],
+                      "outboundTag": "direct"})
+    if rules:
+        frag["rules"] = rules
+    servers = [s.strip() for s in (dns or "").replace(",", " ").split() if s.strip()]
+    if servers:
+        frag["dns"] = {"servers": servers}
+    return frag

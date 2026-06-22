@@ -237,6 +237,15 @@
     <div class="field"><label data-i18n="f.days">اعتبار (روز — ۰ دائمی)</label><input id="f-days" type="number" min="0" value="0"></div>
     <div class="field"><label data-i18n="f.iplimit">سقف IP همزمان</label><input id="f-iplimit" type="number" min="0" value="0"></div>
     <div class="field"><label data-i18n="f.speed">سقف سرعت (KB/s — ۰ نامحدود)</label><input id="f-speed" type="number" min="0" value="0"></div>
+    <div class="field"><label data-i18n="f.routing">مسیریابی</label>
+      <select id="f-routing">
+        <option value="" data-i18n="f.routing.default">پیش‌فرض سرور</option>
+        <option value="global" data-i18n="f.routing.global">سراسری</option>
+        <option value="bypass-lan" data-i18n="f.routing.lan">عبور از LAN</option>
+        <option value="bypass-iran" data-i18n="f.routing.iran">عبور از ایران</option>
+        <option value="bypass-both" data-i18n="f.routing.both">LAN + ایران</option>
+      </select></div>
+    <div class="field"><label data-i18n="f.dns">DNS سفارشی (اختیاری)</label><input id="f-dns" placeholder="1.1.1.1, 8.8.8.8"></div>
     <div class="err" id="modal-err"></div>
     <div class="modal-actions">
       <button type="button" class="btn ghost" id="modal-cancel" data-i18n="cancel">انصراف</button>

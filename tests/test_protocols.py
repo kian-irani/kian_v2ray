@@ -22,6 +22,36 @@ def test_wireguard_inbound_and_mux():
     assert protocols.mux_settings()["max_streams"] == 8
 
 
+def test_phase10_companion_protocols():
+    # ShadowTLS v3 (10.2)
+    st = protocols.shadowtls_inbound(8443, "pw", "www.microsoft.com")
+    assert st["type"] == "shadowtls" and st["version"] == 3
+    assert st["handshake"]["server"] == "www.microsoft.com"
+    assert st["users"][0]["password"] == "pw" and st["detour"] == "shadowtls-ss"
+    try:
+        protocols.shadowtls_inbound(8443, "pw", "x", version=9); bad = False
+    except ValueError:
+        bad = True
+    assert bad
+    # AnyTLS (10.3)
+    at = protocols.anytls_inbound(9443, "pw", padding_scheme=["stop=8"])
+    assert at["type"] == "anytls" and at["padding_scheme"] == ["stop=8"]
+    assert at["users"][0]["password"] == "pw"
+    # SSH outbound (10.4) — client-side
+    ssh = protocols.ssh_outbound("1.2.3.4", 22, "root", password="pw")
+    assert ssh["type"] == "ssh" and ssh["server_port"] == 22 and ssh["user"] == "root"
+    try:
+        protocols.ssh_outbound("1.2.3.4", 22, "root"); bad2 = False
+    except ValueError:
+        bad2 = True
+    assert bad2
+    # ECH (10.1) — no-op until a real ECHConfigList is supplied
+    assert protocols.ech_settings() == {"enabled": False}
+    ech = protocols.ech_settings("BASE64ECH", pq_signature=True)
+    assert ech["enabled"] and ech["config"] == "BASE64ECH"
+    assert ech["pq_signature_schemes_enabled"] is True
+
+
 def test_antidpi_ttl_noise_utls():
     assert protocols.is_valid_fingerprint("chrome")
     assert not protocols.is_valid_fingerprint("internet-explorer")

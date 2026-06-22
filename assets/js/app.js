@@ -225,6 +225,7 @@ function vlessLink({ uuid, ip, port, sni, pubkey, shortId, label }) {
     fp: 'chrome',
     pbk: pubkey,
     sid: shortId,
+    spx: '/',          // spiderX (Reality advanced 10.6): browser-like fallback probe path
     type: 'tcp',
   });
   return `vless://${uuid}@${hostForUri(ip)}:${port}?${q.toString()}#${encodeURIComponent(label)}`;

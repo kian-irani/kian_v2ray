@@ -7,10 +7,11 @@ import '../models/app_settings.dart';
 import '../services/cache.dart';
 import '../theme.dart';
 
-/// Per-app proxy / split-tunnel picker (9.2). Choose which installed apps go
-/// THROUGH the VPN. Empty selection = all apps (default). Stored in AppSettings
-/// .perAppProxy and applied at connect time as flutter_v2ray's blockedApps
-/// inverse (see VpnController). Parity with v2rayNG/Hiddify.
+/// Per-app proxy / split-tunnel picker (9.2). Choose which installed apps
+/// BYPASS the VPN (go direct, not tunneled). Empty selection = every app is
+/// tunneled (default). Stored in AppSettings.perAppProxy and applied at connect
+/// time directly as flutter_v2ray's `blockedApps` (the bypass list — see
+/// VpnController.start). Parity with v2rayNG/Hiddify split-tunnel.
 class PerAppScreen extends StatefulWidget {
   final Strings strings;
   const PerAppScreen({super.key, required this.strings});

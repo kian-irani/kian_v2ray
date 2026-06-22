@@ -46,3 +46,21 @@ def test_import_users_upserts(tmp_path):
 
 def test_missing_file_is_empty(tmp_path):
     assert bridge.read_installer_users(os.path.join(str(tmp_path), "nope.json")) == []
+
+
+def test_per_user_routing_fragment():
+    # default / global => no override
+    assert bridge.per_user_routing("ali") == {}
+    assert bridge.per_user_routing("ali", routing="global") == {}
+    # bypass-lan => LAN subnets go direct
+    lan = bridge.per_user_routing("ali", routing="bypass-lan")
+    assert lan["rules"][0]["outboundTag"] == "direct"
+    assert "192.168.0.0/16" in lan["rules"][0]["ip"]
+    # bypass-both => LAN + Iran geo rules
+    both = bridge.per_user_routing("ali", routing="bypass-both")
+    tags = {r["outboundTag"] for r in both["rules"]}
+    assert tags == {"direct"}
+    assert any(r.get("ip") == ["geoip:ir"] for r in both["rules"])
+    # DNS list (comma or space separated)
+    d = bridge.per_user_routing("ali", dns="1.1.1.1, 9.9.9.9")
+    assert d["dns"]["servers"] == ["1.1.1.1", "9.9.9.9"]

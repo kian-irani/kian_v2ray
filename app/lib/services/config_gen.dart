@@ -62,7 +62,10 @@ class ConfigGen {
       String sid, String label) {
     final q = {
       'encryption': 'none', 'flow': 'xtls-rprx-vision', 'security': 'reality',
-      'sni': sni, 'fp': 'chrome', 'pbk': pbk, 'sid': sid, 'type': 'tcp',
+      'sni': sni, 'fp': 'chrome', 'pbk': pbk, 'sid': sid,
+      // spiderX (Reality advanced 10.6): the path the client's probe "crawls"
+      // on the fronting site so its fallback traffic looks like a real browser.
+      'spx': '/', 'type': 'tcp',
     }.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
     return 'vless://$uuid@${_host(ip)}:$port?$q#${Uri.encodeComponent(label)}';
   }
