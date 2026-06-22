@@ -179,6 +179,21 @@
     "dm.p.httpupgrade": { fa: "سبک‌تر از WebSocket. عبور خوب از پراکسی‌های شرکتی. نسبتاً جدید، در همهٔ کلاینت‌ها پشتیبانی نمی‌شود.", en: "Lighter than WebSocket. Passes corporate proxies well. Fairly new, not supported in all clients." },
     "dm.proto.note":  { fa: "می‌توانی همه را تیک بزنی — هیچ ضرری ندارد. هر کاربر برای هر پروتکل یک لینک می‌گیرد و در v2rayNG کدام بهتر کار کرد، همان را نگه می‌دارد.", en: "You can tick all of them — no harm. Each user gets a link per protocol, and in v2rayNG you keep whichever works best." },
 
+    /* ---------- protocol descriptions + extra protocols ---------- */
+    "gen.tlsproto.label": { fa: "پروتکل‌ها (هرکدام را می‌خواهی تیک بزن)", en: "Protocols (tick whichever you want)" },
+    "proto.vless-ws":          { fa: "پایدارترین، عبور خوب از DPI و CDN", en: "Most stable, good over DPI and CDN" },
+    "proto.vmess-ws":          { fa: "سازگاری بالا با کلاینت‌های قدیمی", en: "High compatibility with older clients" },
+    "proto.vless-grpc":        { fa: "مالتی‌پلکس، خوب روی شبکهٔ پرتاخیر", en: "Multiplexed, good on high-latency networks" },
+    "proto.vmess-grpc":        { fa: "gRPC با VMess", en: "gRPC with VMess" },
+    "proto.trojan-ws":         { fa: "شبیه HTTPS معمولی", en: "Looks like ordinary HTTPS" },
+    "proto.vless-httpupgrade": { fa: "سبک‌تر از WS", en: "Lighter than WS" },
+    "proto.vmess-httpupgrade": { fa: "HTTPUpgrade با VMess", en: "HTTPUpgrade with VMess" },
+    "proto.vless-xhttp":       { fa: "جدید — مقاوم‌ترین در برابر DPI، عالی روی CDN", en: "New — most DPI-resistant, great over CDN" },
+    "gen.extra.label": { fa: "پروتکل‌های اضافه (UDP — ضدِ DPI قوی)", en: "Extra protocols (UDP — strong anti-DPI)" },
+    "gen.extra.note":  { fa: "روی سرویسِ مستقلِ sing-box کنارِ Xray نصب می‌شوند و مسیرِ Reality/SS/TLS را دست‌نمی‌زنند. نیازمندِ بازبودنِ پورتِ UDP روی سرور. لینک‌ها خودکار به Subscription اضافه می‌شوند.", en: "Installed on a standalone sing-box service next to Xray; they don't touch the Reality/SS/TLS path. Needs a UDP port open on the server. Links are added to your subscription automatically." },
+    "gen.extra.hy2":   { fa: "سریع روی شبکهٔ پُرافت/پُرتأخیر، عبورِ عالی از DPI", en: "Fast on lossy/high-latency networks, great DPI evasion" },
+    "gen.extra.tuic":  { fa: "QUIC، 0-RTT، کنترلِ ازدحام BBR", en: "QUIC, 0-RTT, BBR congestion control" },
+
     /* ---------- DOMAIN tab (deep prose) ---------- */
     "dm.ar.lead": { fa: "بعد از خرید دامنه، در پنل DNS رجیسترار:", en: "After buying a domain, in the registrar's DNS panel:" },
     "dm.ar.1": { fa: "یک رکورد <b>A</b> بساز.", en: "Create an <b>A</b> record." },
