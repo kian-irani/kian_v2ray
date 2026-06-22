@@ -1,7 +1,7 @@
 name: kv2m
 description: Kv2m — KIAN V2Ray mobile client (same family as the Kv2m desktop app; Android-first, no GMS).
 publish_to: "none"
-version: 0.1.8+8
+version: 0.2.0+9
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -21,6 +21,7 @@ dependencies:
   intl: ^0.19.0
   dartssh2: ^2.9.0            # SSH into the server to install + manage (C7)
   cryptography: ^2.7.0        # X25519 reality keypair, client-side (C8)
+  flutter_v2ray: ^1.0.0       # bundled native Xray core → app connects on its own (C9)
 
 dev_dependencies:
   flutter_test:

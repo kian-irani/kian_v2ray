@@ -64,10 +64,10 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Kv2m Android ${{ github.ref_name }} (preview)"
+          name: "Kv2m Android ${{ github.ref_name }}"
           tag_name: ${{ github.ref_name }}
           body: |
-            ## Kv2m for Android — preview build
+            ## Kv2m for Android
 
             | فایل | برای چه کسی |
             |------|-------------|
@@ -75,13 +75,13 @@ jobs:
             | `Kv2m-*-arm64.apk` | گوشی‌های جدید (۶۴ بیتی، arm64-v8a) — حجمِ کمتر |
             | `Kv2m-*-arm32.apk` | گوشی‌های خیلی قدیمی (۳۲ بیتی، armeabi-v7a) |
 
-            یک نسخهٔ **پیش‌نمایش**: کلِ رابطِ کاربری کار می‌کند (نصبِ روی سرور از داخلِ اپ،
-            ساختِ کانفیگ، QR، تاریخچهٔ نصب، پروتکل‌های Hysteria2/TUIC، پنلِ وب) ولی
-            **هستهٔ تونلِ native (xray-core .aar) هنوز bundle نشده** — پس اتصالِ واقعیِ
-            ترافیک در همین build فعال نیست.
+            **اتصالِ روی‌دستگاه (جدید):** هستهٔ native (Xray از طریقِ `flutter_v2ray`)
+            حالا داخلِ اپ است — خودِ اپ وصل می‌شود و دیگر به v2rayNG نیاز نیست.
+            همهٔ امکانات کار می‌کنند: نصبِ سرور از داخلِ اپ، ساختِ کانفیگ، QR،
+            تاریخچهٔ نصب، Hysteria2/TUIC، پنلِ وب.
 
-            A **preview** build: the full UI works (in-app server install, config
-            generation, QR, install history, Hysteria2/TUIC, web panel) but the
-            native tunnel core (xray-core `.aar`) isn't bundled yet, so real packet
-            forwarding is not active. For sideloading/testing only.
+            **On-device tunnel (new):** the native core (Xray via `flutter_v2ray`)
+            is now bundled — the app connects on its own, no v2rayNG needed. Full UI
+            works: in-app server install, config generation, QR, install history,
+            Hysteria2/TUIC, web panel.
           files: app/Kv2m-*.apk

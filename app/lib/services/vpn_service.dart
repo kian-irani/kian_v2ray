@@ -1,67 +1,93 @@
-import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_v2ray/flutter_v2ray.dart';
 
 import '../models/server_profile.dart';
 
-/// Dart side of the native VPN bridge (Android: [KianVpnService] over the
-/// `kv2m/vpn` MethodChannel). On platforms without the channel, calls degrade
-/// gracefully so the UI stays usable for development.
+/// Real on-device tunnel via the bundled flutter_v2ray core (Xray). This makes
+/// Kv2m connect by itself — no v2rayNG needed. The plugin ships the native core
+/// and its own VpnService, so [coreAvailable] is true on a real device and
+/// false on dev/desktop (where the platform channel is absent) — keeping the
+/// home screen's "don't fake a connection" guard honest.
 class VpnController {
-  static const _channel = MethodChannel('kv2m/vpn');
+  VpnController() {
+    _v2ray = FlutterV2ray(onStatusChanged: (status) {
+      // status.state is e.g. "CONNECTED" | "DISCONNECTED" | "CONNECTING".
+      _state = status.state;
+    });
+  }
 
-  /// True if this build bundles a real native tunnel core. When false, the app
-  /// can generate/manage configs but cannot tunnel traffic on-device — importing
-  /// the subscription into v2rayNG is the way to actually connect. On dev/desktop
-  /// (no channel) we report false so the UI stays honest.
+  late final FlutterV2ray _v2ray;
+  String _state = 'DISCONNECTED';
+  bool _initialized = false;
+
+  /// True when the native core is present (real device). Returns false on
+  /// dev/desktop so the UI stays honest instead of black-holing traffic.
   Future<bool> coreAvailable() async {
     try {
-      return await _channel.invokeMethod<bool>('coreAvailable') ?? false;
-    } on PlatformException {
-      return false;
-    } on MissingPluginException {
+      await _ensureInit();
+      return true;
+    } catch (_) {
       return false;
     }
+  }
+
+  Future<void> _ensureInit() async {
+    if (_initialized) return;
+    await _v2ray.initializeV2Ray();
+    _initialized = true;
   }
 
   /// Ask the OS for VPN consent (first connect). Returns true if granted.
   Future<bool> prepare() async {
     try {
-      return await _channel.invokeMethod<bool>('prepare') ?? false;
-    } on PlatformException {
+      await _ensureInit();
+      return await _v2ray.requestPermission();
+    } catch (_) {
       return false;
-    } on MissingPluginException {
-      return true; // dev/desktop: pretend granted
     }
   }
 
-  /// Start the tunnel for [server]. The config JSON is what the native core
-  /// consumes (here we pass the share URI; the core expands it).
+  /// Start the real tunnel for [server] (parses its share URI into a full Xray
+  /// config and runs it through the bundled core). Returns true if it started.
   Future<bool> start(ServerProfile server) async {
-    final ok = await prepare();
-    if (!ok) return false;
     try {
-      return await _channel.invokeMethod<bool>('start', {
-            'config': server.uri,
-          }) ??
-          false;
-    } on MissingPluginException {
+      await _ensureInit();
+      if (!await _v2ray.requestPermission()) return false;
+      final parser = FlutterV2ray.parseFromURL(server.uri);
+      _v2ray.startV2Ray(
+        remark: parser.remark.isNotEmpty ? parser.remark : server.name,
+        config: parser.getFullConfiguration(),
+        proxyOnly: false,
+        bypassSubnets: null,
+        blockedApps: null,
+      );
       return true;
+    } catch (e) {
+      debugPrint('VpnController.start failed: $e');
+      return false;
     }
   }
 
   Future<void> stop() async {
     try {
-      await _channel.invokeMethod('stop');
-    } on MissingPluginException {
+      _v2ray.stopV2Ray();
+    } catch (_) {
       // no-op on dev/desktop
     }
   }
 
-  /// "connected" | "disconnected"
-  Future<String> status() async {
+  /// Measured real latency through the selected server's config (ms), or -1.
+  Future<int> serverDelay(ServerProfile server) async {
     try {
-      return await _channel.invokeMethod<String>('status') ?? 'disconnected';
-    } on MissingPluginException {
-      return 'disconnected';
+      await _ensureInit();
+      final cfg = FlutterV2ray.parseFromURL(server.uri).getFullConfiguration();
+      return await _v2ray.getServerDelay(config: cfg);
+    } catch (_) {
+      return -1;
     }
   }
+
+  /// "connected" | "disconnected"
+  Future<String> status() async =>
+      _state.toUpperCase() == 'CONNECTED' ? 'connected' : 'disconnected';
 }
