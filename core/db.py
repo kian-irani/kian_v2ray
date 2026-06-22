@@ -89,12 +89,19 @@ MIGRATIONS: list[str] = [
 
 
 def connect(path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
-    """Open (creating parent dirs for) a SQLite db with safe pragmas."""
+    """Open (creating parent dirs for) a SQLite db with safe pragmas.
+
+    ``check_same_thread=False`` is required because FastAPI/Starlette runs
+    sync dependencies (get_db) in a thread-pool executor, so the connection
+    is created in one thread and closed in another.  WAL mode + the busy
+    timeout make concurrent access safe despite this flag.
+    """
     if path != ":memory:":
         parent = os.path.dirname(path)
         if parent:
             os.makedirs(parent, exist_ok=True)
-    conn = sqlite3.connect(path, timeout=10, isolation_level=None)
+    conn = sqlite3.connect(path, timeout=10, isolation_level=None,
+                           check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA foreign_keys=ON;")
