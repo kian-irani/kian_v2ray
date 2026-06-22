@@ -28,9 +28,9 @@ SSH نصب از اپ · پنلِ وب · تاریخچهٔ نصب · QR · auto-r
 - [x] ۹.۶ **پینگِ هر سرور** — TCP ping (SmartSelection) + دکمهٔ «بهترین سرور» (تستِ همه). (real-delay = follow-on)
 - [x] ۹.۷ **آمارِ زندهٔ مصرف** — up/down + uptime حینِ اتصال روی صفحهٔ اصلی.
 - [x] ۹.۸ **Auto-connect** — گزینه در تنظیمات (اتصال به آخرین سرور هنگامِ launch).
-- [ ] ۹.۹ **Deep-link import** — intent-filter برای `vless://`/`sub`. [بعدی]
+- [x] ۹.۹ **Deep-link import** — intent-filter (vless/vmess/trojan/ss/hy2/tuic/kv2m) + initialLink → import در launch.
 - [x] ۹.۱۰ **Proxy-only** — گزینه در تنظیمات (flutter_v2ray `proxyOnly`).
-- [ ] ۹.۱۱ **ویرایش/مرتب‌سازیِ کانفیگ**. [بعدی]
+- [x] ۹.۱۱ **مدیریتِ کانفیگ** — تغییرِ نام + حذف (با undo) از منویِ هر سرور. (drag-reorder = follow-on)
 - [x] ۹.۱۲ **راهنمای درون‌برنامه‌ای** — `HelpCard` دوزبانه در home/setup/manage/history/settings.
 
 ### فاز ۱۰ — پروتکل/transportهای بیشتر (parity با sing-box)
