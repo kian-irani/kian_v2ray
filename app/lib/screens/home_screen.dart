@@ -9,6 +9,7 @@ import '../services/selection.dart';
 import '../services/subscription.dart';
 import '../services/vpn_service.dart';
 import '../theme.dart';
+import '../widgets/help_card.dart';
 import 'config_detail_screen.dart';
 import 'history_screen.dart';
 import 'manage_screen.dart';
@@ -317,7 +318,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   : (_connected ? s.t('connected') : s.t('disconnected')),
               onTap: _selected == null ? null : _toggleConnection,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
+            HelpCard(title: s.t('help.title'), body: s.t('help.home'),
+                initiallyExpanded: _servers.isEmpty),
+            const SizedBox(height: 14),
             if (_subUrl != null && _subUrl!.isNotEmpty) ...[
               Card(
                 color: const Color(0xFF0E1B33),

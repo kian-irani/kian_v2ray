@@ -10,6 +10,7 @@ import '../services/cache.dart';
 import '../services/config_gen.dart';
 import '../services/ssh_installer.dart';
 import '../theme.dart';
+import '../widgets/help_card.dart';
 
 /// Setup wizard (C7): the app generates the config (client-side keys + the same
 /// Gist subscription as the web), SSHes into the server, and runs the install —
@@ -219,6 +220,8 @@ class _SetupScreenState extends State<SetupScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(s.t('setup.desc'), style: const TextStyle(color: KianTheme.accent)),
+          const SizedBox(height: 10),
+          HelpCard(title: s.t('help.title'), body: s.t('help.setup')),
           const SizedBox(height: 12),
           _field(_ip, s.t('setup.ip'), hint: '185.x.x.x'),
           Row(children: [

@@ -94,6 +94,23 @@ class Strings {
     'hist.delete.confirm': ['این رکوردِ تاریخچه حذف شود؟', 'Delete this history record?'],
     'copyall.title': ['کپیِ همهٔ کانفیگ‌ها', 'Copy all configs'],
     'copyall.done': ['همهٔ لینک‌ها کپی شد', 'All links copied'],
+    'help.title': ['راهنما', 'Help'],
+    'help.home': [
+      'دکمهٔ بزرگ وصل/قطع می‌کند. سرورها را از + (لینک/QR) اضافه کن یا از «نصب روی سرور» بساز. دکمهٔ سرعت بهترین سرور را تست و انتخاب می‌کند. آیکنِ QR روی هر سرور کانفیگ و QR را نشان می‌دهد. رفرش، Subscriptionها را به‌روز می‌کند.',
+      'The big button connects/disconnects. Add servers with + (link/QR) or build one via "Set up server". The speed button tests and picks the best server. The QR icon on each server shows its config and QR. Refresh updates your subscriptions.',
+    ],
+    'help.setup': [
+      'این بخش از داخلِ اپ به سرورت SSH می‌زند، کانفیگ می‌سازد و نصب می‌کند — بدونِ ترمینال. IP و رمزِ SSH را بده، پروتکل‌ها را انتخاب کن (Reality پیش‌فرض؛ WARP/SS/TLS/Hysteria2/TUIC اختیاری). بعد از نصب، کانفیگ‌ها خودکار به اپ اضافه و در تاریخچه ذخیره می‌شوند.',
+      'This SSHes into your server from inside the app, builds the config and installs — no terminal. Enter the IP and SSH password, pick protocols (Reality by default; WARP/SS/TLS/Hysteria2/TUIC optional). After install the configs are auto-added to the app and saved in history.',
+    ],
+    'help.manage': [
+      'به پنلِ وبِ سرورت وصل شو (آدرس + یوزر/رمز) تا کاربران را ببینی، اضافه/غیرفعال/حذف کنی و آمار را ببینی — همه از داخلِ اپ. اگر پنل نداری، از «نصب روی سرور» آن را راه بینداز.',
+      'Connect to your server\'s web panel (URL + user/pass) to view users, add/disable/delete them and see stats — all in-app. No panel yet? Deploy one from "Set up server".',
+    ],
+    'help.history': [
+      'هر نصبی که از اپ انجام دادی اینجا می‌ماند: لینکِ Subscription، آدرس و یوزر/رمزِ پنل، پروتکل‌ها و تاریخ. هر چیزی را با یک لمس کپی کن؛ رمزِ پنل با آیکنِ چشم نمایش/پنهان می‌شود.',
+      'Every install you ran from the app is kept here: subscription link, panel URL + user/pass, protocols and date. Copy anything with one tap; reveal/hide the panel password with the eye icon.',
+    ],
     'sub.refresh': ['به‌روزرسانیِ Subscription', 'Refresh subscription'],
     'sub.refresh.done': ['کانفیگ‌ها به‌روز شد', 'Configs updated'],
     'sub.refresh.none': ['تغییری نبود یا اتصال برقرار نشد', 'No change or fetch failed'],

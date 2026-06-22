@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../i18n.dart';
 import '../services/panel_api.dart';
 import '../theme.dart';
+import '../widgets/help_card.dart';
 
 /// In-app server management (the web-panel sections, native — no browser).
 /// Connect to a deployed KIAN panel, then manage users + see stats.
@@ -97,6 +98,8 @@ class _ManageScreenState extends State<ManageScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(s.t('mg.connect'), style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 10),
+          HelpCard(title: s.t('help.title'), body: s.t('help.manage')),
           const SizedBox(height: 12),
           TextField(controller: _url,
               decoration: InputDecoration(labelText: s.t('mg.url'),

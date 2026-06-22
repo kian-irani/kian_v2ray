@@ -5,6 +5,7 @@ import '../i18n.dart';
 import '../models/install_record.dart';
 import '../services/cache.dart';
 import '../theme.dart';
+import '../widgets/help_card.dart';
 
 /// Install history (C-feedback): every server install the user ran from the app,
 /// with its subscription link + web-panel URL/credentials, always recoverable.
@@ -57,13 +58,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ? _empty(s)
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  itemCount: _records.length,
-                  itemBuilder: (_, i) => _RecordCard(
-                    strings: s,
-                    record: _records[i],
-                    onCopy: _copy,
-                    onDelete: () => _confirmDelete(s, i),
-                  ),
+                  itemCount: _records.length + 1,
+                  itemBuilder: (_, i) {
+                    if (i == 0) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: HelpCard(title: s.t('help.title'), body: s.t('help.history')),
+                      );
+                    }
+                    final r = _records[i - 1];
+                    return _RecordCard(
+                      strings: s,
+                      record: r,
+                      onCopy: _copy,
+                      onDelete: () => _confirmDelete(s, i - 1),
+                    );
+                  },
                 ),
     );
   }
