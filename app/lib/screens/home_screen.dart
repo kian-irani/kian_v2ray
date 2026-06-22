@@ -36,7 +36,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final List<ServerProfile> _servers = [];
   final _cache = Cache();
-  final _vpn = VpnController();
+  late final VpnController _vpn;
   final _selection = const SmartSelection();
   final _subs = SubscriptionService();
   ServerProfile? _selected;
@@ -48,6 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _vpn = VpnController(onStats: () {
+      if (mounted) setState(() {}); // refresh live up/down + duration
+    });
     _restore();
   }
 
@@ -238,6 +241,39 @@ class _HomeScreenState extends State<HomeScreen> {
     _cache.saveSelected(s.name);
   }
 
+  /// Live up/down speed + session duration while connected (parity feature).
+  Widget _statsRow(Strings s) {
+    Widget cell(IconData ic, String label, String val) => Expanded(
+          child: Column(
+            children: [
+              Icon(ic, size: 18, color: KianTheme.accent),
+              const SizedBox(height: 4),
+              Text(val, style: const TextStyle(
+                  fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF8AA0C0))),
+            ],
+          ),
+        );
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0E1B33),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(children: [
+        cell(Icons.south_outlined, s.t('stats.down'), '${_fmtSpeed(_vpn.downloadSpeed)}/s'),
+        cell(Icons.north_outlined, s.t('stats.up'), '${_fmtSpeed(_vpn.uploadSpeed)}/s'),
+        cell(Icons.timer_outlined, s.t('stats.time'), _vpn.duration),
+      ]),
+    );
+  }
+
+  String _fmtSpeed(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
+  }
+
   /// Copy every server's share URI (newline-separated) to the clipboard.
   Future<void> _copyAllConfigs() async {
     if (_servers.isEmpty) return;
@@ -318,6 +354,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   : (_connected ? s.t('connected') : s.t('disconnected')),
               onTap: _selected == null ? null : _toggleConnection,
             ),
+            if (_connected) ...[
+              const SizedBox(height: 12),
+              _statsRow(s),
+            ],
             const SizedBox(height: 14),
             HelpCard(title: s.t('help.title'), body: s.t('help.home'),
                 initiallyExpanded: _servers.isEmpty),

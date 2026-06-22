@@ -9,16 +9,28 @@ import '../models/server_profile.dart';
 /// false on dev/desktop (where the platform channel is absent) — keeping the
 /// home screen's "don't fake a connection" guard honest.
 class VpnController {
-  VpnController() {
+  VpnController({void Function()? onStats}) {
     _v2ray = FlutterV2ray(onStatusChanged: (status) {
-      // status.state is e.g. "CONNECTED" | "DISCONNECTED" | "CONNECTING".
+      // status: state, duration, uploadSpeed, downloadSpeed, upload, download.
       _state = status.state;
+      _duration = status.duration;
+      _upSpeed = status.uploadSpeed;
+      _downSpeed = status.downloadSpeed;
+      onStats?.call();
     });
   }
 
   late final FlutterV2ray _v2ray;
   String _state = 'DISCONNECTED';
   bool _initialized = false;
+
+  // Live stats from the last status event (shown on the home screen).
+  String _duration = '00:00:00';
+  int _upSpeed = 0;
+  int _downSpeed = 0;
+  String get duration => _duration;
+  int get uploadSpeed => _upSpeed;
+  int get downloadSpeed => _downSpeed;
 
   /// True when the native core is present (real device). Returns false on
   /// dev/desktop so the UI stays honest instead of black-holing traffic.
