@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../i18n.dart';
+import '../models/app_settings.dart';
 import '../models/server_profile.dart';
 import '../services/cache.dart';
 import '../services/selection.dart';
@@ -11,17 +12,20 @@ import '../theme.dart';
 import 'config_detail_screen.dart';
 import 'history_screen.dart';
 import 'manage_screen.dart';
+import 'settings_screen.dart';
 import 'setup_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Strings strings;
   final VoidCallback onToggleLang;
   final VoidCallback onToggleTheme;
+  final ValueChanged<String> onThemeMode;
   const HomeScreen({
     super.key,
     required this.strings,
     required this.onToggleLang,
     required this.onToggleTheme,
+    required this.onThemeMode,
   });
 
   @override
@@ -169,7 +173,9 @@ class _HomeScreenState extends State<HomeScreen> {
         await _vpn.stop();
         if (mounted) setState(() => _connected = false);
       } else {
-        final ok = await _vpn.start(_selected!);
+        final cfg = AppSettings.fromJson(await _cache.loadSettings());
+        final ok = await _vpn.start(_selected!,
+            proxyOnly: cfg.proxyOnly, bypassSubnets: cfg.bypassSubnets());
         if (mounted) setState(() => _connected = ok);
       }
     } finally {
@@ -282,7 +288,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.refresh_outlined),
           ),
-          IconButton(onPressed: widget.onToggleTheme, icon: const Icon(Icons.brightness_6_outlined)),
+          IconButton(
+            tooltip: s.t('settings.open'),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => SettingsScreen(
+                  strings: s,
+                  onToggleLang: widget.onToggleLang,
+                  onThemeMode: widget.onThemeMode,
+                ))),
+            icon: const Icon(Icons.settings_outlined),
+          ),
           TextButton(onPressed: widget.onToggleLang, child: Text(s.lang == 'fa' ? 'EN' : 'FA')),
         ],
       ),

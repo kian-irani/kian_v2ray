@@ -48,8 +48,14 @@ class VpnController {
   }
 
   /// Start the real tunnel for [server] (parses its share URI into a full Xray
-  /// config and runs it through the bundled core). Returns true if it started.
-  Future<bool> start(ServerProfile server) async {
+  /// config and runs it through the bundled core). Honors user settings:
+  /// [proxyOnly] (no system TUN) and [bypassSubnets] (routing mode). Returns
+  /// true if it started.
+  Future<bool> start(
+    ServerProfile server, {
+    bool proxyOnly = false,
+    List<String>? bypassSubnets,
+  }) async {
     try {
       await _ensureInit();
       if (!await _v2ray.requestPermission()) return false;
@@ -57,9 +63,8 @@ class VpnController {
       _v2ray.startV2Ray(
         remark: parser.remark.isNotEmpty ? parser.remark : server.name,
         config: parser.getFullConfiguration(),
-        proxyOnly: false,
-        bypassSubnets: null,
-        blockedApps: null,
+        proxyOnly: proxyOnly,
+        bypassSubnets: bypassSubnets,
       );
       return true;
     } catch (e) {

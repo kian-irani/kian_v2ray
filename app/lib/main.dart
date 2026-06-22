@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'i18n.dart';
 import 'theme.dart';
 import 'screens/home_screen.dart';
+import 'services/cache.dart';
 
 void main() => runApp(const KianApp());
 
@@ -14,10 +15,39 @@ class KianApp extends StatefulWidget {
 }
 
 class _KianAppState extends State<KianApp> {
-  String _lang = 'fa';
-  ThemeMode _mode = ThemeMode.dark;
+  String _lang = 'en';           // English default (matches install + page)
+  ThemeMode _mode = ThemeMode.system;
+  final _cache = Cache();
 
-  void _toggleLang() => setState(() => _lang = _lang == 'fa' ? 'en' : 'fa');
+  @override
+  void initState() {
+    super.initState();
+    _restorePrefs();
+  }
+
+  Future<void> _restorePrefs() async {
+    final (lang, _) = await _cache.loadPrefs();
+    final settings = await _cache.loadSettings();
+    if (!mounted) return;
+    setState(() {
+      _lang = lang;
+      _mode = _modeFrom(settings['themeMode'] as String?);
+    });
+  }
+
+  ThemeMode _modeFrom(String? m) => switch (m) {
+        'dark' => ThemeMode.dark,
+        'light' => ThemeMode.light,
+        _ => ThemeMode.system,
+      };
+
+  void setThemeMode(String m) => setState(() => _mode = _modeFrom(m));
+
+  void _toggleLang() {
+    setState(() => _lang = _lang == 'fa' ? 'en' : 'fa');
+    _cache.savePrefs(lang: _lang);
+  }
+
   void _toggleTheme() =>
       setState(() => _mode = _mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
 
@@ -43,6 +73,7 @@ class _KianAppState extends State<KianApp> {
         strings: s,
         onToggleLang: _toggleLang,
         onToggleTheme: _toggleTheme,
+        onThemeMode: setThemeMode,
       ),
     );
   }

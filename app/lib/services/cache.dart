@@ -16,6 +16,7 @@ class Cache {
   static const _kTheme = 'kv2m.theme';
   static const _kSubUrl = 'kv2m.subUrl';
   static const _kHistory = 'kv2m.installHistory';
+  static const _kSettings = 'kv2m.appSettings';
 
   Future<void> saveServers(List<ServerProfile> servers) async {
     final prefs = await SharedPreferences.getInstance();
@@ -101,6 +102,20 @@ class Cache {
     await saveInstallHistory(all);
   }
 
+  /// App settings (theme mode, routing, kill-switch, auto-connect, …) as a JSON
+  /// map. Stored together so the Settings screen reads/writes atomically.
+  Future<Map<String, dynamic>> loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_kSettings);
+    if (raw == null || raw.isEmpty) return {};
+    return jsonDecode(raw) as Map<String, dynamic>;
+  }
+
+  Future<void> saveSettings(Map<String, dynamic> settings) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kSettings, jsonEncode(settings));
+  }
+
   Future<void> savePrefs({String? lang, String? theme}) async {
     final prefs = await SharedPreferences.getInstance();
     if (lang != null) await prefs.setString(_kLang, lang);
@@ -109,6 +124,6 @@ class Cache {
 
   Future<(String lang, String theme)> loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    return (prefs.getString(_kLang) ?? 'fa', prefs.getString(_kTheme) ?? 'dark');
+    return (prefs.getString(_kLang) ?? 'en', prefs.getString(_kTheme) ?? 'dark');
   }
 }
