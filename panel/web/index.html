@@ -86,6 +86,8 @@
   .login .modal{max-width:380px}
   .err{color:#fca5a5;font-size:13px;min-height:18px}
   canvas{width:100%;height:160px;display:block}
+  /* fallback font stack اگر گوگل فونت لود نشد */
+  @font-face{font-family:'VazirFallback';src:local('Tahoma'),local('Arial');unicode-range:U+0600-06FF}
   @media(max-width:640px){th.hide,td.hide{display:none}}
 </style>
 </head>
@@ -106,8 +108,12 @@
       <label for="lg-pass" data-i18n="login.pass">رمز عبور</label>
       <input id="lg-pass" type="password" autocomplete="current-password">
     </div>
+    <div class="field hidden" id="totp-field">
+      <label for="lg-totp" data-i18n="login.totp">کد ۲FA</label>
+      <input id="lg-totp" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code">
+    </div>
     <div class="err" id="lg-err"></div>
-    <button class="btn primary" style="width:100%" type="submit" data-i18n="login.btn">ورود</button>
+    <button class="btn primary" style="width:100%;margin-top:4px" type="submit" data-i18n="login.btn">ورود</button>
   </form>
 </section>
 
