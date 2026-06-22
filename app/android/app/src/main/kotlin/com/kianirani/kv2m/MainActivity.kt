@@ -22,6 +22,27 @@ class MainActivity : FlutterActivity() {
     private var pendingResult: MethodChannel.Result? = null
     private val vpnRequestCode = 0x7654
 
+    // Deep-link (VIEW intent) data captured at launch / while running, handed to
+    // Flutter via the 'initialLink' channel call so it can import the config.
+    private var pendingLink: String? = null
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        intent?.let { captureLink(it) }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        captureLink(intent)
+    }
+
+    private fun captureLink(intent: Intent) {
+        if (intent.action == Intent.ACTION_VIEW) {
+            intent.dataString?.let { pendingLink = it }
+        }
+    }
+
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channel)
@@ -39,6 +60,10 @@ class MainActivity : FlutterActivity() {
                     }
                     "status" -> result.success(KianVpnService.currentStatus)
                     "coreAvailable" -> result.success(KianVpnService.isCoreAvailable())
+                    "initialLink" -> {
+                        result.success(pendingLink)
+                        pendingLink = null // consumed once
+                    }
                     else -> result.notImplemented()
                 }
             }

@@ -76,6 +76,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // Auto-refresh subscriptions on launch (silent — won't disrupt if offline).
     final sources = await _subs.loadSources();
     if (sources.isNotEmpty) _refreshSubs(silent: true);
+    // Deep-link: if the app was opened by tapping a share link / sub URL, import it.
+    final link = await _vpn.initialLink();
+    if (link != null && link.isNotEmpty) await _importLink(link);
   }
 
   /// Re-fetch all subscription sources and merge with manually-added servers.

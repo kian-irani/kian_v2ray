@@ -32,6 +32,20 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Deep-link import: tapping a share link / sub URL opens Kv2m and
+                 imports it (9.9 — parity with v2rayNG/Hiddify one-click import). -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="vless" />
+                <data android:scheme="vmess" />
+                <data android:scheme="trojan" />
+                <data android:scheme="ss" />
+                <data android:scheme="hysteria2" />
+                <data android:scheme="tuic" />
+                <data android:scheme="kv2m" />
+            </intent-filter>
         </activity>
 
         <!-- The VPN tunnel service. Binds the system VpnService API. -->

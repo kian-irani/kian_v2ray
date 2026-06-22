@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_v2ray/flutter_v2ray.dart';
 
 import '../models/server_profile.dart';
@@ -19,6 +20,10 @@ class VpnController {
       onStats?.call();
     });
   }
+
+  // Our own MainActivity channel for native extras the plugin doesn't cover
+  // (deep-link import). Separate from flutter_v2ray's internal channels.
+  static const _extras = MethodChannel('kv2m/vpn');
 
   late final FlutterV2ray _v2ray;
   String _state = 'DISCONNECTED';
@@ -107,4 +112,16 @@ class VpnController {
   /// "connected" | "disconnected"
   Future<String> status() async =>
       _state.toUpperCase() == 'CONNECTED' ? 'connected' : 'disconnected';
+
+  /// Pending deep-link the app was opened with (a share link / sub URL), or null.
+  /// Consumed once by the native side (9.9 — one-tap import).
+  Future<String?> initialLink() async {
+    try {
+      return await _extras.invokeMethod<String>('initialLink');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
 }
