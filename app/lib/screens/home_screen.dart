@@ -119,6 +119,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final saved = await _cache.loadServers();
     final sel = await _cache.loadSelected();
     final sub = await _cache.loadSubUrl();
+    // Register the install's sub link as a refreshable source so future configs
+    // (port remaps, added users) auto-update — connects the wizard to refresh.
+    if (sub != null && sub.isNotEmpty) await _subs.addSource(sub);
     if (!mounted) return;
     setState(() {
       _servers
