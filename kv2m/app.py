@@ -2,12 +2,13 @@
 """kv2m Qt UI — frameless window, icon sidebar, pages. Depends on core + i18n + theme."""
 import base64, io
 from PySide6.QtWidgets import (
+    QSystemTrayIcon, QMenu,
     QApplication, QWidget, QLabel, QPushButton, QLineEdit, QComboBox, QCheckBox,
     QHBoxLayout, QVBoxLayout, QGridLayout, QFrame, QStackedWidget, QScrollArea,
     QTextEdit, QSizePolicy, QSpacerItem, QGraphicsDropShadowEffect,
 )
 from PySide6.QtCore import Qt, QThread, Signal, QPoint, QTimer, QSize
-from PySide6.QtGui import QPixmap, QImage, QColor, QFont
+from PySide6.QtGui import QPixmap, QImage, QColor, QFont, QIcon, QAction, QPainter
 
 import core, theme
 from i18n import tr, set_lang, get_lang, is_rtl, load_settings, save_settings
@@ -530,14 +531,63 @@ class MainWindow(QWidget):
         self._toast(f"{tr('toast.err')}: {e}", True)
 
 
+def _make_tray_icon():
+    """A small green-accent 'K' icon drawn at runtime (no asset file needed)."""
+    pm = QPixmap(64, 64); pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    p.setBrush(QColor("#0B1426")); p.setPen(Qt.NoPen)
+    p.drawRoundedRect(2, 2, 60, 60, 14, 14)
+    f = QFont("Arial", 30, QFont.Bold); p.setFont(f)
+    p.setPen(QColor("#22C55E"))
+    p.drawText(pm.rect(), Qt.AlignCenter, "K")
+    p.end()
+    return QIcon(pm)
+
+
+def _setup_tray(app, win, settings):
+    """Cross-platform system tray (Windows/macOS/Linux): show/hide + quit, and
+    minimize-to-tray on window close when enabled in settings."""
+    if not QSystemTrayIcon.isSystemTrayAvailable():
+        return None
+    tray = QSystemTrayIcon(_make_tray_icon(), app)
+    tray.setToolTip("Kv2m")
+    menu = QMenu()
+    act_show = QAction(tr("tray.show"), app)
+    act_quit = QAction(tr("tray.quit"), app)
+    act_show.triggered.connect(lambda: (win.showNormal(), win.raise_(), win.activateWindow()))
+    act_quit.triggered.connect(lambda: (setattr(win, "_really_quit", True), app.quit()))
+    menu.addAction(act_show); menu.addSeparator(); menu.addAction(act_quit)
+    tray.setContextMenu(menu)
+    tray.activated.connect(
+        lambda reason: (win.showNormal(), win.raise_(), win.activateWindow())
+        if reason == QSystemTrayIcon.Trigger else None)
+    tray.show()
+
+    # Intercept close: hide to tray instead of quitting (if the user opted in).
+    win._really_quit = False
+    _orig_close = win.closeEvent
+    def _close(ev):
+        if settings.get("minimize_to_tray", True) and not win._really_quit:
+            ev.ignore(); win.hide()
+            tray.showMessage("Kv2m", tr("tray.hidden"),
+                             QSystemTrayIcon.Information, 2000)
+        else:
+            _orig_close(ev) if callable(_orig_close) else ev.accept()
+    win.closeEvent = _close
+    return tray
+
+
 def run():
     import sys
     settings = load_settings()
     app = QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(False)   # tray keeps the app alive when hidden
     if not settings.get("lang"):
         code = _ask_language(app); settings["lang"]=code; save_settings(settings)
     set_lang(settings.get("lang","en"))
     win = MainWindow(); win.show()
+    _tray = _setup_tray(app, win, settings)  # noqa: F841 (kept alive by ref)
     sys.exit(app.exec())
 
 

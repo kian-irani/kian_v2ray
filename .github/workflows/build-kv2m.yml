@@ -1,4 +1,4 @@
-name: Build Kv2m Windows
+name: Build Kv2m Desktop (Windows / macOS / Linux)
 
 on:
   push:
@@ -80,3 +80,78 @@ jobs:
           files: |
             dist/Kv2m-Setup-x64.exe
             dist/Kv2m-Portable-x64.exe
+
+  # macOS build — a self-contained .app folder zipped for distribution.
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install PySide6-Essentials paramiko cryptography "qrcode[pil]" Pillow pyinstaller
+      - name: Build .app
+        run: |
+          pyinstaller --windowed --name "Kv2m" \
+            --paths kv2m \
+            --hidden-import app --hidden-import core --hidden-import theme \
+            --hidden-import i18n --hidden-import cli --hidden-import servers \
+            --hidden-import settings --hidden-import updater --hidden-import panel_client \
+            --hidden-import paramiko --hidden-import cryptography \
+            --hidden-import qrcode --hidden-import PIL \
+            --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy \
+            kv2m/kv2m.py
+          cd dist && zip -r -q "Kv2m-macOS.zip" "Kv2m.app" && cd ..
+          echo "✅ $(ls -lh dist/Kv2m-macOS.zip)"
+      - name: Get version
+        run: echo "VER=${GITHUB_REF_NAME#kv2m-v}" >> "$GITHUB_ENV"
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Kv2m v${{ env.VER }} — Windows / macOS / Linux"
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## Kv2m v${{ env.VER }} — desktop (cross-platform)
+
+            | فایل | پلتفرم |
+            |------|--------|
+            | `Kv2m-Setup-x64.exe` | Windows — نصبِ کامل |
+            | `Kv2m-Portable-x64.exe` | Windows — بدونِ نصب |
+            | `Kv2m-macOS.zip` | macOS — `Kv2m.app` (راست‌کلیک → Open بارِ اول) |
+            | `Kv2m-Linux-x86_64` | Linux — فایلِ اجراییِ مستقل (`chmod +x`) |
+
+            بدونِ نیاز به Python.
+          files: dist/Kv2m-macOS.zip
+
+  # Linux build — a single self-contained executable.
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install system libs for Qt
+        run: sudo apt-get update -y && sudo apt-get install -y libegl1 libxkbcommon0 libgl1
+      - name: Install deps
+        run: pip install PySide6-Essentials paramiko cryptography "qrcode[pil]" Pillow pyinstaller
+      - name: Build executable
+        run: |
+          pyinstaller --onefile --name "Kv2m-Linux-x86_64" \
+            --paths kv2m \
+            --hidden-import app --hidden-import core --hidden-import theme \
+            --hidden-import i18n --hidden-import cli --hidden-import servers \
+            --hidden-import settings --hidden-import updater --hidden-import panel_client \
+            --hidden-import paramiko --hidden-import cryptography \
+            --hidden-import qrcode --hidden-import PIL \
+            --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy \
+            kv2m/kv2m.py
+          echo "✅ $(ls -lh dist/Kv2m-Linux-x86_64)"
+      - name: Get version
+        run: echo "VER=${GITHUB_REF_NAME#kv2m-v}" >> "$GITHUB_ENV"
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: dist/Kv2m-Linux-x86_64

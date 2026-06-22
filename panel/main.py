@@ -39,6 +39,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
+from core import analytics
 from core import audit
 from core import cluster
 from core import db as core_db
@@ -328,6 +329,20 @@ def api_audit(limit: int = 50, admin: str = Depends(require_admin),
               conn=Depends(get_db)):
     """Recent admin actions for the Audit Log viewer (2.8)."""
     return {"entries": audit.tail(conn, limit=min(limit, 500))}
+
+
+@app.get("/api/analytics/preview")
+def api_analytics_preview(admin: str = Depends(require_admin), conn=Depends(get_db)):
+    """Transparency endpoint: show EXACTLY the anonymous payload that would be
+    sent (only if the operator opted in via KIAN_ANALYTICS=1). No PII ever."""
+    s = repo.stats(conn)
+    iid = repo.get_setting(conn, "analytics_id")
+    if iid is None:
+        iid = secrets.token_hex(8)
+        repo.set_setting(conn, "analytics_id", iid)
+    payload = analytics.build_payload(s, install_id=iid, version="panel",
+                                      protocols=[])
+    return {"enabled": analytics.enabled(), "would_send": payload}
 
 
 @app.get("/metrics")
