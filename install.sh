@@ -36,11 +36,85 @@ STATE_FILE="$WORK_DIR/state"
 LOCK_FILE="$WORK_DIR/install.lock"
 
 C_G='\033[1;32m'; C_Y='\033[1;33m'; C_R='\033[1;31m'; C_B='\033[1;36m'; C_N='\033[0m'
-say(){  printf "${C_G}✔${C_N} %s\n" "$*"; }
-inf(){  printf "${C_B}→${C_N} %s\n" "$*"; }
-warn(){ printf "${C_Y}⚠${C_N} %s\n" "$*"; }
-err(){  printf "${C_R}✘${C_N} %s\n" "$*" >&2; }
-trap 'err "خطا در خط $LINENO — جزئیات: tail -n 40 '"$INSTALL_LOG"'"' ERR
+
+# ── Bilingual output ───────────────────────────────────────────────────────
+# Default Persian; the app/page sets KIAN_LANG=en when the user operates in
+# English, so the whole install console is English for them. _tr() maps the
+# Persian milestone/error strings → English (zero call-site changes), and
+# xlt() picks a side for interpolated lines.
+KIAN_LANG="${KIAN_LANG:-fa}"
+declare -A _EN=(
+  ["باید با root اجرا شود (sudo)."]="Must run as root (sudo)."
+  ["هیچ payload ای پیدا نشد."]="No payload found."
+  ["دستور را از صفحه تعاملی کپی کن:  https://kian-irani.github.io/kian_v2ray/"]="Copy the command from the web page: https://kian-irani.github.io/kian_v2ray/"
+  ["نصب از قبل در حال اجراست."]="An install is already running."
+  ["نصب پیش‌نیازها (curl, jq, python3, ...)"]="Installing prerequisites (curl, jq, python3, ...)"
+  ["پیش‌نیازها نصب شد"]="Prerequisites installed"
+  ["پیش‌نیازها از قبل نصب — رد شد"]="Prerequisites already present — skipped"
+  ["نصب Docker..."]="Installing Docker..."
+  ["docker نصب نیست"]="docker is not installed"
+  ["Docker آماده است"]="Docker is ready"
+  ["Docker از قبل نصب است"]="Docker already installed"
+  ["Docker از قبل آماده — رد شد"]="Docker already ready — skipped"
+  ["بهینه‌سازی شبکه فعال شد (BBR + fq)"]="Network tuning enabled (BBR + fq)"
+  ["بهینه‌سازی شبکه قبلاً انجام شده — رد شد"]="Network tuning already done — skipped"
+  ["نصب Cloudflare WARP..."]="Installing Cloudflare WARP..."
+  ["WARP از قبل نصب است"]="WARP already installed"
+  ["ثبت‌نام WARP..."]="Registering WARP..."
+  ["WARP: متصل"]="WARP: connected"
+  ["WARP نصب نشده (حالت مستقیم)"]="WARP not installed (direct mode)"
+  ["WARP لازم نیست (همه کانفیگ‌ها مستقیم) — رد شد"]="WARP not needed (all configs direct) — skipped"
+  ["WARP وصل نشد — فعال‌سازی fallback موقت به direct تا کاربر بی‌نت نماند"]="WARP didn't connect — enabling temporary direct fallback so you stay online"
+  ["WARP افتاده بود → خروجی مستقیم شد (fallback فعال؛ خودکار برمی‌گردد)"]="WARP was down → traffic went direct (fallback active; auto-recovers)"
+  ["WARP برگشت: ترافیک warp دوباره از WARP می‌رود"]="WARP recovered: warp traffic routes through WARP again"
+  ["fallback فعال شد: ترافیک warp موقتاً مستقیم می‌رود (در status اطلاع داده می‌شود)"]="Fallback enabled: warp traffic goes direct temporarily (shown in status)"
+  ["نوشتن config.json و users.json"]="Writing config.json and users.json"
+  ["اصلاح‌گرِ REALITY: فیلدِ dest برای inboundها افزوده شد (سازگاری با Xray 26.x)"]="REALITY fixer: added the dest field to inbounds (Xray 26.x compatibility)"
+  ["فایل‌های کانفیگ نوشته شد"]="Config files written"
+  ["تداخل پورت با سرویس دیگری روی این سرور تشخیص داده شد — انتقال همهٔ پورت‌ها به بازهٔ آزاد"]="Port conflict with another service detected — moving all ports to a free range"
+  ["بازهٔ پورت آزاد پیدا نشد."]="No free port range found."
+  ["راه‌اندازی کانتینر Xray"]="Starting the Xray container"
+  ["نسخه پین‌شده pull نشد — استفاده از :latest"]="Pinned version didn't pull — using :latest"
+  ["Xray بالا نیامد — در حال تشخیص علت..."]="Xray didn't start — diagnosing..."
+  ["علت: یکی از پورت‌ها هنوز اشغال است. اجرا کن: kian-v2ray fixport"]="Cause: a port is still in use. Run: kian-v2ray fixport"
+  ["علت: مشکل در config.json. اجرا کن: kian-v2ray status"]="Cause: config.json problem. Run: kian-v2ray status"
+  ["علت: config.json خراب است."]="Cause: config.json is invalid."
+  ["علت نامشخص — لاگ بالا را بررسی کن یا: kian-v2ray status"]="Unknown cause — check the log above or: kian-v2ray status"
+  ["همگام‌سازی Subscription با گیت‌هاب (از طریق Worker)..."]="Syncing subscription to GitHub (via Worker)..."
+  ["لینک‌های Subscription روی HTTPS گیت‌هاب آماده شد ✅"]="Subscription links ready on GitHub HTTPS ✅"
+  ["همگام‌سازی Gist موفق نبود — sub محلی روی پورت‌ها همچنان فعال است"]="Gist sync failed — the local sub on ports is still active"
+  ["نصب ابزار مدیریت و watchdog"]="Installing the manager tool and watchdog"
+  ["مدیر و watchdog نصب شد"]="Manager and watchdog installed"
+  ["نصب سرویس Subscription"]="Installing the Subscription service"
+  ["Subscription فعال"]="Subscription active"
+  ["Subscription پاسخ نداد"]="Subscription didn't respond"
+  ["سرویس Subscription هنوز پاسخ نداد — بعداً: systemctl status kian-sub"]="Subscription service not responding yet — later: systemctl status kian-sub"
+  ["نصب Caddy..."]="Installing Caddy..."
+  ["نصب Caddy ناموفق — کانفیگ‌های TLS کار نخواهند کرد"]="Caddy install failed — TLS configs won't work"
+  ["DNS دامنه قابل resolve نیست. مطمئن شو رکورد A تنظیم شده باشد."]="Domain DNS doesn't resolve. Make sure the A record is set."
+  ["گواهی TLS احتمالاً گرفته نمی‌شود تا رکورد A را درست کنی. (نصب ادامه پیدا می‌کند)"]="TLS cert likely won't be issued until the A record is fixed. (Install continues)"
+  ["پورت ۴۴۳ اشغال است — Caddy نمی‌تواند روی :443 bind کند."]="Port 443 is in use — Caddy can't bind to :443."
+  ["پورت ۸۰ اشغال است — Caddy نمی‌تواند گواهی ACME بگیرد. اگر سرویس دیگری روی ۸۰ هست، خاموشش کن."]="Port 80 is in use — Caddy can't get an ACME cert. Stop whatever is on 80."
+  ["Caddy فعال شد. گواهی TLS به‌صورت خودکار گرفته می‌شود (ممکن است ۱-۲ دقیقه طول بکشد)."]="Caddy is up. The TLS cert is obtained automatically (may take 1-2 minutes)."
+  ["Caddy بالا نیامد — بررسی: systemctl status caddy ; journalctl -u caddy -n 30"]="Caddy didn't start — check: systemctl status caddy ; journalctl -u caddy -n 30"
+  ["بارگذاری Caddy ناموفق — بررسی: caddy validate --config /etc/caddy/Caddyfile"]="Caddy reload failed — check: caddy validate --config /etc/caddy/Caddyfile"
+  ["ufw فعال است — باز کردن پورت‌های لازم"]="ufw is active — opening the required ports"
+  ["فایروال ufw فعال نیست — تغییری اعمال نشد (پورت‌ها در دسترس‌اند)"]="ufw firewall is not active — no changes (ports are reachable)"
+  ["راه‌اندازی sing-box ناموفق بود — Xray دست‌نخورده است"]="sing-box setup failed — Xray is untouched"
+  ["لینک‌های Hysteria2/TUIC به Subscription اضافه شد ✅"]="Hysteria2/TUIC links added to the subscription ✅"
+  ["به‌روزرسانیِ Gist برای پروتکل‌های اضافی ناموفق بود (sub محلی به‌روز است)"]="Gist update for extra protocols failed (local sub is up to date)"
+  ["راه‌اندازیِ پنلِ وب"]="Setting up the web panel"
+  ["راه‌اندازی پنل ناموفق بود — Xray دست‌نخورده است"]="Panel setup failed — Xray is untouched"
+  ["نصب با موفقیت کامل شد! 🎉"]="Installation completed successfully! 🎉"
+  ["پورت‌ها تغییر کردند؛ links.txt و Subscription از config بازسازی شد. لینک صفحه ممکن است قدیمی باشد — از «kian-v2ray sub <نام>» لینک به‌روز را بگیر."]="Ports changed; links.txt and the subscription were rebuilt from config. The page link may be stale — get a fresh one with 'kian-v2ray sub <name>'."
+)
+_tr(){ if [ "$KIAN_LANG" = "en" ]; then printf '%s' "${_EN[$1]:-$1}"; else printf '%s' "$1"; fi; }
+xlt(){ if [ "$KIAN_LANG" = "en" ]; then printf '%s' "$2"; else printf '%s' "$1"; fi; }
+say(){  printf "${C_G}✔${C_N} %s\n" "$(_tr "$*")"; }
+inf(){  printf "${C_B}→${C_N} %s\n" "$(_tr "$*")"; }
+warn(){ printf "${C_Y}⚠${C_N} %s\n" "$(_tr "$*")"; }
+err(){  printf "${C_R}✘${C_N} %s\n" "$(_tr "$*")" >&2; }
+trap 'err "$(xlt "خطا در خط $LINENO" "Error on line $LINENO") — $(xlt "جزئیات" "details"): tail -n 40 '"$INSTALL_LOG"'"' ERR
 
 mkdir -p "$WORK_DIR"
 done_step(){ grep -qxF "$1" "$STATE_FILE" 2>/dev/null; }
@@ -228,6 +302,12 @@ _grab(){ printf '%s' "$PAYLOAD_JSON" | tr -d '\n' | grep -oE "\"$1\"[[:space:]]*
 _bool(){ printf '%s' "$PAYLOAD_JSON" | tr -d '\n' | grep -oE "\"$1\"[[:space:]]*:[[:space:]]*(true|false)" | head -1 | grep -oE '(true|false)'; }
 WARP_NEEDED="$(_bool warp_needed || echo false)"
 SERVER_IP="$(_grab server_ip || true)"
+# Language: env KIAN_LANG wins (set by the app/page when the user is in English);
+# else fall back to payload.lang; else Persian default.
+if [ "${KIAN_LANG:-}" != "en" ] && [ "${KIAN_LANG:-}" != "fa" ]; then
+  _PLANG="$(_grab lang || true)"
+  [ "$_PLANG" = "en" ] && KIAN_LANG="en"
+fi
 
 # --- مرحله ۱: پیش‌نیازها ---------------------------------------------------
 if ! done_step deps; then
@@ -875,10 +955,10 @@ echo "=================================================================="
 say "نصب با موفقیت کامل شد! 🎉"
 echo "=================================================================="
 echo ""
-echo "کانفیگ‌ها (در کلاینت import کن):"
+echo "$(xlt "کانفیگ‌ها (در کلاینت import کن):" "Configs (import these in your client):")"
 echo "------------------------------------------------------------------"
-cat "$ETC_DIR/links.txt" 2>/dev/null || echo "(لینکی ذخیره نشده)"
+cat "$ETC_DIR/links.txt" 2>/dev/null || echo "$(xlt "(لینکی ذخیره نشده)" "(no link saved)")"
 echo "------------------------------------------------------------------"
 echo ""
-echo "دستورها:  kian-v2ray status | configs | users"
+echo "$(xlt "دستورها" "Commands"):  kian-v2ray status | configs | users"
 echo ""

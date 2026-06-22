@@ -262,6 +262,7 @@ class MainWindow(QWidget):
             "tls_protos": [k for k,cb in self.a_protos.items() if cb.isChecked()],
             "extra_protocols": ([ "hysteria2" ] if self.a_hy2.isChecked() else []) +
                                ([ "tuic" ] if self.a_tuic.isChecked() else []),
+            "lang": get_lang(),   # install console follows the desktop UI language
         }
         try: g = core.generate(opts)
         except Exception as e: return self._toast(f"{tr('toast.err')}: {e}", True)

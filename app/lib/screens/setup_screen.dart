@@ -121,6 +121,7 @@ class _SetupScreenState extends State<SetupScreen> {
         tlsProtoKinds: _tls ? _tlsSelected.toList() : const [],
         extraProtocols: [if (_hy2) 'hysteria2', if (_tuic) 'tuic'],
         snis: _customSni.text.trim().isEmpty ? const [] : [_customSni.text.trim()],
+        lang: widget.strings.lang,   // install console follows the app's language
       );
 
       _say('• ساختِ لینکِ Subscription روی Gist…');

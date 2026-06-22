@@ -276,7 +276,8 @@ def generate(opts):
     # پروتکل‌های اضافه (Hysteria2/TUIC روی sing-box) — install.sh آن‌ها را enable
     # می‌کند و لینک‌هایشان را به Subscription می‌افزاید. مقدارِ معتبر: ["hysteria2","tuic"].
     extra_protocols=[p for p in (opts.get("extra_protocols") or []) if p in ("hysteria2","tuic")]
-    payload={"warp_needed":warp_needed,"server_ip":ip,
+    lang="en" if (opts.get("lang") or "en")=="en" else "fa"   # install console language
+    payload={"warp_needed":warp_needed,"server_ip":ip,"lang":lang,
              "config_b64":_b64(json.dumps(config)),"users_b64":_b64(json.dumps({"users":users})),
              "links":links,"ports":ports,"api_port":api_port,"sub_port":SUB_PORTS,
              "sub_tokens":sub_tokens,"reality_pbk":reality["publicKey"],"reality_sid":reality["shortId"],
@@ -290,7 +291,7 @@ def generate(opts):
             "ports":ports,"profiles":profiles,"sni_list":sni_list,"config":config,
             "payload_b64":payload_b64,"warp_needed":warp_needed,"tls_profiles":tls_profiles,
             "install_id":install_id,"sub_items":sub_items,"gist_proxy":GIST_PROXY,
-            "sub_tokens":sub_tokens,"install_cmd":f"export KIAN_PAYLOAD='{payload_b64}'\ncurl -fsSL {RAW_BASE}/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh"}
+            "sub_tokens":sub_tokens,"install_cmd":f"export KIAN_PAYLOAD='{payload_b64}'\nexport KIAN_LANG='{lang}'\ncurl -fsSL {RAW_BASE}/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh"}
 
 # ── CLI commands ─────────────────────────────────────────────
 def cmd_status():          return "kian-v2ray status"

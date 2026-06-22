@@ -55,6 +55,15 @@ function pickSNIs(n) {
 const $  = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
 
+// Install console language follows the page language (same key as i18n.js).
+// Default to English so an English visitor gets an English install.
+function _installLang() {
+  try {
+    const l = localStorage.getItem('kv2ray_lang');
+    return l === 'fa' ? 'fa' : 'en';
+  } catch (_) { return 'en'; }
+}
+
 function utf8ToB64(str) {
   const bytes = new TextEncoder().encode(str);
   let bin = '';
@@ -495,11 +504,13 @@ async function generate(f) {
     tls_domain: tlsProfiles.length ? f.tls.domain : '',
     caddyfile_b64: tlsProfiles.length ? utf8ToB64(buildCaddyfile(f.tls.domain, tlsProfiles)) : '',
     extra_protocols: f.extraProtocols || [],   // Hysteria2/TUIC روی sing-box (انتخابِ کاربر)
+    lang: _installLang(),                       // install console language = page language
   };
   const payloadB64 = utf8ToB64(JSON.stringify(payload));
 
   const installCmd =
     `export KIAN_PAYLOAD='${payloadB64}'\n` +
+    `export KIAN_LANG='${_installLang()}'\n` +
     `curl -fsSL ${RAW_BASE}/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh`;
 
   // ساخت gist‌ها همین الان (مرورگر → Worker) تا لینک HTTPS Subscription به کاربر داده شود.

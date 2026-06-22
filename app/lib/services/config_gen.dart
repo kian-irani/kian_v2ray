@@ -128,6 +128,7 @@ class ConfigGen {
     List<String> tlsProtoKinds = const [],
     List<String> extraProtocols = const [],
     List<String> snis = const [],   // override the default Reality SNIs (page parity)
+    String lang = 'en',             // install console language (matches app UI)
   }) async {
     // Use caller-supplied SNIs when given (custom SNI), else the built-in set.
     final activeSnis = snis.where((s) => s.trim().isNotEmpty).toList();
@@ -201,8 +202,10 @@ class ConfigGen {
       'tls_domain': tlsEnabled ? dom : '',
       'caddyfile_b64': tlsEnabled ? _b64(_caddyfile(dom, tls)) : '',
       'extra_protocols': extraProtocols,   // Hysteria2/TUIC روی sing-box
+      'lang': lang,                        // install console language
     };
     final cmd = "export KIAN_PAYLOAD='${_b64(jsonEncode(payload))}'\n"
+        "export KIAN_LANG='$lang'\n"
         "curl -fsSL $rawBase/install.sh -o /tmp/kian-v2ray.sh && "
         "bash /tmp/kian-v2ray.sh";
     return InstallBundle(installCommand: cmd, installId: installId,
