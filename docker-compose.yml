@@ -32,7 +32,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     restart: unless-stopped
-    depends_on: [ prometheus ]
+    depends_on: [ prometheus, loki ]
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
     volumes:
@@ -40,6 +40,30 @@ services:
     ports:
       - "3000:3000"
 
+  # Central log aggregation (phase 7 — optional). Loki stores logs; promtail
+  # ships the host's journ/syslog + container logs into it. Add Loki as a
+  # Grafana datasource (http://loki:3100) to query alongside Prometheus metrics.
+  loki:
+    image: grafana/loki:latest
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:latest
+    restart: unless-stopped
+    depends_on: [ loki ]
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+
 volumes:
   kian-data:
   grafana-data:
+  loki-data:
