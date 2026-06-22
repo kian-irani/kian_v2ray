@@ -8,6 +8,7 @@ class ServerProfile {
   final int? port;
   final String? protocol; // vless | vmess | trojan | shadowsocks | hysteria2 ...
   int? latencyMs; // measured by the smart-selection ping
+  final String? source; // subscription URL this came from (null = manual)
 
   ServerProfile({
     required this.name,
@@ -16,6 +17,7 @@ class ServerProfile {
     this.port,
     this.protocol,
     this.latencyMs,
+    this.source,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,6 +27,7 @@ class ServerProfile {
         'port': port,
         'protocol': protocol,
         'latencyMs': latencyMs,
+        'source': source,
       };
 
   factory ServerProfile.fromJson(Map<String, dynamic> j) => ServerProfile(
@@ -34,6 +37,7 @@ class ServerProfile {
         port: j['port'] as int?,
         protocol: j['protocol'] as String?,
         latencyMs: j['latencyMs'] as int?,
+        source: j['source'] as String?,
       );
 
   /// Best-effort parse of a share link into host/port/protocol.

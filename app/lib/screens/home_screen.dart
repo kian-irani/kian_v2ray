@@ -5,6 +5,7 @@ import '../i18n.dart';
 import '../models/server_profile.dart';
 import '../services/cache.dart';
 import '../services/selection.dart';
+import '../services/subscription.dart';
 import '../services/vpn_service.dart';
 import '../theme.dart';
 import 'config_detail_screen.dart';
@@ -32,10 +33,12 @@ class _HomeScreenState extends State<HomeScreen> {
   final _cache = Cache();
   final _vpn = VpnController();
   final _selection = const SmartSelection();
+  final _subs = SubscriptionService();
   ServerProfile? _selected;
   String? _subUrl;
   bool _connected = false;
   bool _busy = false;
+  bool _refreshing = false;
 
   @override
   void initState() {
@@ -62,6 +65,49 @@ class _HomeScreenState extends State<HomeScreen> {
       _subUrl = sub;
       _connected = status == 'connected';
     });
+    // Auto-refresh subscriptions on launch (silent — won't disrupt if offline).
+    final sources = await _subs.loadSources();
+    if (sources.isNotEmpty) _refreshSubs(silent: true);
+  }
+
+  /// Re-fetch all subscription sources and merge with manually-added servers.
+  Future<void> _refreshSubs({bool silent = false}) async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      final fresh = await _subs.refreshAll(DateTime.now().toIso8601String());
+      if (!mounted) return;
+      if (fresh.isEmpty && !silent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(widget.strings.t('sub.refresh.none')),
+              duration: const Duration(seconds: 2)),
+        );
+        return;
+      }
+      // keep manual servers (source == null), replace all sub-sourced ones
+      final manual = _servers.where((s) => s.source == null).toList();
+      final selName = _selected?.name;
+      setState(() {
+        _servers
+          ..clear()
+          ..addAll(manual)
+          ..addAll(fresh);
+        ServerProfile? match;
+        for (final s in _servers) {
+          if (s.name == selName) { match = s; break; }
+        }
+        _selected = match ?? (_servers.isNotEmpty ? _servers.first : null);
+      });
+      await _cache.saveServers(_servers);
+      if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${widget.strings.t('sub.refresh.done')} (${fresh.length})'),
+              duration: const Duration(seconds: 2)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
   }
 
   /// Reload the server list from cache (after setup auto-imports configs).
@@ -86,8 +132,18 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _importLink(String body) {
-    final parsed = parseSubscription(body);
+  Future<void> _importLink(String body) async {
+    final text = body.trim();
+    if (text.isEmpty) return;
+    // A subscription URL → register it as a source and fetch it (keeps updating
+    // automatically on future launches / manual refresh). Otherwise treat the
+    // text as raw share link(s) / base64 and add once.
+    if (SubscriptionService.isSubUrl(text)) {
+      await _subs.addSource(text);
+      await _refreshSubs();
+      return;
+    }
+    final parsed = parseSubscription(text);
     if (parsed.isEmpty) return;
     setState(() {
       _servers.addAll(parsed);
@@ -217,6 +273,14 @@ class _HomeScreenState extends State<HomeScreen> {
             tooltip: s.t('best.auto'),
             onPressed: _servers.isEmpty ? null : _pickBest,
             icon: const Icon(Icons.speed_outlined),
+          ),
+          IconButton(
+            tooltip: s.t('sub.refresh'),
+            onPressed: _refreshing ? null : () => _refreshSubs(),
+            icon: _refreshing
+                ? const SizedBox(width: 18, height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.refresh_outlined),
           ),
           IconButton(onPressed: widget.onToggleTheme, icon: const Icon(Icons.brightness_6_outlined)),
           TextButton(onPressed: widget.onToggleLang, child: Text(s.lang == 'fa' ? 'EN' : 'FA')),

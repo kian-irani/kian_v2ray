@@ -27,6 +27,7 @@ const TLS_PROTOS = {
   'trojan-ws':  { proto: 'trojan', net: 'ws',          label: 'Trojan-WS',  note: 'شبیه ترافیک HTTPS معمولی' },
   'vless-httpupgrade': { proto: 'vless', net: 'httpupgrade', label: 'VLESS-HTTPUpgrade', note: 'سبک‌تر از WS، عبور خوب از پراکسی‌ها' },
   'vmess-httpupgrade': { proto: 'vmess', net: 'httpupgrade', label: 'VMess-HTTPUpgrade', note: 'HTTPUpgrade با VMess' },
+  'vless-xhttp': { proto: 'vless', net: 'xhttp', label: 'VLESS-XHTTP', note: 'جدید — مقاوم‌ترین در برابر DPI، عالی روی CDN' },
 };
 
 // دامنه‌های استتار (SNI) — TLS 1.3 و معمولاً در ایران در دسترس‌اند (yahoo حذف شد)
@@ -144,6 +145,7 @@ function buildConfig(o) {
     if (t.net === 'ws')          stream.wsSettings = { path: t.path };
     else if (t.net === 'grpc')   stream.grpcSettings = { serviceName: t.path.replace(/^\//, '') };
     else if (t.net === 'httpupgrade') stream.httpupgradeSettings = { path: t.path };
+    else if (t.net === 'xhttp')  stream.xhttpSettings = { mode: 'auto', path: t.path };
     let settings;
     if (t.proto === 'vless')      settings = { clients: o.users.map(u => ({ id: u.id, email: u.email })), decryption: 'none' };
     else if (t.proto === 'vmess') settings = { clients: o.users.map(u => ({ id: u.id, email: u.email })) };
@@ -226,6 +228,7 @@ function ssLink({ ip, port, password, label }) {
 function tlsVlessLink({ uuid, domain, net, path, label }) {
   const q = new URLSearchParams({ encryption: 'none', security: 'tls', sni: domain, fp: 'chrome', type: net, host: domain });
   if (net === 'ws' || net === 'httpupgrade') q.set('path', path);
+  if (net === 'xhttp') { q.set('path', path); q.set('mode', 'auto'); }
   if (net === 'grpc') { q.set('serviceName', path.replace(/^\//, '')); q.set('mode', 'gun'); }
   return `vless://${uuid}@${domain}:443?${q.toString()}#${encodeURIComponent(label)}`;
 }
@@ -269,6 +272,15 @@ function buildCaddyfile(domain, tlsProfiles) {
       const svc = t.path.replace(/^\//, '');
       lines.push(`\t@${t.tag} {`);
       lines.push(`\t\tpath /${svc}/*`);
+      lines.push(`\t}`);
+      lines.push(`\thandle @${t.tag} {`);
+      lines.push(`\t\treverse_proxy h2c://127.0.0.1:${t.intPort}`);
+      lines.push(`\t}`);
+    } else if (t.net === 'xhttp') {
+      // XHTTP uses a path PREFIX (sub-requests under it); proxy with h2c so
+      // both HTTP/1.1 and H2 streams reach Xray.
+      lines.push(`\t@${t.tag} {`);
+      lines.push(`\t\tpath ${t.path} ${t.path}/*`);
       lines.push(`\t}`);
       lines.push(`\thandle @${t.tag} {`);
       lines.push(`\t\treverse_proxy h2c://127.0.0.1:${t.intPort}`);

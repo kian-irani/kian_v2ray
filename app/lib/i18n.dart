@@ -94,6 +94,9 @@ class Strings {
     'hist.delete.confirm': ['این رکوردِ تاریخچه حذف شود؟', 'Delete this history record?'],
     'copyall.title': ['کپیِ همهٔ کانفیگ‌ها', 'Copy all configs'],
     'copyall.done': ['همهٔ لینک‌ها کپی شد', 'All links copied'],
+    'sub.refresh': ['به‌روزرسانیِ Subscription', 'Refresh subscription'],
+    'sub.refresh.done': ['کانفیگ‌ها به‌روز شد', 'Configs updated'],
+    'sub.refresh.none': ['تغییری نبود یا اتصال برقرار نشد', 'No change or fetch failed'],
     'nocore.title': ['اتصال در این نسخه فعال نیست', 'Tunnel not available in this build'],
     'nocore.body': ['این نسخهٔ اپ کانفیگ و سرور را می‌سازد/مدیریت می‌کند ولی هستهٔ تونلِ روی‌دستگاه هنوز در آن نیست — اگر وصل شویم اینترنتت قطع می‌شود. فعلاً کانفیگ را کپی کن و در v2rayNG وارد کن (یا QR را اسکن کن). به‌محضِ افزودنِ هسته، همین دکمه واقعی وصل می‌شود.', 'This build generates & manages configs/servers but the on-device tunnel core isn\'t bundled yet — connecting would cut your internet. For now copy the config into v2rayNG (or scan its QR). Once the core is added, this button will really connect.'],
   };

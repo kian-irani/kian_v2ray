@@ -15,7 +15,7 @@ from i18n import tr, set_lang, get_lang, is_rtl, load_settings, save_settings
 
 NAV = [("nav.generate","⚡"),("nav.install","🚀"),("nav.manage","👥"),("nav.settings","⚙"),("nav.about","ℹ")]
 MODES = [("both","mode.both"),("direct","mode.direct"),("warp","mode.warp"),("nosni","mode.nosni")]
-TLS_ORDER = ["vless-ws","vmess-ws","vless-grpc","vmess-grpc","trojan-ws","vless-httpupgrade","vmess-httpupgrade"]
+TLS_ORDER = ["vless-ws","vmess-ws","vless-grpc","vmess-grpc","trojan-ws","vless-httpupgrade","vmess-httpupgrade","vless-xhttp"]
 
 
 def qr_pixmap(data, size=150):

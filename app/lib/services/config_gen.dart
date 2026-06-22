@@ -28,6 +28,7 @@ class ConfigGen {
     'trojan-ws': ['trojan', 'ws', 'Trojan-WS'],
     'vless-httpupgrade': ['vless', 'httpupgrade', 'VLESS-HTTPUpgrade'],
     'vmess-httpupgrade': ['vmess', 'httpupgrade', 'VMess-HTTPUpgrade'],
+    'vless-xhttp': ['vless', 'xhttp', 'VLESS-XHTTP'],
   };
 
   final _rnd = Random.secure();
@@ -88,6 +89,7 @@ class ConfigGen {
       'security': 'tls', 'sni': domain, 'fp': 'chrome', 'type': net, 'host': domain,
     };
     if (net == 'ws' || net == 'httpupgrade') q['path'] = path;
+    if (net == 'xhttp') { q['path'] = path; q['mode'] = 'auto'; }
     if (net == 'grpc') { q['serviceName'] = path.replaceFirst('/', ''); q['mode'] = 'gun'; }
     final qs = q.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
     final scheme = proto == 'trojan' ? 'trojan' : 'vless';
@@ -101,6 +103,9 @@ class ConfigGen {
       if (net == 'grpc') {
         final svc = path.replaceFirst('/', '');
         l.addAll(['\t@$tag {', '\t\tpath /$svc/*', '\t}',
+          '\thandle @$tag {', '\t\treverse_proxy h2c://127.0.0.1:$port', '\t}']);
+      } else if (net == 'xhttp') {
+        l.addAll(['\t@$tag {', '\t\tpath $path $path/*', '\t}',
           '\thandle @$tag {', '\t\treverse_proxy h2c://127.0.0.1:$port', '\t}']);
       } else {
         l.addAll(['\t@$tag {', '\t\tpath $path', '\t}',
@@ -239,6 +244,7 @@ class ConfigGen {
       if (net == 'ws') stream['wsSettings'] = {'path': path};
       else if (net == 'grpc') stream['grpcSettings'] = {'serviceName': path.replaceFirst('/', '')};
       else if (net == 'httpupgrade') stream['httpupgradeSettings'] = {'path': path};
+      else if (net == 'xhttp') stream['xhttpSettings'] = {'mode': 'auto', 'path': path};
       Map<String, dynamic> settings;
       if (proto == 'trojan') {
         settings = {'clients': users.map((u) => {'password': u['id'], 'email': u['email']}).toList()};

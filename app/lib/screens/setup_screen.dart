@@ -36,7 +36,7 @@ class _SetupScreenState extends State<SetupScreen> {
   // Full TLS protocol set (parity with the web page). Default: vless-ws.
   static const _tlsKinds = [
     'vless-ws', 'vmess-ws', 'vless-grpc', 'vmess-grpc',
-    'trojan-ws', 'vless-httpupgrade', 'vmess-httpupgrade',
+    'trojan-ws', 'vless-httpupgrade', 'vmess-httpupgrade', 'vless-xhttp',
   ];
   final Set<String> _tlsSelected = {'vless-ws'};
 

@@ -32,6 +32,7 @@ TLS_PROTOS = {
     "trojan-ws":         {"proto":"trojan","net":"ws",          "label":"Trojan-WS",         "note":"شبیه ترافیک HTTPS معمولی"},
     "vless-httpupgrade": {"proto":"vless", "net":"httpupgrade", "label":"VLESS-HTTPUpgrade", "note":"سبک‌تر از WS، عبور خوب از پراکسی"},
     "vmess-httpupgrade": {"proto":"vmess", "net":"httpupgrade", "label":"VMess-HTTPUpgrade", "note":"HTTPUpgrade با VMess"},
+    "vless-xhttp":       {"proto":"vless", "net":"xhttp",       "label":"VLESS-XHTTP",       "note":"جدید — مقاوم‌ترین در برابر DPI، عالی روی CDN"},
 }
 
 def _b64url(raw): return base64.urlsafe_b64encode(raw).decode().rstrip("=")
@@ -73,6 +74,7 @@ def _tls_query(d):  # like URLSearchParams.toString()
 def tls_vless_link(uuid_,domain,net,path,label):
     q={"encryption":"none","security":"tls","sni":domain,"fp":"chrome","type":net,"host":domain}
     if net in ("ws","httpupgrade"): q["path"]=path
+    if net=="xhttp": q["path"]=path; q["mode"]="auto"
     if net=="grpc": q["serviceName"]=path.lstrip("/"); q["mode"]="gun"
     return f"vless://{uuid_}@{domain}:443?{_tls_query(q)}#{_quote(label)}"
 
@@ -101,6 +103,9 @@ def build_caddyfile(domain,tls_profiles):
         if t["net"]=="grpc":
             svc=t["path"].lstrip("/")
             lines+=[f"\t@{t['tag']} {{",f"\t\tpath /{svc}/*","\t}",
+                    f"\thandle @{t['tag']} {{",f"\t\treverse_proxy h2c://127.0.0.1:{t['intPort']}","\t}"]
+        elif t["net"]=="xhttp":
+            lines+=[f"\t@{t['tag']} {{",f"\t\tpath {t['path']} {t['path']}/*","\t}",
                     f"\thandle @{t['tag']} {{",f"\t\treverse_proxy h2c://127.0.0.1:{t['intPort']}","\t}"]
         else:
             lines+=[f"\t@{t['tag']} {{",f"\t\tpath {t['path']}","\t}",
@@ -134,6 +139,7 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
         if net=="ws":            stream={"network":"ws","security":"none","wsSettings":{"path":t["path"]}}
         elif net=="grpc":        stream={"network":"grpc","security":"none","grpcSettings":{"serviceName":t["path"].lstrip("/")}}
         elif net=="httpupgrade": stream={"network":"httpupgrade","security":"none","httpupgradeSettings":{"path":t["path"]}}
+        elif net=="xhttp":       stream={"network":"xhttp","security":"none","xhttpSettings":{"mode":"auto","path":t["path"]}}
         else:                    stream={"network":net,"security":"none"}
         if t["proto"]=="vless":    st={"clients":[{"id":u["id"],"email":u["email"]} for u in users],"decryption":"none"}
         elif t["proto"]=="vmess":  st={"clients":[{"id":u["id"],"email":u["email"]} for u in users]}
