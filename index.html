@@ -165,8 +165,8 @@
 
       <!-- ⚠️ هشدار فیلتر IP در حالت بدون دامنه -->
       <div id="ip-blacklist-warn" class="ip-warn">
-        <div class="ip-warn-head">⚠️ هشدار مهم — فیلتر شدن IP سرور</div>
-        <div class="ip-warn-body">
+        <div class="ip-warn-head" data-i18n="g.ipwarn.head">⚠️ هشدار مهم — فیلتر شدن IP سرور</div>
+        <div class="ip-warn-body" data-i18n-html="g.ipwarn.body">
           چون کانفیگ‌های Reality و Shadowsocks <b>مستقیم به IP لخت سرورت</b> می‌روند (بدون دامنه/CDN)،
           اگر کانفیگ را به <b>بیش از ۲-۳ نفر</b> بدهی و <b>مصرف هفتگی بالا</b> داشته باشد (مثلاً چند صد گیگ)،
           سامانه فیلترینگ ISP می‌تواند الگوی ترافیک را شناسایی کند و <b>IP سرورت را برای همیشه فیلتر کند.</b>
@@ -195,23 +195,23 @@
       <div class="adv-body hidden" id="adv-body">
         <div id="sni-block">
         <div class="field">
-          <label for="sni-mode">دامنهٔ استتار (SNI)</label>
+          <label for="sni-mode" data-i18n="g.adv.sni.l">دامنهٔ استتار (SNI)</label>
           <select id="sni-mode">
-            <option value="auto" selected>خودکار — چند دامنهٔ امن (پیشنهادی)</option>
-            <option value="manual">دستی — یک دامنهٔ مشخص</option>
+            <option value="auto" selected data-i18n="g.adv.sni.auto">خودکار — چند دامنهٔ امن (پیشنهادی)</option>
+            <option value="manual" data-i18n="g.adv.sni.manual">دستی — یک دامنهٔ مشخص</option>
           </select>
-          <small class="hint">حالت خودکار چند دامنهٔ در-دسترس روی چند پورت می‌سازه تا اگه یکی بسته شد، بقیه کار کنن.</small>
+          <small class="hint" data-i18n="g.adv.sni.h">حالت خودکار چند دامنهٔ در-دسترس روی چند پورت می‌سازه تا اگه یکی بسته شد، بقیه کار کنن.</small>
         </div>
         <div class="field" id="field-sni-count">
-          <label for="sni-count">چند دامنه/کانفیگ ساخته بشه؟</label>
+          <label for="sni-count" data-i18n="g.adv.snicount.l">چند دامنه/کانفیگ ساخته بشه؟</label>
           <select id="sni-count">
-            <option value="1">۱ دامنه</option>
-            <option value="2" selected>۲ دامنه (پیشنهادی)</option>
-            <option value="3">۳ دامنه</option>
+            <option value="1" data-i18n="g.adv.snicount.1">۱ دامنه</option>
+            <option value="2" selected data-i18n="g.adv.snicount.2">۲ دامنه (پیشنهادی)</option>
+            <option value="3" data-i18n="g.adv.snicount.3">۳ دامنه</option>
           </select>
         </div>
         <div class="field hidden" id="field-sni">
-          <label for="sni">دامنهٔ دستی</label>
+          <label for="sni" data-i18n="g.adv.snisel.l">دامنهٔ دستی</label>
           <select id="sni">
             <option value="www.speedtest.net" selected>www.speedtest.net</option>
             <option value="www.bing.com">www.bing.com</option>
@@ -222,22 +222,22 @@
             <option value="www.nvidia.com">www.nvidia.com</option>
             <option value="cdn.jsdelivr.net">cdn.jsdelivr.net</option>
             <option value="www.cloudflare.com">www.cloudflare.com</option>
-            <option value="__custom__">دامنهٔ دلخواه…</option>
+            <option value="__custom__" data-i18n="g.adv.sni.customopt">دامنهٔ دلخواه…</option>
           </select>
-          <small class="hint">دامنه‌ای انتخاب کن که در ایران فیلتر نباشه و TLS 1.3 داشته باشه.</small>
+          <small class="hint" data-i18n="g.adv.snisel.h">دامنه‌ای انتخاب کن که در ایران فیلتر نباشه و TLS 1.3 داشته باشه.</small>
         </div>
         <div class="field hidden" id="field-sni-custom">
-          <label for="sni-custom">دامنهٔ دلخواه</label>
+          <label for="sni-custom" data-i18n="g.adv.snicustom.l">دامنهٔ دلخواه</label>
           <input id="sni-custom" type="text" placeholder="example.com" autocomplete="off" spellcheck="false">
         </div>
         </div><!-- /sni-block -->
         <label class="switch">
           <input type="checkbox" id="ss-enabled">
           <span class="switch-track"><span class="switch-thumb"></span></span>
-          <span class="switch-label">Shadowsocks هم اضافه کن <span class="muted small">(پروتکل پشتیبان)</span></span>
+          <span class="switch-label" data-i18n-html="g.adv.ss.l">Shadowsocks هم اضافه کن <span class="muted small">(پروتکل پشتیبان)</span></span>
         </label>
         <div class="field hidden" id="field-ss-port">
-          <label for="ss-port">پورت Shadowsocks</label>
+          <label for="ss-port" data-i18n="g.adv.ssport.l">پورت Shadowsocks</label>
           <input id="ss-port" type="number" min="1" max="65535" value="8388">
         </div>
         <div class="field" id="field-extra-protos">
@@ -251,8 +251,8 @@
           </div>
         </div>
         <div class="port-info">
-          <div class="port-info-head">📋 پورت‌های kian-v2ray — راهنمای کامل</div>
-          <div class="port-info-body">
+          <div class="port-info-head" data-i18n="g.adv.ports.head">📋 پورت‌های kian-v2ray — راهنمای کامل</div>
+          <div class="port-info-body" data-i18n-html="g.adv.ports.body">
             <p><b>پورت‌های Reality (روی این‌ها کانفیگ V2Ray سرو می‌شود — قابل تنظیم):</b></p>
             <ul>
               <li>پیش‌فرض خودکار (پیشنهاد): <code>۴۴۳</code>، <code>۲۰۸۳</code>، <code>۲۰۸۷</code>، <code>۲۰۹۶</code>، <code>۸۰۸۰</code> — پورت‌های وب معروف که با ترافیک HTTPS عادی قاطی می‌شوند و کم به‌چشم می‌آیند.</li>
@@ -275,62 +275,62 @@
           </div>
         </div>
         <div class="field">
-          <label for="base-port">پورت پایه (اختیاری — خالی بگذار)</label>
-          <input id="base-port" type="number" min="1" max="65535" placeholder="خودکار: ۴۴۳، ۲۰۸۳، ۲۰۸۷، ۲۰۹۶، ۸۰۸۰...">
-          <small class="hint">🎯 <b>خالی بگذار</b> تا از پورت‌های وب معروف (۴۴۳، ۲۰۸۳، ۸۰۸۰، ...) استفاده شود.<br>
+          <label for="base-port" data-i18n="g.adv.baseport.l">پورت پایه (اختیاری — خالی بگذار)</label>
+          <input id="base-port" type="number" min="1" max="65535" placeholder="خودکار: ۴۴۳، ۲۰۸۳، ۲۰۸۷، ۲۰۹۶، ۸۰۸۰..." data-i18n-ph="g.adv.baseport.ph">
+          <small class="hint" data-i18n-html="g.adv.baseport.h">🎯 <b>خالی بگذار</b> تا از پورت‌های وب معروف (۴۴۳، ۲۰۸۳، ۸۰۸۰، ...) استفاده شود.<br>
           ⚠️ فقط اگه پنل دیگری روی سرور داری که این پورت‌ها را گرفته، عددی بده (مثلاً <code>9443</code>) تا پورت‌ها از آنجا ترتیبی شروع شوند.</small>
         </div>
         <div class="grid2">
           <div class="field">
-            <label for="quota">حجم هر کاربر</label>
+            <label for="quota" data-i18n="g.adv.quota.l">حجم هر کاربر</label>
             <select id="quota">
-              <option value="50">۵۰ گیگ</option>
-              <option value="100">۱۰۰ گیگ</option>
-              <option value="200">۲۰۰ گیگ</option>
-              <option value="500">۵۰۰ گیگ</option>
-              <option value="0" selected>نامحدود</option>
+              <option value="50" data-i18n="g.adv.quota.50">۵۰ گیگ</option>
+              <option value="100" data-i18n="g.adv.quota.100">۱۰۰ گیگ</option>
+              <option value="200" data-i18n="g.adv.quota.200">۲۰۰ گیگ</option>
+              <option value="500" data-i18n="g.adv.quota.500">۵۰۰ گیگ</option>
+              <option value="0" selected data-i18n="g.adv.quota.0">نامحدود</option>
             </select>
           </div>
           <div class="field">
-            <label for="days">مدت اعتبار</label>
+            <label for="days" data-i18n="g.adv.days.l">مدت اعتبار</label>
             <select id="days">
-              <option value="30">۳۰ روز</option>
-              <option value="60">۶۰ روز</option>
-              <option value="90">۹۰ روز</option>
-              <option value="0" selected>دائمی</option>
+              <option value="30" data-i18n="g.adv.days.30">۳۰ روز</option>
+              <option value="60" data-i18n="g.adv.days.60">۶۰ روز</option>
+              <option value="90" data-i18n="g.adv.days.90">۹۰ روز</option>
+              <option value="0" selected data-i18n="g.adv.days.0">دائمی</option>
             </select>
           </div>
         </div>
-        <p class="muted small">پورت‌ها خودکار انتخاب می‌شن (از ۸۴۴۳ به بعد) — لازم نیست کاری بکنی.</p>
+        <p class="muted small" data-i18n="g.adv.portnote">پورت‌ها خودکار انتخاب می‌شن (از ۸۴۴۳ به بعد) — لازم نیست کاری بکنی.</p>
       </div>
 
       <!-- فاز ۳: کانفیگ‌های دامنه‌دار (TLS) -->
       <details class="adv tls-block">
-        <summary>🌐 کانفیگ‌های دامنه‌دار (WS / gRPC / HTTPUpgrade + TLS) — پیشرفته</summary>
+        <summary data-i18n="g.tls.summary">🌐 کانفیگ‌های دامنه‌دار (WS / gRPC / HTTPUpgrade + TLS) — پیشرفته</summary>
         <div class="adv-body">
           <div class="tls-intro">
-            <p>این کانفیگ‌ها به‌جای IP، روی <b>دامنه + گواهی TLS واقعی</b> کار می‌کنند و پشت <b>Caddy</b> روی پورت ۴۴۳ سرو می‌شوند. مزیت: عبور بهتر از DPI، امکان استفاده پشت CDN (مثل Cloudflare)، و شبیه‌بودن کامل به ترافیک HTTPS معمولی.</p>
-            <p class="tls-req"><b>پیش‌نیازها (مهم):</b></p>
+            <p data-i18n-html="g.tls.intro">این کانفیگ‌ها به‌جای IP، روی <b>دامنه + گواهی TLS واقعی</b> کار می‌کنند و پشت <b>Caddy</b> روی پورت ۴۴۳ سرو می‌شوند. مزیت: عبور بهتر از DPI، امکان استفاده پشت CDN (مثل Cloudflare)، و شبیه‌بودن کامل به ترافیک HTTPS معمولی.</p>
+            <p class="tls-req" data-i18n-html="g.tls.req"><b>پیش‌نیازها (مهم):</b></p>
             <ul class="tls-req-list">
-              <li>یک <b>دامنه</b> داشته باش (مثلاً از Namecheap، Cloudflare، Freenom).</li>
-              <li>یک رکورد <b>A</b> بساز که دامنه (یا یک ساب‌دامنه مثل <code>vpn.example.com</code>) به <b>IP سرورت</b> اشاره کند.</li>
-              <li>اگر از Cloudflare استفاده می‌کنی، موقع نصب اول ابر را <b>خاکستری (DNS only)</b> کن تا گواهی گرفته شود؛ بعد می‌تونی نارنجی (Proxied) کنی.</li>
-              <li>پورت‌های <b>۴۴۳</b> و <b>۸۰</b> سرور باید آزاد باشند (برای گرفتن گواهی Let's Encrypt).</li>
+              <li data-i18n-html="g.tls.req1">یک <b>دامنه</b> داشته باش (مثلاً از Namecheap، Cloudflare، Freenom).</li>
+              <li data-i18n-html="g.tls.req2">یک رکورد <b>A</b> بساز که دامنه (یا یک ساب‌دامنه مثل <code>vpn.example.com</code>) به <b>IP سرورت</b> اشاره کند.</li>
+              <li data-i18n-html="g.tls.req3">اگر از Cloudflare استفاده می‌کنی، موقع نصب اول ابر را <b>خاکستری (DNS only)</b> کن تا گواهی گرفته شود؛ بعد می‌تونی نارنجی (Proxied) کنی.</li>
+              <li data-i18n-html="g.tls.req4">پورت‌های <b>۴۴۳</b> و <b>۸۰</b> سرور باید آزاد باشند (برای گرفتن گواهی Let's Encrypt).</li>
             </ul>
           </div>
 
           <div class="field tls-toggle">
             <label class="switch-row">
               <input type="checkbox" id="tls-enabled">
-              <span>کانفیگ‌های دامنه‌دار را فعال کن</span>
+              <span data-i18n="g.tls.toggle">کانفیگ‌های دامنه‌دار را فعال کن</span>
             </label>
           </div>
 
           <div id="tls-options" class="tls-options" hidden>
             <div class="field">
-              <label for="tls-domain">دامنه (که به IP سرور اشاره می‌کند)</label>
-              <input id="tls-domain" type="text" placeholder="مثلاً vpn.example.com" autocomplete="off" spellcheck="false">
-              <small class="hint">حتماً رکورد A این دامنه باید روی IP همین سرور تنظیم شده باشد، وگرنه گواهی TLS گرفته نمی‌شود.</small>
+              <label for="tls-domain" data-i18n="g.tls.domain.l">دامنه (که به IP سرور اشاره می‌کند)</label>
+              <input id="tls-domain" type="text" placeholder="مثلاً vpn.example.com" autocomplete="off" spellcheck="false" data-i18n-ph="g.tls.domain.ph">
+              <small class="hint" data-i18n="g.tls.domain.h">حتماً رکورد A این دامنه باید روی IP همین سرور تنظیم شده باشد، وگرنه گواهی TLS گرفته نمی‌شود.</small>
             </div>
 
             <div class="field">
@@ -345,16 +345,16 @@
                 <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vmess-httpupgrade"> <b>VMess-HTTPUpgrade</b><small data-i18n="proto.vmess-httpupgrade">HTTPUpgrade با VMess</small></label>
                 <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vless-xhttp"> <b>VLESS-XHTTP</b><small data-i18n="proto.vless-xhttp">جدید — مقاوم‌ترین در برابر DPI، عالی روی CDN</small></label>
               </div>
-              <small class="hint">پیشنهاد: اگر مطمئن نیستی، فقط <b>VLESS-WS</b> را بگذار — برای اکثر موارد بهترین است.</small>
+              <small class="hint" data-i18n-html="g.tls.proto.h">پیشنهاد: اگر مطمئن نیستی، فقط <b>VLESS-WS</b> را بگذار — برای اکثر موارد بهترین است.</small>
             </div>
 
             <div class="field">
-              <label>مسیر خروجی این کانفیگ‌ها</label>
+              <label data-i18n="g.tls.channel.l">مسیر خروجی این کانفیگ‌ها</label>
               <div class="seg">
-                <label><input type="radio" name="tls-channel" value="direct" checked> سریع (مستقیم)</label>
-                <label><input type="radio" name="tls-channel" value="warp"> از WARP (دور زدن بلاک خروجی سرور)</label>
+                <label><input type="radio" name="tls-channel" value="direct" checked> <span data-i18n="g.tls.channel.direct">سریع (مستقیم)</span></label>
+                <label><input type="radio" name="tls-channel" value="warp"> <span data-i18n="g.tls.channel.warp">از WARP (دور زدن بلاک خروجی سرور)</span></label>
               </div>
-              <small class="hint">اگر سرورت سایت‌هایی را بلاک می‌کند (مثل بعضی پروایدرهای ترکیه)، WARP را انتخاب کن.</small>
+              <small class="hint" data-i18n="g.tls.channel.h">اگر سرورت سایت‌هایی را بلاک می‌کند (مثل بعضی پروایدرهای ترکیه)، WARP را انتخاب کن.</small>
             </div>
           </div>
         </div>
@@ -382,13 +382,13 @@
       <div class="stp"><span class="stp-n">۱</span><div>
         <b data-i18n="sv.s1t">یک برنامهٔ SSH باز کن</b>
         <p data-i18n-html="sv.s1d">روی گوشی: اپ <b>Termius</b> رو نصب کن. روی ویندوز: <b>PowerShell</b> یا <b>PuTTY</b>.</p>
-        <a class="btn-link" href="https://play.google.com/store/apps/details?id=com.server.auditor.ssh.client" target="_blank" rel="noopener">دانلود Termius (اندروید) ↗</a>
+        <a class="btn-link" href="https://play.google.com/store/apps/details?id=com.server.auditor.ssh.client" target="_blank" rel="noopener" data-i18n="sv.termius">دانلود Termius (اندروید) ↗</a>
       </div></div>
 
       <div class="stp"><span class="stp-n">۲</span><div>
         <b data-i18n="sv.s2t">به سرورت وصل شو</b>
         <p data-i18n="sv.s2d">با آی‌پی و رمز سرور وصل شو. توی ترمینال این رو بزن (آی‌پی خودت رو بذار):</p>
-        <div class="cmdline mono">ssh root@آی‌پی‌سرور</div>
+        <div class="cmdline mono">ssh root@SERVER_IP</div>
         <p class="muted small" data-i18n="sv.s2n">رمز سرور رو هنگام خرید بهت می‌دن. موقع تایپ رمز چیزی نمایش داده نمی‌شه — طبیعیه.</p>
       </div></div>
 
@@ -413,14 +413,14 @@
     <h3 data-i18n="s.server.buy">🛒 سرور نداری؟ از کجا بخری</h3>
     <div class="buy-grid">
       <div class="buy">
-        <div class="buy-title">🌐 Netlen (ترکیه)</div>
-        <ul class="mini"><li>✓ بدون احراز هویت</li><li>✓ پرداخت کریپتو</li><li>✗ انگلیسی</li></ul>
+        <div class="buy-title" data-i18n="sv.buy.netlen">🌐 Netlen (ترکیه)</div>
+        <ul class="mini" data-i18n-html="sv.buy.netlen.f"><li>✓ بدون احراز هویت</li><li>✓ پرداخت کریپتو</li><li>✗ انگلیسی</li></ul>
         <a class="btn-link" href="https://www.netlen.com.tr/" target="_blank" rel="noopener">netlen.com.tr ↗</a>
       </div>
       <div class="buy">
-        <div class="buy-title">🌍 هر VPS خارج از ایران</div>
-        <ul class="mini"><li>✓ ترجیحاً پرداخت کریپتو / بدون KYC</li><li>✓ لوکیشن نزدیک (ترکیه/آلمان/امارات)</li><li>✓ آی‌پی تمیز و در-دسترس از ایران</li></ul>
-        <span class="muted small">هر ارائه‌دهنده‌ای که این شرایط رو داشته باشه مناسبه.</span>
+        <div class="buy-title" data-i18n="sv.buy.any">🌍 هر VPS خارج از ایران</div>
+        <ul class="mini" data-i18n-html="sv.buy.any.f"><li>✓ ترجیحاً پرداخت کریپتو / بدون KYC</li><li>✓ لوکیشن نزدیک (ترکیه/آلمان/امارات)</li><li>✓ آی‌پی تمیز و در-دسترس از ایران</li></ul>
+        <span class="muted small" data-i18n="sv.buy.any.n">هر ارائه‌دهنده‌ای که این شرایط رو داشته باشه مناسبه.</span>
       </div>
     </div>
     <p class="muted small" data-i18n="sv.min">حداقل سرور: ۱ هسته CPU، ۵۱۲ مگ رم، اوبونتو ۲۲ یا ۲۴. لوکیشن خارج از ایران.</p>
@@ -441,7 +441,7 @@
       <div class="stp"><span class="stp-n">۱</span><div>
         <b data-i18n="an.s1t">اپ v2rayNG رو نصب کن</b>
         <p data-i18n="an.s1d">رایگان و متن‌باز — از Reality پشتیبانی می‌کنه.</p>
-        <a class="btn-link" href="https://github.com/2dust/v2rayNG/releases/latest" target="_blank" rel="noopener">دانلود v2rayNG از گیت‌هاب ↗</a>
+        <a class="btn-link" href="https://github.com/2dust/v2rayNG/releases/latest" target="_blank" rel="noopener" data-i18n="an.dl">دانلود v2rayNG از گیت‌هاب ↗</a>
         <p class="muted small" data-i18n="an.alt">جایگزین: NekoBox for Android.</p>
       </div></div>
 
@@ -476,7 +476,7 @@
       <div class="stp"><span class="stp-n">۱</span><div>
         <b data-i18n="pc.s1t">اپ v2rayN رو دانلود کن</b>
         <p data-i18n="pc.s1d">برای ویندوز — از Reality پشتیبانی می‌کنه.</p>
-        <a class="btn-link" href="https://github.com/2dust/v2rayN/releases/latest" target="_blank" rel="noopener">دانلود v2rayN ↗</a>
+        <a class="btn-link" href="https://github.com/2dust/v2rayN/releases/latest" target="_blank" rel="noopener" data-i18n="pc.dl">دانلود v2rayN ↗</a>
         <p class="muted small" data-i18n="pc.alt">جایگزین چندسکویی (ویندوز/مک/لینوکس): NekoRay.</p>
       </div></div>
 
@@ -567,8 +567,8 @@
     <p class="muted" data-i18n-html="dm.intro">کانفیگ‌های دامنه‌دار (VLESS-WS، VMess-WS، gRPC، Trojan، HTTPUpgrade) از نظر امنیت و پایداری در ایران <b>بهترین گزینه</b> هستند، چون شبیه ترافیک HTTPS معمولی‌اند. ولی به یک <b>دامنه</b> نیاز دارند. اگر دامنه نداری، حالت Reality (پیش‌فرض) همچنان عالی است.</p>
 
     <h3 data-i18n="dm.h.which">🎯 چه دامنه‌ای بگیرم؟</h3>
-    <p>هر دامنه‌ای کار می‌کند، ولی <b>پیشنهادها</b>:</p>
-    <ul>
+    <p data-i18n-html="dm.which.lead">هر دامنه‌ای کار می‌کند، ولی <b>پیشنهادها</b>:</p>
+    <ul data-i18n-html="dm.which.f">
       <li><b>دامنه‌های ارزان (~$۲-۱۰ سالانه):</b> <a href="https://www.namecheap.com/" target="_blank">Namecheap</a> · <a href="https://porkbun.com/" target="_blank">Porkbun</a> · <a href="https://www.cloudflare.com/products/registrar/" target="_blank">Cloudflare Registrar</a> (با قیمت اصلی، بدون سود)</li>
       <li><b>دامنه‌های رایگان:</b> <a href="https://www.duckdns.org/" target="_blank">DuckDNS</a> (ساب‌دامنه رایگان) · <a href="https://eu.org/" target="_blank">EU.org</a> (رایگان، ولی تأیید چند روز طول می‌کشد)</li>
       <li><b>پسوندهای ارزان:</b> <code>.xyz</code>, <code>.shop</code>, <code>.online</code>, <code>.site</code> — معمولاً سال اول ~$۱-۲</li>
@@ -680,7 +680,7 @@
 <section class="panel-tab" data-panel="manage">
   <div class="card prose">
     <h2 data-i18n="s.manage.h">👥 مدیریت کاربر — بدون حفظ‌کردن دستور</h2>
-    <p>عملیات را انتخاب کن و فیلدها را پر کن؛ یک <b>دستور آمادهٔ کپی</b> می‌گیری. کافی است یک‌بار آن را در ترمینال سرور (SSH) Paste کنی — نیازی نیست چیزی را به‌خاطر بسپاری یا دستی بنویسی.</p>
+    <p data-i18n-html="mg.intro">عملیات را انتخاب کن و فیلدها را پر کن؛ یک <b>دستور آمادهٔ کپی</b> می‌گیری. کافی است یک‌بار آن را در ترمینال سرور (SSH) Paste کنی — نیازی نیست چیزی را به‌خاطر بسپاری یا دستی بنویسی.</p>
 
     <div class="field">
       <label for="mg-action" data-i18n="m.action.l">چه کاری می‌خوای بکنی؟</label>
@@ -721,9 +721,9 @@
       <pre class="term-body mono" id="mg-out"></pre>
     </div>
     <div class="row" id="mg-copy-row"></div>
-    <p class="muted small">برای «افزودن کاربر»، بعد از اجرا، کانفیگ همان کاربر با QR در ترمینال نشان داده می‌شود. این دستورها فقط روی سروری کار می‌کنند که قبلاً نصب را روی آن انجام داده‌ای.</p>
+    <p class="muted small" data-i18n="mg.note">برای «افزودن کاربر»، بعد از اجرا، کانفیگ همان کاربر با QR در ترمینال نشان داده می‌شود. این دستورها فقط روی سروری کار می‌کنند که قبلاً نصب را روی آن انجام داده‌ای.</p>
 
-    <div class="callout">🔭 در فازهای بعدی، این کارها مستقیم از <b>ربات تلگرام</b> بدون ترمینال انجام می‌شود (نقشهٔ راه را در تب «درباره» ببین).</div>
+    <div class="callout" data-i18n-html="mg.callout">🔭 در فازهای بعدی، این کارها مستقیم از <b>ربات تلگرام</b> بدون ترمینال انجام می‌شود (نقشهٔ راه را در تب «درباره» ببین).</div>
 
     <!-- پنلِ وب: مدیریتِ گرافیکی روی سرور -->
     <div class="server-tips" id="panel-setup" style="margin-top:18px">
@@ -750,13 +750,13 @@
 <section class="panel-tab" data-panel="about">
   <div class="card prose">
     <h2 data-i18n="s.about.h">ℹ️ درباره</h2>
-    <p>
+    <p data-i18n-html="ab.desc">
       KIAN V2Ray یک ابزار رایگان و متن‌بازه که روی <b>سرورِ خودت</b> کانفیگ V2Ray (VLESS Reality + WARP) می‌سازه.
       کلیدها توی مرورگر خودت ساخته می‌شن و هیچ‌جا ذخیره نمی‌شن. هدف اینه که حتی بدون دانش فنی، فقط با کپی-پیست کار کنه.
     </p>
 
     <h3 data-i18n="ab.roadmap">🗺️ نقشهٔ راه</h3>
-    <ul class="tips">
+    <ul class="tips" data-i18n-html="ab.roadmap.f">
       <li>✅ <b>فاز ۱:</b> Reality سریع + WARP، نصب تک‌دستوری، مدیریت کاربر/حجم.</li>
       <li>✅ <b>پایداری و سرعت:</b> WARP با WireGuard/MASQUE + بازگشت خودکار به مستقیم، خودتشخیصی در <span class="mono">status</span>، رفع تداخل پورت، نصب مجدد امن، بهینه‌سازی BBR.</li>
       <li>✅ <b>فاز ۲ (الان):</b> لینک Subscription — برای هر کاربر یک لینک واحد که در v2rayNG واردش می‌کنی و همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.</li>
@@ -766,24 +766,24 @@
     </ul>
 
     <h3 data-i18n="ab.kv2m">🛠️ نرم‌افزار Kv2m (جدید)</h3>
-    <p class="muted">برای مدیریت حرفه‌ای‌تر، نرم‌افزار <b>Kv2m</b> خودش به سرورت SSH می‌زند و همه‌چیز را مدیریت/نصب می‌کند — برای ویندوز/مک/لینوکس و اندروید (Termux).</p>
-    <div class="callout">💻 دانلود و راهنما: <a href="https://github.com/kian-irani/kian_v2ray/tree/main/kv2m" target="_blank" rel="noopener">پوشهٔ kv2m در گیت‌هاب</a></div>
+    <p class="muted" data-i18n-html="ab.kv2m.d">برای مدیریت حرفه‌ای‌تر، نرم‌افزار <b>Kv2m</b> خودش به سرورت SSH می‌زند و همه‌چیز را مدیریت/نصب می‌کند — برای ویندوز/مک/لینوکس و اندروید (Termux).</p>
+    <div class="callout" data-i18n-html="ab.kv2m.dl">💻 دانلود و راهنما: <a href="https://github.com/kian-irani/kian_v2ray/tree/main/kv2m" target="_blank" rel="noopener">پوشهٔ kv2m در گیت‌هاب</a></div>
 
     <h3 data-i18n="ab.channels">👤 کانال‌ها و ارتباط</h3>
     <div class="links-grid">
-      <a class="lk" href="https://t.me/kian_irani_cdn_f" target="_blank" rel="noopener">🎓 آموزش و کانال<br><span>@kian_irani_cdn_f</span></a>
-      <a class="lk" href="https://t.me/Kian_irani_t" target="_blank" rel="noopener">🆘 پشتیبانی<br><span>@Kian_irani_t</span></a>
-      <a class="lk" href="https://t.me/Mhrv_script_bot" target="_blank" rel="noopener">🤖 ربات MHRV<br><span>@Mhrv_script_bot</span></a>
-      <a class="lk" href="https://t.me/Zyrln_script_bot" target="_blank" rel="noopener">🤖 ربات Zyrln<br><span>@Zyrln_script_bot</span></a>
-      <a class="lk" href="https://github.com/kian-irani/kian_v2ray" target="_blank" rel="noopener">⭐ سورس در گیت‌هاب<br><span>kian_v2ray</span></a>
+      <a class="lk" href="https://t.me/kian_irani_cdn_f" target="_blank" rel="noopener" data-i18n-html="ab.ch.learn">🎓 آموزش و کانال<br><span>@kian_irani_cdn_f</span></a>
+      <a class="lk" href="https://t.me/Kian_irani_t" target="_blank" rel="noopener" data-i18n-html="ab.ch.support">🆘 پشتیبانی<br><span>@Kian_irani_t</span></a>
+      <a class="lk" href="https://t.me/Mhrv_script_bot" target="_blank" rel="noopener" data-i18n-html="ab.ch.mhrv">🤖 ربات MHRV<br><span>@Mhrv_script_bot</span></a>
+      <a class="lk" href="https://t.me/Zyrln_script_bot" target="_blank" rel="noopener" data-i18n-html="ab.ch.zyrln">🤖 ربات Zyrln<br><span>@Zyrln_script_bot</span></a>
+      <a class="lk" href="https://github.com/kian-irani/kian_v2ray" target="_blank" rel="noopener" data-i18n-html="ab.ch.src">⭐ سورس در گیت‌هاب<br><span>kian_v2ray</span></a>
     </div>
 
     <h3 data-i18n="ab.donate">💝 حمایت (اختیاری)</h3>
-    <p class="muted">این پروژه رایگانه ولی هزینهٔ سرور و وقت توسعه واقعیه. اگه دوست داشتی:</p>
+    <p class="muted" data-i18n="ab.donate.d">این پروژه رایگانه ولی هزینهٔ سرور و وقت توسعه واقعیه. اگه دوست داشتی:</p>
     <div class="donate">
       <span class="donate-label">🔺 Tron (TRC20) — USDT / TRX:</span>
       <code class="mono" id="trc20">TEVuoZ7574341zbc8pc5jrrBrgqGGMys5q</code>
-      <button type="button" class="copy" id="copy-trc20"><span>کپی</span></button>
+      <button type="button" class="copy" id="copy-trc20"><span data-i18n="ab.copy">کپی</span></button>
     </div>
 
     <h3 data-i18n="ab.builtwith">🙏 ساخته‌شده با استفاده از</h3>
@@ -792,7 +792,7 @@
       <a href="https://developers.cloudflare.com/warp-client/" target="_blank" rel="noopener">Cloudflare WARP</a> ·
       TweetNaCl.js · qrcodejs
     </p>
-    <p class="muted small">ساخته شده با ❤️ توسط Kian Irani</p>
+    <p class="muted small" data-i18n="ab.footer">ساخته شده با ❤️ توسط Kian Irani</p>
   </div>
 </section>
 

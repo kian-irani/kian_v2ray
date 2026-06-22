@@ -119,6 +119,10 @@ class Strings {
       'هر نصبی که از اپ انجام دادی اینجا می‌ماند: لینکِ Subscription، آدرس و یوزر/رمزِ پنل، پروتکل‌ها و تاریخ. هر چیزی را با یک لمس کپی کن؛ رمزِ پنل با آیکنِ چشم نمایش/پنهان می‌شود.',
       'Every install you ran from the app is kept here: subscription link, panel URL + user/pass, protocols and date. Copy anything with one tap; reveal/hide the panel password with the eye icon.',
     ],
+    'help.perapp': [
+      'split-tunnel: اپ‌هایی که اینجا تیک می‌زنی از VPN عبور نمی‌کنند و مستقیم به اینترنت وصل می‌شوند (مثلاً اپ‌های بانکی یا داخلی). خالی بگذاری، همهٔ اپ‌ها از VPN رد می‌شوند. این تنظیم موقعِ اتصال اعمال می‌شود.',
+      'Split-tunnel: apps you tick here bypass the VPN and connect directly (e.g. banking or local apps). Leave it empty and every app goes through the VPN. This is applied when you connect.',
+    ],
     'stats.down': ['دانلود', 'Download'],
     'stats.up': ['آپلود', 'Upload'],
     'stats.time': ['زمان', 'Uptime'],

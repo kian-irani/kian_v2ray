@@ -129,6 +129,24 @@
     "ab.channels":  { fa: "👤 کانال‌ها و ارتباط", en: "👤 Channels & contact" },
     "ab.donate":    { fa: "💝 حمایت (اختیاری)", en: "💝 Support (optional)" },
     "ab.builtwith": { fa: "🙏 ساخته‌شده با استفاده از", en: "🙏 Built with" },
+    "ab.desc": { fa: "KIAN V2Ray یک ابزار رایگان و متن‌بازه که روی <b>سرورِ خودت</b> کانفیگ V2Ray (VLESS Reality + WARP) می‌سازه. کلیدها توی مرورگر خودت ساخته می‌شن و هیچ‌جا ذخیره نمی‌شن. هدف اینه که حتی بدون دانش فنی، فقط با کپی-پیست کار کنه.", en: "KIAN V2Ray is a free, open-source tool that builds V2Ray configs (VLESS Reality + WARP) on <b>your own server</b>. Keys are generated in your browser and stored nowhere. The goal: it works with copy-paste only, even without technical knowledge." },
+    "ab.roadmap.f": {
+      fa: "<li>✅ <b>فاز ۱:</b> Reality سریع + WARP، نصب تک‌دستوری، مدیریت کاربر/حجم.</li><li>✅ <b>پایداری و سرعت:</b> WARP با WireGuard/MASQUE + بازگشت خودکار به مستقیم، خودتشخیصی در <span class=\"mono\">status</span>، رفع تداخل پورت، نصب مجدد امن، بهینه‌سازی BBR.</li><li>✅ <b>فاز ۲ (الان):</b> لینک Subscription — برای هر کاربر یک لینک واحد که در v2rayNG واردش می‌کنی و همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.</li><li>🔜 <b>فاز ۳:</b> دامنه + TLS واقعی (WS/gRPC پشت Caddy) برای سرورهای سخت‌گیر.</li><li>🔜 <b>فاز ۴:</b> فرانت CDN برای سرورهایی که آی‌پی‌شون از ایران بسته‌ست.</li><li>🔜 <b>فاز ۵:</b> اتصال مستقیم به ربات تلگرام + هشدار حجم.</li>",
+      en: "<li>✅ <b>Phase 1:</b> Fast Reality + WARP, one-command install, user/quota management.</li><li>✅ <b>Stability & speed:</b> WARP over WireGuard/MASQUE + auto-fallback to direct, self-diagnosis in <span class=\"mono\">status</span>, port-conflict fixing, safe reinstall, BBR tuning.</li><li>✅ <b>Phase 2 (now):</b> Subscription link — one link per user that you import into v2rayNG; all configs arrive automatically and stay up to date.</li><li>🔜 <b>Phase 3:</b> Domain + real TLS (WS/gRPC behind Caddy) for strict servers.</li><li>🔜 <b>Phase 4:</b> CDN fronting for servers whose IP is blocked from Iran.</li><li>🔜 <b>Phase 5:</b> Direct Telegram-bot control + quota alerts.</li>"
+    },
+    "ab.kv2m.d": { fa: "برای مدیریت حرفه‌ای‌تر، نرم‌افزار <b>Kv2m</b> خودش به سرورت SSH می‌زند و همه‌چیز را مدیریت/نصب می‌کند — برای ویندوز/مک/لینوکس و اندروید (Termux).", en: "For more pro management, the <b>Kv2m</b> app SSHes into your server itself and manages/installs everything — for Windows/macOS/Linux and Android (Termux)." },
+    "ab.kv2m.dl": { fa: "💻 دانلود و راهنما: <a href=\"https://github.com/kian-irani/kian_v2ray/tree/main/kv2m\" target=\"_blank\" rel=\"noopener\">پوشهٔ kv2m در گیت‌هاب</a>", en: "💻 Download & guide: <a href=\"https://github.com/kian-irani/kian_v2ray/tree/main/kv2m\" target=\"_blank\" rel=\"noopener\">the kv2m folder on GitHub</a>" },
+    "ab.ch.learn": { fa: "🎓 آموزش و کانال<br><span>@kian_irani_cdn_f</span>", en: "🎓 Tutorials & channel<br><span>@kian_irani_cdn_f</span>" },
+    "ab.ch.support": { fa: "🆘 پشتیبانی<br><span>@Kian_irani_t</span>", en: "🆘 Support<br><span>@Kian_irani_t</span>" },
+    "ab.ch.mhrv": { fa: "🤖 ربات MHRV<br><span>@Mhrv_script_bot</span>", en: "🤖 MHRV bot<br><span>@Mhrv_script_bot</span>" },
+    "ab.ch.zyrln": { fa: "🤖 ربات Zyrln<br><span>@Zyrln_script_bot</span>", en: "🤖 Zyrln bot<br><span>@Zyrln_script_bot</span>" },
+    "ab.ch.src": { fa: "⭐ سورس در گیت‌هاب<br><span>kian_v2ray</span>", en: "⭐ Source on GitHub<br><span>kian_v2ray</span>" },
+    "ab.donate.d": { fa: "این پروژه رایگانه ولی هزینهٔ سرور و وقت توسعه واقعیه. اگه دوست داشتی:", en: "This project is free, but server costs and dev time are real. If you'd like to help:" },
+    "ab.copy": { fa: "کپی", en: "Copy" },
+    "ab.footer": { fa: "ساخته شده با ❤️ توسط Kian Irani", en: "Made with ❤️ by Kian Irani" },
+    "mg.intro": { fa: "عملیات را انتخاب کن و فیلدها را پر کن؛ یک <b>دستور آمادهٔ کپی</b> می‌گیری. کافی است یک‌بار آن را در ترمینال سرور (SSH) Paste کنی — نیازی نیست چیزی را به‌خاطر بسپاری یا دستی بنویسی.", en: "Pick an action and fill the fields; you get a <b>ready-to-copy command</b>. Just paste it once into the server terminal (SSH) — no need to memorize or type anything by hand." },
+    "mg.note": { fa: "برای «افزودن کاربر»، بعد از اجرا، کانفیگ همان کاربر با QR در ترمینال نشان داده می‌شود. این دستورها فقط روی سروری کار می‌کنند که قبلاً نصب را روی آن انجام داده‌ای.", en: "For “Add user”, after running it the user's config with a QR is shown in the terminal. These commands only work on a server where you've already installed." },
+    "mg.callout": { fa: "🔭 در فازهای بعدی، این کارها مستقیم از <b>ربات تلگرام</b> بدون ترمینال انجام می‌شود (نقشهٔ راه را در تب «درباره» ببین).", en: "🔭 In future phases these will be done straight from a <b>Telegram bot</b> without a terminal (see the roadmap in the “About” tab)." },
 
     /* ---------- TIPS tab (deep prose) ---------- */
     "tp.h.diff":      { fa: "فرق «سریع» و «WARP» چیه؟", en: "What's the difference between “Fast” and “WARP”?" },
@@ -166,6 +184,11 @@
     /* ---------- DOMAIN tab (headings + protocol guide) ---------- */
     "dm.intro":       { fa: "کانفیگ‌های دامنه‌دار (VLESS-WS، VMess-WS، gRPC، Trojan، HTTPUpgrade) از نظر امنیت و پایداری در ایران <b>بهترین گزینه</b> هستند، چون شبیه ترافیک HTTPS معمولی‌اند. ولی به یک <b>دامنه</b> نیاز دارند. اگر دامنه نداری، حالت Reality (پیش‌فرض) همچنان عالی است.", en: "Domain-based configs (VLESS-WS, VMess-WS, gRPC, Trojan, HTTPUpgrade) are the <b>best option</b> for security and resilience in Iran because they look like ordinary HTTPS traffic. But they need a <b>domain</b>. If you don't have one, Reality mode (default) is still excellent." },
     "dm.h.which":     { fa: "🎯 چه دامنه‌ای بگیرم؟", en: "🎯 Which domain should I get?" },
+    "dm.which.lead":  { fa: "هر دامنه‌ای کار می‌کند، ولی <b>پیشنهادها</b>:", en: "Any domain works, but <b>recommendations</b>:" },
+    "dm.which.f": {
+      fa: "<li><b>دامنه‌های ارزان (~$۲-۱۰ سالانه):</b> <a href=\"https://www.namecheap.com/\" target=\"_blank\">Namecheap</a> · <a href=\"https://porkbun.com/\" target=\"_blank\">Porkbun</a> · <a href=\"https://www.cloudflare.com/products/registrar/\" target=\"_blank\">Cloudflare Registrar</a> (با قیمت اصلی، بدون سود)</li><li><b>دامنه‌های رایگان:</b> <a href=\"https://www.duckdns.org/\" target=\"_blank\">DuckDNS</a> (ساب‌دامنه رایگان) · <a href=\"https://eu.org/\" target=\"_blank\">EU.org</a> (رایگان، ولی تأیید چند روز طول می‌کشد)</li><li><b>پسوندهای ارزان:</b> <code>.xyz</code>, <code>.shop</code>, <code>.online</code>, <code>.site</code> — معمولاً سال اول ~$۱-۲</li><li><b>بپرهیز از:</b> <code>.tk</code>, <code>.ml</code>, <code>.ga</code> (فریمنوم — بسیاری از کلاینت‌ها بلاک می‌کنند)</li>",
+      en: "<li><b>Cheap domains (~$2-10/yr):</b> <a href=\"https://www.namecheap.com/\" target=\"_blank\">Namecheap</a> · <a href=\"https://porkbun.com/\" target=\"_blank\">Porkbun</a> · <a href=\"https://www.cloudflare.com/products/registrar/\" target=\"_blank\">Cloudflare Registrar</a> (at cost, no markup)</li><li><b>Free domains:</b> <a href=\"https://www.duckdns.org/\" target=\"_blank\">DuckDNS</a> (free subdomain) · <a href=\"https://eu.org/\" target=\"_blank\">EU.org</a> (free, but approval takes a few days)</li><li><b>Cheap TLDs:</b> <code>.xyz</code>, <code>.shop</code>, <code>.online</code>, <code>.site</code> — usually ~$1-2 the first year</li><li><b>Avoid:</b> <code>.tk</code>, <code>.ml</code>, <code>.ga</code> (Freenom — many clients block them)</li>"
+    },
     "dm.h.arecord":   { fa: "📡 تنظیم رکورد A — مهم‌ترین قدم", en: "📡 Setting the A record — the most important step" },
     "dm.h.cf":        { fa: "☁️ اگر از Cloudflare استفاده می‌کنی", en: "☁️ If you use Cloudflare" },
     "dm.h.proto":     { fa: "🔧 پروتکل‌ها — کدام را انتخاب کنم؟", en: "🔧 Protocols — which should I pick?" },
@@ -193,6 +216,67 @@
     "gen.extra.note":  { fa: "روی سرویسِ مستقلِ sing-box کنارِ Xray نصب می‌شوند و مسیرِ Reality/SS/TLS را دست‌نمی‌زنند. نیازمندِ بازبودنِ پورتِ UDP روی سرور. لینک‌ها خودکار به Subscription اضافه می‌شوند.", en: "Installed on a standalone sing-box service next to Xray; they don't touch the Reality/SS/TLS path. Needs a UDP port open on the server. Links are added to your subscription automatically." },
     "gen.extra.hy2":   { fa: "سریع روی شبکهٔ پُرافت/پُرتأخیر، عبورِ عالی از DPI", en: "Fast on lossy/high-latency networks, great DPI evasion" },
     "gen.extra.tuic":  { fa: "QUIC، 0-RTT، کنترلِ ازدحام BBR", en: "QUIC, 0-RTT, BBR congestion control" },
+
+    /* ---------- GEN: IP-filter warning (was Persian-only) ---------- */
+    "g.ipwarn.head": { fa: "⚠️ هشدار مهم — فیلتر شدن IP سرور", en: "⚠️ Important — your server IP can get blocked" },
+    "g.ipwarn.body": {
+      fa: "چون کانفیگ‌های Reality و Shadowsocks <b>مستقیم به IP لخت سرورت</b> می‌روند (بدون دامنه/CDN)، اگر کانفیگ را به <b>بیش از ۲-۳ نفر</b> بدهی و <b>مصرف هفتگی بالا</b> داشته باشد (مثلاً چند صد گیگ)، سامانه فیلترینگ ISP می‌تواند الگوی ترافیک را شناسایی کند و <b>IP سرورت را برای همیشه فیلتر کند.</b><br><br><b>راه‌حل برای پخش عمومی یا کاربران زیاد:</b> از حالت <b>«کانفیگ‌های دامنه‌دار (TLS)»</b> در پایین استفاده کن — ترافیک پشت Cloudflare می‌رود، IP واقعی سرورت دیده نمی‌شود، و اگر یک IP بسته شد، Cloudflare خودش IP دیگر می‌دهد.<br><br><span class=\"ip-warn-rule\">قانون ساده: <b>تا ۲-۳ نفر</b> ⟵ Reality کافی است. <b>بیشتر</b> یا <b>پخش عمومی</b> ⟵ حتماً دامنه + TLS.</span>",
+      en: "Because Reality and Shadowsocks configs go <b>straight to your server's bare IP</b> (no domain/CDN), if you hand the config to <b>more than 2-3 people</b> with <b>heavy weekly usage</b> (hundreds of GB), the ISP's filtering system can fingerprint the traffic pattern and <b>block your server IP for good.</b><br><br><b>Fix for public sharing or many users:</b> use the <b>“Domain-based (TLS) configs”</b> below — traffic rides behind Cloudflare, your real server IP stays hidden, and if one IP is blocked Cloudflare just hands out another.<br><br><span class=\"ip-warn-rule\">Simple rule: <b>up to 2-3 people</b> ⟵ Reality is enough. <b>More</b> or <b>public sharing</b> ⟵ definitely domain + TLS.</span>"
+    },
+
+    /* ---------- GEN: advanced settings (was Persian-only) ---------- */
+    "g.adv.sni.l": { fa: "دامنهٔ استتار (SNI)", en: "Camouflage domain (SNI)" },
+    "g.adv.sni.auto": { fa: "خودکار — چند دامنهٔ امن (پیشنهادی)", en: "Auto — several safe domains (recommended)" },
+    "g.adv.sni.manual": { fa: "دستی — یک دامنهٔ مشخص", en: "Manual — one specific domain" },
+    "g.adv.sni.h": { fa: "حالت خودکار چند دامنهٔ در-دسترس روی چند پورت می‌سازه تا اگه یکی بسته شد، بقیه کار کنن.", en: "Auto mode builds several reachable domains across multiple ports, so if one is blocked the others still work." },
+    "g.adv.snicount.l": { fa: "چند دامنه/کانفیگ ساخته بشه؟", en: "How many domains/configs to build?" },
+    "g.adv.snicount.1": { fa: "۱ دامنه", en: "1 domain" },
+    "g.adv.snicount.2": { fa: "۲ دامنه (پیشنهادی)", en: "2 domains (recommended)" },
+    "g.adv.snicount.3": { fa: "۳ دامنه", en: "3 domains" },
+    "g.adv.snisel.l": { fa: "دامنهٔ دستی", en: "Manual domain" },
+    "g.adv.snisel.h": { fa: "دامنه‌ای انتخاب کن که در ایران فیلتر نباشه و TLS 1.3 داشته باشه.", en: "Pick a domain that isn't blocked in Iran and supports TLS 1.3." },
+    "g.adv.sni.customopt": { fa: "دامنهٔ دلخواه…", en: "Custom domain…" },
+    "g.adv.snicustom.l": { fa: "دامنهٔ دلخواه", en: "Custom domain" },
+    "g.adv.ss.l": { fa: "Shadowsocks هم اضافه کن <span class=\"muted small\">(پروتکل پشتیبان)</span>", en: "Add Shadowsocks too <span class=\"muted small\">(backup protocol)</span>" },
+    "g.adv.ssport.l": { fa: "پورت Shadowsocks", en: "Shadowsocks port" },
+    "g.adv.ports.head": { fa: "📋 پورت‌های kian-v2ray — راهنمای کامل", en: "📋 kian-v2ray ports — full guide" },
+    "g.adv.ports.body": {
+      fa: "<p><b>پورت‌های Reality (روی این‌ها کانفیگ V2Ray سرو می‌شود — قابل تنظیم):</b></p><ul><li>پیش‌فرض خودکار (پیشنهاد): <code>۴۴۳</code>، <code>۲۰۸۳</code>، <code>۲۰۸۷</code>، <code>۲۰۹۶</code>، <code>۸۰۸۰</code> — پورت‌های وب معروف که با ترافیک HTTPS عادی قاطی می‌شوند و کم به‌چشم می‌آیند.</li><li>گزینه‌های جایگزین (در صورت تداخل): <code>۹۴۴۳</code>، <code>۵۴۴۳</code>، <code>۸۴۴۳</code>، <code>۲۰۵۲</code>، <code>۲۰۸۶</code>.</li></ul><p><b>پورت‌های ثابت سیستمی (نباید جای دیگری استفاده شوند):</b></p><ul><li><code>۴۰۰۰۰</code> ⟵ WARP socks (فقط localhost)</li><li><code>۲۰۰۰۰-۵۰۰۰۰</code> (تصادفی) ⟵ API داخلی Xray (فقط localhost)</li><li><code>۸۰، ۸۸۸۸، ۲۰۸۶</code> ⟵ سرویس Subscription محلی</li><li><code>۴۴۳، ۸۰</code> ⟵ <b>اگر</b> TLS با دامنه فعال کنی، این پورت‌ها برای Caddy رزرو می‌شوند</li></ul><p class=\"muted small\">💡 <b>اگر سرورت تمیز است</b> (تازه نصب OS) و هیچ سرویس دیگری نداری، نیازی به تغییر چیزی نیست — صفحه خودش بهترین پورت‌ها را انتخاب می‌کند. فقط در این موارد عدد بده:</p><ul class=\"muted small\"><li>روی سرور پنل دیگری (3x-ui، Marzban، X-UI) داری و پورت‌های ۴۴۳ یا ۸۰۸۰ را گرفته → عددی بالاتر مثل ۹۴۴۳ بده</li><li>می‌خواهی پورت خاصی استفاده شود (مثلاً برای CDN سفارشی) → همان را وارد کن</li></ul>",
+      en: "<p><b>Reality ports (your V2Ray configs are served here — adjustable):</b></p><ul><li>Auto default (recommended): <code>443</code>, <code>2083</code>, <code>2087</code>, <code>2096</code>, <code>8080</code> — well-known web ports that blend in with normal HTTPS traffic.</li><li>Fallback options (on conflict): <code>9443</code>, <code>5443</code>, <code>8443</code>, <code>2052</code>, <code>2086</code>.</li></ul><p><b>Fixed system ports (don't reuse elsewhere):</b></p><ul><li><code>40000</code> ⟵ WARP socks (localhost only)</li><li><code>20000-50000</code> (random) ⟵ Xray internal API (localhost only)</li><li><code>80, 8888, 2086</code> ⟵ local subscription service</li><li><code>443, 80</code> ⟵ <b>if</b> you enable domain TLS, these are reserved for Caddy</li></ul><p class=\"muted small\">💡 <b>If your server is clean</b> (fresh OS) with no other services, you don't need to change anything — the page picks the best ports. Only set a value when:</p><ul class=\"muted small\"><li>another panel (3x-ui, Marzban, X-UI) already took 443 or 8080 → give a higher number like 9443</li><li>you want a specific port (e.g. for a custom CDN) → enter it</li></ul>"
+    },
+    "g.adv.baseport.l": { fa: "پورت پایه (اختیاری — خالی بگذار)", en: "Base port (optional — leave empty)" },
+    "g.adv.baseport.ph": { fa: "خودکار: ۴۴۳، ۲۰۸۳، ۲۰۸۷، ۲۰۹۶، ۸۰۸۰...", en: "Auto: 443, 2083, 2087, 2096, 8080..." },
+    "g.adv.baseport.h": { fa: "🎯 <b>خالی بگذار</b> تا از پورت‌های وب معروف (۴۴۳، ۲۰۸۳، ۸۰۸۰، ...) استفاده شود.<br>⚠️ فقط اگه پنل دیگری روی سرور داری که این پورت‌ها را گرفته، عددی بده (مثلاً <code>9443</code>) تا پورت‌ها از آنجا ترتیبی شروع شوند.", en: "🎯 <b>Leave empty</b> to use well-known web ports (443, 2083, 8080, ...).<br>⚠️ Only set a value if another panel on the server already took these ports (e.g. <code>9443</code>) so ports start sequentially from there." },
+    "g.adv.quota.l": { fa: "حجم هر کاربر", en: "Quota per user" },
+    "g.adv.quota.50": { fa: "۵۰ گیگ", en: "50 GB" },
+    "g.adv.quota.100": { fa: "۱۰۰ گیگ", en: "100 GB" },
+    "g.adv.quota.200": { fa: "۲۰۰ گیگ", en: "200 GB" },
+    "g.adv.quota.500": { fa: "۵۰۰ گیگ", en: "500 GB" },
+    "g.adv.quota.0": { fa: "نامحدود", en: "Unlimited" },
+    "g.adv.days.l": { fa: "مدت اعتبار", en: "Validity period" },
+    "g.adv.days.30": { fa: "۳۰ روز", en: "30 days" },
+    "g.adv.days.60": { fa: "۶۰ روز", en: "60 days" },
+    "g.adv.days.90": { fa: "۹۰ روز", en: "90 days" },
+    "g.adv.days.0": { fa: "دائمی", en: "Forever" },
+    "g.adv.portnote": { fa: "پورت‌ها خودکار انتخاب می‌شن (از ۸۴۴۳ به بعد) — لازم نیست کاری بکنی.", en: "Ports are picked automatically (from 8443 up) — you don't need to do anything." },
+
+    /* ---------- GEN: TLS domain block (was Persian-only) ---------- */
+    "g.tls.summary": { fa: "🌐 کانفیگ‌های دامنه‌دار (WS / gRPC / HTTPUpgrade + TLS) — پیشرفته", en: "🌐 Domain-based configs (WS / gRPC / HTTPUpgrade + TLS) — advanced" },
+    "g.tls.intro": { fa: "این کانفیگ‌ها به‌جای IP، روی <b>دامنه + گواهی TLS واقعی</b> کار می‌کنند و پشت <b>Caddy</b> روی پورت ۴۴۳ سرو می‌شوند. مزیت: عبور بهتر از DPI، امکان استفاده پشت CDN (مثل Cloudflare)، و شبیه‌بودن کامل به ترافیک HTTPS معمولی.", en: "Instead of an IP, these configs run on a <b>domain + a real TLS certificate</b>, served behind <b>Caddy</b> on port 443. Benefits: better DPI evasion, works behind a CDN (like Cloudflare), and looks exactly like normal HTTPS traffic." },
+    "g.tls.req": { fa: "<b>پیش‌نیازها (مهم):</b>", en: "<b>Prerequisites (important):</b>" },
+    "g.tls.req1": { fa: "یک <b>دامنه</b> داشته باش (مثلاً از Namecheap، Cloudflare، Freenom).", en: "Have a <b>domain</b> (e.g. from Namecheap, Cloudflare, Freenom)." },
+    "g.tls.req2": { fa: "یک رکورد <b>A</b> بساز که دامنه (یا یک ساب‌دامنه مثل <code>vpn.example.com</code>) به <b>IP سرورت</b> اشاره کند.", en: "Create an <b>A</b> record pointing the domain (or a subdomain like <code>vpn.example.com</code>) to <b>your server IP</b>." },
+    "g.tls.req3": { fa: "اگر از Cloudflare استفاده می‌کنی، موقع نصب اول ابر را <b>خاکستری (DNS only)</b> کن تا گواهی گرفته شود؛ بعد می‌تونی نارنجی (Proxied) کنی.", en: "If you use Cloudflare, set the cloud to <b>grey (DNS only)</b> during install so the cert is issued; you can switch it to orange (Proxied) afterwards." },
+    "g.tls.req4": { fa: "پورت‌های <b>۴۴۳</b> و <b>۸۰</b> سرور باید آزاد باشند (برای گرفتن گواهی Let's Encrypt).", en: "Server ports <b>443</b> and <b>80</b> must be free (to obtain the Let's Encrypt certificate)." },
+    "g.tls.toggle": { fa: "کانفیگ‌های دامنه‌دار را فعال کن", en: "Enable domain-based configs" },
+    "g.tls.domain.l": { fa: "دامنه (که به IP سرور اشاره می‌کند)", en: "Domain (pointing to the server IP)" },
+    "g.tls.domain.ph": { fa: "مثلاً vpn.example.com", en: "e.g. vpn.example.com" },
+    "g.tls.domain.h": { fa: "حتماً رکورد A این دامنه باید روی IP همین سرور تنظیم شده باشد، وگرنه گواهی TLS گرفته نمی‌شود.", en: "The domain's A record must point to this exact server IP, otherwise the TLS certificate cannot be issued." },
+    "g.tls.proto.h": { fa: "پیشنهاد: اگر مطمئن نیستی، فقط <b>VLESS-WS</b> را بگذار — برای اکثر موارد بهترین است.", en: "Tip: if unsure, leave only <b>VLESS-WS</b> — it's best for most cases." },
+    "g.tls.channel.l": { fa: "مسیر خروجی این کانفیگ‌ها", en: "Outbound path for these configs" },
+    "g.tls.channel.direct": { fa: "سریع (مستقیم)", en: "Fast (direct)" },
+    "g.tls.channel.warp": { fa: "از WARP (دور زدن بلاک خروجی سرور)", en: "Via WARP (bypass server-side egress blocks)" },
+    "g.tls.channel.h": { fa: "اگر سرورت سایت‌هایی را بلاک می‌کند (مثل بعضی پروایدرهای ترکیه)، WARP را انتخاب کن.", en: "If your server blocks some sites (like some Turkey providers), choose WARP." },
 
     /* ---------- DOMAIN tab (deep prose) ---------- */
     "dm.ar.lead": { fa: "بعد از خرید دامنه، در پنل DNS رجیسترار:", en: "After buying a domain, in the registrar's DNS panel:" },
@@ -253,10 +337,17 @@
     "sv.s5t": { fa: "۲ تا ۵ دقیقه صبر کن، بعد وضعیت رو چک کن", en: "Wait 2–5 minutes, then check the status" },
     "sv.s5d": { fa: "اگه نوشت Xray در حال اجراست ✅ تمومه. لینک‌های کانفیگ همون‌هایی هستن که توی تب اول گرفتی.", en: "If it says Xray is running ✅ you're done. The config links are the ones you got in the first tab." },
     "sv.min": { fa: "حداقل سرور: ۱ هسته CPU، ۵۱۲ مگ رم، اوبونتو ۲۲ یا ۲۴. لوکیشن خارج از ایران.", en: "Minimum server: 1 CPU core, 512 MB RAM, Ubuntu 22 or 24. Location outside Iran." },
+    "sv.termius": { fa: "دانلود Termius (اندروید) ↗", en: "Download Termius (Android) ↗" },
+    "sv.buy.netlen": { fa: "🌐 Netlen (ترکیه)", en: "🌐 Netlen (Turkey)" },
+    "sv.buy.netlen.f": { fa: "<li>✓ بدون احراز هویت</li><li>✓ پرداخت کریپتو</li><li>✗ انگلیسی</li>", en: "<li>✓ No KYC</li><li>✓ Crypto payment</li><li>✗ English UI</li>" },
+    "sv.buy.any": { fa: "🌍 هر VPS خارج از ایران", en: "🌍 Any VPS outside Iran" },
+    "sv.buy.any.f": { fa: "<li>✓ ترجیحاً پرداخت کریپتو / بدون KYC</li><li>✓ لوکیشن نزدیک (ترکیه/آلمان/امارات)</li><li>✓ آی‌پی تمیز و در-دسترس از ایران</li>", en: "<li>✓ Prefer crypto payment / no KYC</li><li>✓ Nearby location (Turkey/Germany/UAE)</li><li>✓ Clean IP reachable from Iran</li>" },
+    "sv.buy.any.n": { fa: "هر ارائه‌دهنده‌ای که این شرایط رو داشته باشه مناسبه.", en: "Any provider that meets these criteria works." },
 
     /* ---------- ANDROID tab (steps) ---------- */
     "an.s1t": { fa: "اپ v2rayNG رو نصب کن", en: "Install the v2rayNG app" },
     "an.s1d": { fa: "رایگان و متن‌باز — از Reality پشتیبانی می‌کنه.", en: "Free and open-source — supports Reality." },
+    "an.dl": { fa: "دانلود v2rayNG از گیت‌هاب ↗", en: "Download v2rayNG from GitHub ↗" },
     "an.alt": { fa: "جایگزین: NekoBox for Android.", en: "Alternative: NekoBox for Android." },
     "an.two": { fa: "دو راه داری:", en: "You have two ways:" },
     "an.copy": { fa: "• <b>کپی-پیست:</b> توی تب «ساخت کانفیگ» روی «کپی لینک» بزن، بعد توی v2rayNG: دکمهٔ <b>+</b> بالا ← <b>«Import config from Clipboard»</b>.", en: "• <b>Copy-paste:</b> in the “Build config” tab tap “Copy link”, then in v2rayNG: the <b>+</b> button ← <b>“Import config from Clipboard”</b>." },
@@ -270,6 +361,7 @@
     /* ---------- PC tab (steps) ---------- */
     "pc.s1t": { fa: "اپ v2rayN رو دانلود کن", en: "Download the v2rayN app" },
     "pc.s1d": { fa: "برای ویندوز — از Reality پشتیبانی می‌کنه.", en: "For Windows — supports Reality." },
+    "pc.dl": { fa: "دانلود v2rayN ↗", en: "Download v2rayN ↗" },
     "pc.alt": { fa: "جایگزین چندسکویی (ویندوز/مک/لینوکس): NekoRay.", en: "Cross-platform alternative (Windows/macOS/Linux): NekoRay." },
     "pc.s2d": { fa: "توی تب «ساخت کانفیگ» روی «کپی لینک» بزن. بعد توی v2rayN از منوی بالا: <b>Servers ← Import bulk URL from clipboard</b> (یا Ctrl+V داخل لیست سرورها).", en: "In the “Build config” tab tap “Copy link”. Then in v2rayN from the top menu: <b>Servers ← Import bulk URL from clipboard</b> (or Ctrl+V inside the server list)." },
     "pc.s3t": { fa: "روشن کن", en: "Turn it on" },

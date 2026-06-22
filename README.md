@@ -37,9 +37,9 @@ A **free, open-source** stack to run your own anti-censorship VPN on **your own 
 | **Web generator** | In-browser config builder, 100% bilingual (FA/EN), client-side keys | ✅ stable |
 | **Web panel** (`panel/`) | FastAPI + JWT/2FA · dark-glass dashboard (users/nodes/audit/charts/settings) · IP/speed/HWID limits · WebSocket stats · `/metrics` | ✅ code-complete |
 | **Multi-server** (`core/cluster.py` + `node-agent/`) | One panel → many VPS · health/failover/load-balance/GeoIP · Marzban/3X-UI import | ✅ code-complete |
-| **New protocols** (`scripts/kian-protocols.sh`) | **Hysteria2 + TUIC v5** via a sing-box companion (opt-in) · Fragment/uTLS/TTL/Noise · sing-box/Clash sub export · REALITY SNI scanner · Tor fallback | ✅ code · ⏳ server test |
-| **Kv2m desktop** (`kv2m/`) | PySide6/Qt app, **multi-server**, web-panel deploy, **Hysteria2/TUIC** generator, auto-update — Windows installer + portable | ✅ **v3.2.1** |
-| **Kv2m mobile** (`app/`) | Flutter Android client — in-app SSH install, config **QR + copy**, **install history**, web-panel deploy, **Hysteria2/TUIC**, GMS-free, offline mode | ✅ project · ⏳ native core |
+| **New protocols** (`scripts/kian-protocols.sh` + `core/protocols.py`) | **Hysteria2 + TUIC v5** via a sing-box companion (opt-in) · **ShadowTLS v3 / AnyTLS / SSH-out / ECH** builders · Fragment/uTLS/TTL/Noise · **Reality spiderX** · sing-box/Clash sub export · REALITY SNI scanner · Tor fallback | ✅ code · ⏳ server test |
+| **Kv2m desktop** (`kv2m/`) | PySide6/Qt app, **multi-server**, web-panel deploy, **Hysteria2/TUIC** generator, auto-update — Windows/macOS/Linux | ✅ **v3.6.0** |
+| **Kv2m mobile** (`app/`) | Flutter Android client — **on-device tunnel** (bundled Xray core), in-app SSH install, config **QR + copy**, **install history**, **per-app split-tunnel**, routing/DNS/kill-switch settings, web-panel deploy, GMS-free, offline mode | ✅ **v0.5.0** |
 | **Monitoring** (`monitoring/`) | Prometheus + node/Xray exporters + Grafana dashboard + alert rules | ✅ configs |
 | **Notifications** (`core/notify.py`) | Telegram + Email(SMTP) + Webhook · server-side expiry/quota push (no FCM) | ✅ code-complete |
 | **CI/CD** | Validate (bash/js/py/pytest/smoke) + CodeQL + Trivy + auto-release | ✅ green |
@@ -92,21 +92,21 @@ export KIAN_ADMIN_PASSWORD='change-me-strong'
 uvicorn panel.main:app --host 0.0.0.0 --port 8443     # open /app  ·  Swagger at /docs
 ```
 
-Features: JWT + refresh + **TOTP 2FA** (with UI) · user CRUD + search + **bulk actions** · per-user **IP / speed / HWID** limits + **auto-disable** · WebSocket live stats · CSV/JSON export · **audit log** · **node management** (health/route/failover) · key rotation · security headers + rate-limit + CORS · `/metrics` for Prometheus. One-click stack: `docker compose up -d`.
+Features: JWT + refresh + **TOTP 2FA** (with UI) · user CRUD + search + **bulk actions** · per-user **IP / speed / HWID** limits + **auto-disable** · **per-user routing / DNS** · WebSocket live stats · CSV/JSON export · **audit log** · **node management** (health/route/failover) · key rotation · security headers + rate-limit + CORS · `/metrics` for Prometheus. One-click stack: `docker compose up -d`.
 
 ## Supported protocols
 
-**No domain (Reality):** VLESS + Reality + Vision (TCP) · Shadowsocks
-**With domain (TLS):** VLESS-WS · VMess-WS · VLESS-gRPC · VMess-gRPC · Trojan-WS · VLESS-HTTPUpgrade · VMess-HTTPUpgrade
-**Opt-in companion (sing-box):** Hysteria2 · TUIC v5
-**Anti-DPI:** Fragment · uTLS fingerprint · TTL · Noise padding · Tor bridge fallback
+**No domain (Reality):** VLESS + Reality + Vision (TCP), with **spiderX** · Shadowsocks
+**With domain (TLS):** VLESS-WS · VMess-WS · VLESS-gRPC · VMess-gRPC · Trojan-WS · VLESS-HTTPUpgrade · VMess-HTTPUpgrade · **VLESS-XHTTP**
+**Opt-in companion (sing-box):** Hysteria2 · TUIC v5 · ShadowTLS v3 · AnyTLS · WireGuard · SSH outbound *(builders ready; runtime-gated like Hysteria2/TUIC)*
+**Anti-DPI:** Fragment · uTLS fingerprint · TTL · Noise padding · ECH plumbing · Tor bridge fallback
 
 ## 💻 Kv2m apps
 
-- **Desktop v3.2.1** — PySide6/Qt, bilingual, **multi-server** (saved profiles, auto-update), **web-panel deploy** over SSH, and the **Hysteria2/TUIC** generator. Windows installer + portable on [releases](https://github.com/kian-irani/kian_v2ray/releases/latest).
-- **Mobile (Kv2m, Flutter)** — Android-first, **GMS-free** (Cafe Bazaar / Myket / F-Droid friendly), VpnService. In-app SSH install + **config QR & one-tap copy** + **subscription card** + **install history** (saves your sub link & panel URL/credentials) + **web-panel deploy** + **Hysteria2/TUIC** selection + smart server selection + offline mode. Native tunnel core is the last build step.
+- **Desktop v3.6.0** — PySide6/Qt, bilingual, **multi-server** (saved profiles, auto-update), **web-panel deploy** over SSH, and the **Hysteria2/TUIC** generator. Windows (Setup + Portable), macOS and Linux builds on [releases](https://github.com/kian-irani/kian_v2ray/releases/latest).
+- **Mobile (Kv2m v0.5.0, Flutter)** — Android-first, **GMS-free** (Cafe Bazaar / Myket / F-Droid friendly). **Connects on its own** via a bundled native Xray core (`flutter_v2ray`) — no v2rayNG needed. In-app SSH install + **config QR & one-tap copy** + **subscription card** (auto-refresh) + **install history** + **web-panel deploy** + **per-app split-tunnel** + routing / DNS / kill-switch / auto-connect settings + smart server selection + offline mode.
 
-> **How to connect from your phone right now:** the Kv2m app **generates, installs and manages** everything; on-device tunneling needs the native core (still being built). Until it lands, the app **won't fake a connection** — instead, copy the config (or scan the QR) and import it into **v2rayNG** to connect. Everything else (server install, panel, subscription, history) works in-app.
+> **Connect from your phone:** the Kv2m app **builds, installs, manages and tunnels** everything itself. On a dev/desktop build without the native core it stays honest (it won't black-hole your traffic) and offers to copy the config for v2rayNG instead.
 
 ## 🗺️ Roadmap
 
@@ -144,9 +144,9 @@ Issues and suggestions welcome — see [`docs/CONTRIBUTING.md`](docs/CONTRIBUTIN
 | **صفحهٔ تعاملی** | سازندهٔ کانفیگ در مرورگر، **۱۰۰٪ دوزبانه**، کلید سمتِ کاربر | ✅ پایدار |
 | **پنلِ وب** | FastAPI + JWT/**2FA** · داشبوردِ dark-glass (کاربران/سرورها/ممیزی/نمودار/تنظیمات) · محدودیتِ IP/سرعت/HWID · آمارِ زنده | ✅ کد کامل |
 | **چندسرور** | یک پنل → چند VPS · health/failover/load-balance/GeoIP · مهاجرت از Marzban/3X-UI | ✅ کد کامل |
-| **پروتکل‌های جدید** | **Hysteria2 + TUIC v5** روی sing-box (اختیاری) · Fragment/uTLS/TTL/Noise · خروجیِ sing-box/Clash · REALITY scanner · Tor fallback | ✅ کد · ⏳ تستِ سرور |
-| **Kv2m دسکتاپ** | اپِ PySide6/Qt، **چندسرور**، راه‌اندازیِ پنل، سازندهٔ **Hysteria2/TUIC**، auto-update — ویندوز (Setup + Portable) | ✅ **v3.2.1** |
-| **Kv2m موبایل** | کلاینتِ Flutter اندروید — نصبِ SSH داخلِ اپ، **QR و کپیِ کانفیگ**، **تاریخچهٔ نصب**، راه‌اندازیِ پنل، **Hysteria2/TUIC**، بدونِ GMS، آفلاین | ✅ پروژه · ⏳ هستهٔ native |
+| **پروتکل‌های جدید** | **Hysteria2 + TUIC v5** روی sing-box (اختیاری) · builderهای **ShadowTLS v3 / AnyTLS / SSH-out / ECH** · Fragment/uTLS/TTL/Noise · **Reality spiderX** · خروجیِ sing-box/Clash · REALITY scanner · Tor fallback | ✅ کد · ⏳ تستِ سرور |
+| **Kv2m دسکتاپ** | اپِ PySide6/Qt، **چندسرور**، راه‌اندازیِ پنل، سازندهٔ **Hysteria2/TUIC**، auto-update — ویندوز/مک/لینوکس | ✅ **v3.6.0** |
+| **Kv2m موبایل** | کلاینتِ Flutter اندروید — **اتصالِ روی‌دستگاه** (هستهٔ Xray bundle‌شده)، نصبِ SSH داخلِ اپ، **QR و کپیِ کانفیگ**، **تاریخچهٔ نصب**، **split-tunnel per-app**، تنظیماتِ routing/DNS/kill-switch، بدونِ GMS، آفلاین | ✅ **v0.5.0** |
 | **پایش** | Prometheus + اکسپورترها + داشبوردِ Grafana + قوانینِ هشدار | ✅ پیکربندی |
 | **اعلان‌ها** | Telegram + Email + Webhook · Push انقضا/سهمیه (بدونِ FCM) | ✅ کد کامل |
 
@@ -179,15 +179,15 @@ python3 -m pip install -r panel/requirements.txt
 export KIAN_ADMIN_PASSWORD='یک-رمزِ-قوی'
 uvicorn panel.main:app --host 0.0.0.0 --port 8443   # داشبورد: /app  ·  Swagger: /docs
 ```
-ویژگی‌ها: JWT + **2FA** + CRUD + bulk + محدودیتِ IP/سرعت/HWID + auto-disable + آمارِ زنده + export + **ممیزی** + **مدیریتِ نود** + چرخشِ کلید + هدرهای امنیتی. اجرای کامل: `docker compose up -d`.
+ویژگی‌ها: JWT + **2FA** + CRUD + bulk + محدودیتِ IP/سرعت/HWID + auto-disable + **routing/DNS هر کاربر** + آمارِ زنده + export + **ممیزی** + **مدیریتِ نود** + چرخشِ کلید + هدرهای امنیتی. اجرای کامل: `docker compose up -d`.
 
 ### 🗺️ نقشهٔ راه
 
 از نصب‌کنندهٔ تک‌دستوری به **پلتفرمِ کاملِ چندسروره**. جزئیات و وضعیت: [`ROADMAP.md`](ROADMAP.md).
 
-- ✅ **انجام‌شده (در کد)** — فاز ۱ تا ۵ و ۷: زیرساختِ core، پنلِ وب + 2FA، چندسرور + node agent، پروتکل‌های جدید، صفحهٔ ۱۰۰٪ دوزبانه، CI/CD + پایش، اعلان‌ها.
-- ⏳ **نیازِ سرورِ زنده** — تستِ واقعیِ اتصالِ Hysteria2/TUIC/TLS.
-- 🙋 **نیازِ تو** — حساب‌های مارکت (گوگل‌پلی/کافه‌بازار/مایکت/F-Droid)، Keystore، انتشار، هستهٔ nativeِ موبایل.
+- ✅ **انجام‌شده (در کد)** — فاز ۱ تا ۱۲: زیرساختِ core، پنلِ وب + 2FA + routing/DNSِ هر کاربر، چندسرور + node agent، پروتکل‌ها (Reality spiderX/XHTTP + builderهای ShadowTLS/AnyTLS/SSH/ECH)، اپِ موبایلِ خوداتصال + split-tunnel، **صفحهٔ ۱۰۰٪ دوزبانه (هر تب)**، CI/CD + پایش، اعلان‌ها.
+- ⏳ **نیازِ سرورِ زنده** — تستِ واقعیِ end-to-end اتصالِ Hysteria2/TUIC/TLS روی VPS.
+- 🙋 **نیازِ تو** — حساب‌های مارکت (گوگل‌پلی/کافه‌بازار/مایکت/F-Droid)، Keystore، انتشار.
 
 ### امنیت و حریم خصوصی
 

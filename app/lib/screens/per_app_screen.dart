@@ -6,6 +6,7 @@ import '../i18n.dart';
 import '../models/app_settings.dart';
 import '../services/cache.dart';
 import '../theme.dart';
+import '../widgets/help_card.dart';
 
 /// Per-app proxy / split-tunnel picker (9.2). Choose which installed apps
 /// BYPASS the VPN (go direct, not tunneled). Empty selection = every app is
@@ -75,6 +76,11 @@ class _PerAppScreenState extends State<PerAppScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                  child: HelpCard(
+                      title: s.t('help.title'), body: s.t('help.perapp')),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Text(
