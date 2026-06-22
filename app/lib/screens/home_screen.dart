@@ -241,6 +241,67 @@ class _HomeScreenState extends State<HomeScreen> {
     _cache.saveSelected(s.name);
   }
 
+  /// Rename a server (config management, 9.11). Updates the cache.
+  Future<void> _renameServer(ServerProfile srv) async {
+    final s = widget.strings;
+    final ctrl = TextEditingController(text: srv.name);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(s.t('cfg.rename')),
+        content: TextField(
+          controller: ctrl, autofocus: true,
+          decoration: InputDecoration(labelText: s.t('cfg.name')),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(s.t('cancel'))),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, ctrl.text.trim()),
+            child: Text(s.t('cfg.save')),
+          ),
+        ],
+      ),
+    );
+    if (newName == null || newName.isEmpty) return;
+    final idx = _servers.indexOf(srv);
+    if (idx < 0) return;
+    final renamed = ServerProfile(
+      name: newName, uri: srv.uri, host: srv.host, port: srv.port,
+      protocol: srv.protocol, latencyMs: srv.latencyMs, source: srv.source,
+    );
+    setState(() {
+      _servers[idx] = renamed;
+      if (_selected == srv) _selected = renamed;
+    });
+    await _cache.saveServers(_servers);
+  }
+
+  /// Delete a server with an undo snackbar (config management, 9.11).
+  Future<void> _deleteServer(ServerProfile srv) async {
+    final s = widget.strings;
+    final idx = _servers.indexOf(srv);
+    if (idx < 0) return;
+    setState(() {
+      _servers.removeAt(idx);
+      if (_selected == srv) _selected = _servers.isNotEmpty ? _servers.first : null;
+    });
+    await _cache.saveServers(_servers);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(s.t('cfg.deleted')),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: s.t('cfg.undo'),
+          onPressed: () async {
+            setState(() => _servers.insert(idx.clamp(0, _servers.length), srv));
+            await _cache.saveServers(_servers);
+          },
+        ),
+      ),
+    );
+  }
+
   /// Live up/down speed + session duration while connected (parity feature).
   Widget _statsRow(Strings s) {
     Widget cell(IconData ic, String label, String val) => Expanded(
@@ -448,6 +509,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                           strings: s, server: srv),
                                     ),
                                   ),
+                                ),
+                                PopupMenuButton<String>(
+                                  tooltip: s.t('cfg.more'),
+                                  icon: const Icon(Icons.more_vert),
+                                  onSelected: (v) {
+                                    if (v == 'rename') _renameServer(srv);
+                                    if (v == 'delete') _deleteServer(srv);
+                                  },
+                                  itemBuilder: (_) => [
+                                    PopupMenuItem(value: 'rename',
+                                        child: Text(s.t('cfg.rename'))),
+                                    PopupMenuItem(value: 'delete',
+                                        child: Text(s.t('cfg.delete'))),
+                                  ],
                                 ),
                               ],
                             ),
