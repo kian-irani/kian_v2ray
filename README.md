@@ -52,12 +52,14 @@ All builds are on the **[latest release](https://github.com/kian-irani/kian_v2ra
 |---|---|---|
 | 🪟 **Windows — Setup** | `Kv2m-Setup-x64.exe` | Full install (Start Menu + Desktop shortcut). No Python needed. |
 | 🪟 **Windows — Portable** | `Kv2m-Portable-x64.exe` | Run directly, no install. |
+| 🍏 **macOS** | `Kv2m-macOS.zip` | `Kv2m.app` (right-click → Open the first time). |
+| 🐧 **Linux** | `Kv2m-Linux-x86_64` | Self-contained binary (`chmod +x`). |
 | 🤖 **Android — Universal** | `Kv2m-*-universal.apk` | **Works on every phone** — the safe choice. |
 | 🤖 **Android — 64-bit** | `Kv2m-*-arm64.apk` | New phones (arm64-v8a) — smaller download. |
 | 🤖 **Android — 32-bit** | `Kv2m-*-arm32.apk` | Very old phones (armeabi-v7a). |
 | 🌐 **No install** | [Web generator](https://kian-irani.github.io/kian_v2ray/) | Build configs right in the browser. |
 
-> The Android builds are **preview** (full UI — in-app install, config QR, install history, Hysteria2/TUIC, web-panel deploy — but the native tunnel core isn't bundled yet). The web generator + Windows app + installer are production-ready.
+> **Android now connects on its own** — the native tunnel core (Xray via `flutter_v2ray`) is bundled, no v2rayNG needed. The web generator, desktop apps (Windows/macOS/Linux) and installer are production-ready.
 
 ## Quick start (the installer)
 
@@ -110,9 +112,8 @@ Features: JWT + refresh + **TOTP 2FA** (with UI) · user CRUD + search + **bulk 
 
 From a one-command installer to a full multi-server VPN platform. Full plan & status: [`ROADMAP.md`](ROADMAP.md).
 
-- ✅ **Done (in code)** — Phases 1–5 & 7: core infra (SQLite/audit/logging), web panel + 2FA, multi-server cluster + node agent, new protocols, 100% bilingual site, CI/CD + monitoring, notifications.
-- ⏳ **Needs a live server** — real Hysteria2/TUIC/TLS connection tests.
-- 🙋 **Needs you** — market accounts (Google Play / Cafe Bazaar / Myket / F-Droid), Keystore, app-store submissions, the mobile native tunnel `.aar`.
+- ✅ **Done** — Phases 1–7: core infra, web panel + 2FA, multi-server cluster + node agent, new protocols (Hysteria2/TUIC), on-device tunnel, desktop on Windows/macOS/Linux + system tray, Terraform/IaC, Loki logs, opt-in analytics, reproducible-build & translation docs, 100% bilingual site, CI/CD + monitoring.
+- 🙋 **Only the commercial phase is left (needs you)** — market developer accounts (Google Play / Cafe Bazaar / Myket / F-Droid), a signing **Keystore**, store screenshots & submissions, and turning on GitHub Discussions. These all require your accounts/identity — see [`ROADMAP.md`](ROADMAP.md) §4.
 
 ## Security & privacy
 

@@ -185,9 +185,9 @@ Tor Bridge Fallback (فاز ۴ — جدید v2.4):
 - [x] نصب + آپدیت خودکار Xray
 - [x] یکپارچه‌سازی با REST API پنل
 - [x] Auto-update مکانیزم (GitHub Releases)
-- [ ] پشتیبانی **macOS** و **Linux** (علاوه بر Windows)
+- [x] پشتیبانی **macOS** و **Linux** (علاوه بر Windows) — jobهای build در `build-kv2m.yml`
 - [~] Crash Reporting (Sentry Desktop)
-- [ ] System Tray Integration
+- [x] System Tray Integration — `QSystemTrayIcon` (show/quit + minimize-to-tray)
 - [x] **[جدید v2.4]** Dark/Light Mode با تنظیمات ذخیره‌شده
 
 ---
@@ -260,7 +260,7 @@ Tor Bridge Fallback (فاز ۴ — جدید v2.4):
 - [x] رابط کاربری کامل فارسی (RTL — اجباری)
 - [x] Privacy Policy به زبان فارسی (صفحه جداگانه)
 - [ ] Screenshots از دستگاه‌های ایرانی (Xiaomi/Samsung رایج)
-- [ ] نسخه APK مستقل (بدون نیاز به Google Play برای نصب)
+- [x] نسخه APK مستقل (بدون نیاز به Google Play برای نصب) — universal/arm64/arm32 در هر ریلیز
 - [ ] توضیحات اپ به فارسی در صفحه بازار
 - [ ] ایمیل ایرانی برای account (یا ایمیل developer)
 
@@ -279,7 +279,7 @@ Tor Bridge Fallback (فاز ۴ — جدید v2.4):
 
 - [x] کد کاملاً متن‌باز (MIT — ✅ موجود)
 - [x] هیچ وابستگی proprietary نداشته باشد (بدون Firebase، AdMob، ...)
-- [ ] Reproducible Builds (ترجیحی — مستندسازی build steps)
+- [x] Reproducible Builds — مستندِ `docs/REPRODUCIBLE-BUILDS.md` (توکچین pin‌شده + rebuild steps)
 - [x] Metadata در `fastlane/metadata/android/` یا `metadata/` (شامل description/screenshots)
 - [ ] ارسال merge request به [f-droid/fdroiddata](https://gitlab.com/fdroid/fdroiddata)
 - [x] Analytics باید opt-in باشد نه opt-out (یا نداشته باشید)
@@ -318,7 +318,7 @@ Tor Bridge Fallback (فاز ۴ — جدید v2.4):
 - [x] Auto Release با CHANGELOG خودکار
 - [x] Docker Image رسمی در GHCR
 - [x] **One-click Deploy** (Docker Compose یا Ansible)
-- [ ] Terraform Provider (مدیریت Infrastructure as Code)
+- [x] Terraform / IaC (provision VPS + اجرای installer با cloud-init) — `deploy/terraform/`
 - [x] **[جدید v2.4]** SAST Security Scan (CodeQL یا Semgrep) روی هر PR
 - [x] **[جدید v2.4]** Container Vulnerability Scan (Trivy) روی Docker image
 
@@ -327,7 +327,7 @@ Tor Bridge Fallback (فاز ۴ — جدید v2.4):
 - [x] **Xray Prometheus Exporter** — آمار ترافیک Xray در Prometheus
 - [x] **Grafana Dashboard** — فایل `.json` آماده import (نه فقط لینک Grafana Cloud)
 - [x] Alert Rules — CPU > 80%، RAM > 90%، bandwidth spike → اعلان تلگرام
-- [ ] **Loki** — مدیریت مرکزی لاگ‌ها (اختیاری — برای پیشرفته‌ها)
+- [x] **Loki** — مدیریت مرکزی لاگ‌ها — Loki + promtail در `docker-compose.yml`
 
 #### مستندات
 - [ ] مستندات کامل fa/en در GitHub Pages
@@ -337,10 +337,10 @@ Tor Bridge Fallback (فاز ۴ — جدید v2.4):
 
 #### جامعه
 - [x] **Plugin System** — افزودن پروتکل یا ویژگی بدون تغییر core
-- [ ] Anonymous Analytics — opt-in، بدون داده شخصی
+- [x] Anonymous Analytics — opt-in، بدون داده شخصی — `core/analytics.py` + `/api/analytics/preview`
 - [x] Contributor Guide + Code of Conduct
 - [ ] **[جدید v2.4]** GitHub Discussions فعال — برای پرسش‌ها (جدا از Issues)
-- [ ] **[جدید v2.4]** Translations — Crowdin یا Weblate برای اضافه کردن زبان‌های جدید (ru، zh، ar)
+- [x] **[جدید v2.4]** Translations — راهنمای افزودنِ زبان `docs/TRANSLATIONS.md` (فرمتِ TMS-ready؛ Crowdin اختیاری بعداً)
 
 ---
 
