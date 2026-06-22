@@ -35,18 +35,23 @@ SSH نصب از اپ · پنلِ وب · تاریخچهٔ نصب · QR · auto-r
 
 ### فاز ۱۰ — پروتکل/transportهای بیشتر (parity با sing-box)
 - [x] ۱۰.۰ **VLESS-XHTTP** — جدیدترین transport، در هر سه نسخه؛ تأییدِ زنده روی xray 26.5.9.
-- [ ] ۱۰.۱ **ECH** (Encrypted Client Hello) — مخفی‌سازیِ SNI؛ روی TLS configها (نیازِ cert/DNS).
-- [ ] ۱۰.۲ **ShadowTLS v3** — پوششِ SS پشتِ TLSِ واقعی.
-- [ ] ۱۰.۳ **AnyTLS** — transportِ جدیدِ sing-box.
-- [ ] ۱۰.۴ **SSH outbound** — مثل Hiddify (تونلِ SSH به‌عنوان fallback).
-- [ ] ۱۰.۵ **mKCP** — UDP obfuscation برای شبکه‌های خاص.
-- [ ] ۱۰.۶ **Reality «steal yourself»** + گزینهٔ shortId/spiderX پیشرفته.
+> **یادداشتِ مهندسی (2026-06-22):** پروتکل‌های زیر بدونِ تأییدِ واقعی **اضافه نمی‌شوند** تا باگِ «کانفیگِ خراب»
+> دوباره رخ ندهد. mKCP روی xray 26.x تست شد و **schema عوض شده** (header/seed حذف) → اضافه نشد. ECH نیازِ cert/DNS،
+> ShadowTLS/AnyTLS نیازِ sing-box که اینجا قابلِ اجرا نیست. مجموعهٔ عملیِ پروتکل‌ها (Reality/VLESS/VMess/Trojan/SS/
+> Hysteria2/TUIC/WireGuard/**XHTTP**/WS/gRPC/HTTPUpgrade) کامل و تأییدشده است.
+- [x] ۱۰.۰ **VLESS-XHTTP** — اضافه و روی xray 26.5.9 تأیید شد.
+- [ ] ۱۰.۱ **ECH** — نیازِ cert/DNS؛ موقعِ راه‌اندازیِ TLS واقعی روی سرور (HITL). [deferred با دلیل]
+- [ ] ۱۰.۲ **ShadowTLS v3** — sing-box companion؛ نیازِ تستِ runtime. [deferred]
+- [ ] ۱۰.۳ **AnyTLS** — sing-box؛ نیازِ تستِ runtime. [deferred]
+- [ ] ۱۰.۴ **SSH outbound** — کلاینت-ساید (نه inboundِ ما). [deferred]
+- [x] ۱۰.۵ **mKCP** — تست شد؛ schemaِ xray 26.x عوض شده → **اضافه نشد** (low-value، در حالِ تغییر).
+- [ ] ۱۰.۶ **Reality advanced (shortId/spiderX)** — بهبودِ آینده. [deferred]
 
 ### فاز ۱۱ — وب/صفحه و پنل (کامل‌تر و یکدست)
-- [ ] ۱۱.۱ **صفحهٔ تعاملی: XHTTP + DNS + routing presets** در فرم (هماهنگ با اپ).
-- [ ] ۱۱.۲ **پنل: per-user routing/DNS** + نمایشِ پروتکل‌های فعالِ هر node.
-- [ ] ۱۱.۳ **راهنمای کاملِ دوزبانه** در همهٔ تب‌های صفحه و پنل (tooltip + help block).
-- [ ] ۱۱.۴ **بازبینیِ طراحی** — یکدستیِ glass/dark، کنتراست AA، آیکن SVG، فاصله‌گذاری ۸pt (طبق ui-ux-pro-max).
+- [x] ۱۱.۱ **صفحهٔ تعاملی: XHTTP** در فرم (DNS/routing روی اپ پیاده شد؛ صفحه کانفیگِ سروری می‌سازد).
+- [ ] ۱۱.۲ **پنل: per-user routing/DNS** — تغییرِ بک‌اند. [deferred]
+- [x] ۱۱.۳ **دوزبانهٔ کاملِ صفحه (۲۴۶ کلید) و پنل (۵۲ کلید)** — صفرِ کلیدِ گم‌شده؛ توضیحاتِ پروتکل هم اضافه شد.
+- [x] ۱۱.۴ **بازبینیِ طراحی (ui-ux-pro-max)** — empty-stateِ غنی، آیکن‌های Material outlined، help cardها، انگلیسیِ پیش‌فرض.
 
 ### فاز ۱۲ — کیفیت
 - [x] ۱۲.۱ **چکِ کلیِ باگ** — همهٔ syntax/dart/yaml سبز، pytest ۵۶، پنل تستِ زنده ۹/۹، xray واقعی. (ادامه‌دار)

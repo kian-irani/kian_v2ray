@@ -5,7 +5,7 @@
   var API = (window.KIAN_API || "").replace(/\/$/, "");   // same-origin by default
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
-  var state = { access: null, refresh: null, users: [], lang: "fa", view: "users" };
+  var state = { access: null, refresh: null, users: [], lang: "en", view: "users" };
 
   /* ----------------------------- i18n ----------------------------- */
   var T = {
@@ -373,7 +373,7 @@
     window._kpTick = setInterval(function () { refreshStats(); refreshSystem(); }, 5000);
   }
   function boot() {
-    try { state.lang = localStorage.getItem("kp_lang") || "fa"; } catch (e) {}
+    try { state.lang = localStorage.getItem("kp_lang") || "en"; } catch (e) {}
     applyLang(); load();
     if (state.access) { showApp(); refreshStats().catch(function () {}); }
   }

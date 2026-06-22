@@ -9,7 +9,7 @@ class AppSettings {
   bool autoRefreshSubs; // refresh subscriptions on launch
   String remoteDns; // DNS for proxied queries
   String directDns; // DNS for direct queries
-  List<String> perAppProxy; // package names routed through VPN ([] = all)
+  List<String> perAppProxy; // package names EXCLUDED from VPN (bypass); [] = all apps tunneled
 
   AppSettings({
     this.themeMode = 'system',

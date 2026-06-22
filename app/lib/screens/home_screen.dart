@@ -185,7 +185,8 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         final cfg = AppSettings.fromJson(await _cache.loadSettings());
         final ok = await _vpn.start(_selected!,
-            proxyOnly: cfg.proxyOnly, bypassSubnets: cfg.bypassSubnets());
+            proxyOnly: cfg.proxyOnly, bypassSubnets: cfg.bypassSubnets(),
+            blockedApps: cfg.perAppProxy);
         if (mounted) setState(() => _connected = ok);
       }
     } finally {

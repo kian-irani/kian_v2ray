@@ -346,7 +346,7 @@
   function init() {
     var lang;
     try { lang = localStorage.getItem(STORE_KEY); } catch (_) { lang = null; }
-    if (lang !== "fa" && lang !== "en") lang = "fa";
+    if (lang !== "fa" && lang !== "en") lang = "en";  // English primary by default
     apply(lang);
 
     var btn = document.getElementById("lang-toggle");

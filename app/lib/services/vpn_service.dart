@@ -72,6 +72,7 @@ class VpnController {
     ServerProfile server, {
     bool proxyOnly = false,
     List<String>? bypassSubnets,
+    List<String>? blockedApps,
   }) async {
     try {
       await _ensureInit();
@@ -82,6 +83,7 @@ class VpnController {
         config: parser.getFullConfiguration(),
         proxyOnly: proxyOnly,
         bypassSubnets: bypassSubnets,
+        blockedApps: (blockedApps != null && blockedApps.isNotEmpty) ? blockedApps : null,
       );
       return true;
     } catch (e) {

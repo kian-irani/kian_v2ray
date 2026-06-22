@@ -4,6 +4,7 @@ import '../i18n.dart';
 import '../models/app_settings.dart';
 import '../services/cache.dart';
 import '../theme.dart';
+import 'per_app_screen.dart';
 
 /// Central settings (parity with v2rayNG / Hiddify): theme, language, routing,
 /// kill-switch, auto-connect, proxy-only, DNS, subscription auto-refresh.
@@ -100,6 +101,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: (v) { setState(() => _s.proxyOnly = v); _save(); },
             title: Text(s.t('settings.proxyonly')),
             subtitle: Text(s.t('settings.proxyonly.d')),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.apps_outlined),
+            title: Text(s.t('settings.perapp')),
+            subtitle: Text(s.t('settings.perapp.d')),
+            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+              if (_s.perAppProxy.isNotEmpty)
+                Text('${_s.perAppProxy.length}',
+                    style: const TextStyle(color: KianTheme.accent)),
+              const Icon(Icons.chevron_right),
+            ]),
+            onTap: () async {
+              await Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => PerAppScreen(strings: widget.strings)));
+              await _load(); // refresh count after returning
+            },
           ),
 
           _section(s.t('settings.dns')),
