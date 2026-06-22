@@ -244,6 +244,47 @@ class _HomeScreenState extends State<HomeScreen> {
     _cache.saveSelected(s.name);
   }
 
+  /// Helpful empty state with icon + two clear actions (design review).
+  Widget _emptyServers(Strings s) => Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off_outlined, size: 64, color: Color(0xFF3A4A66)),
+              const SizedBox(height: 14),
+              Text(s.t('servers.empty'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15)),
+              const SizedBox(height: 6),
+              Text(s.t('servers.empty.d'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF8AA0C0))),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 10, runSpacing: 10, alignment: WrapAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _showImport(context, s),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text(s.t('import.title')),
+                  ),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      await Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => SetupScreen(strings: s)));
+                      await _reloadFromCache();
+                    },
+                    icon: const Icon(Icons.rocket_launch_outlined, size: 18),
+                    label: Text(s.t('open.setup')),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+
   /// Rename a server (config management, 9.11). Updates the cache.
   Future<void> _renameServer(ServerProfile srv) async {
     final s = widget.strings;
@@ -484,7 +525,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Expanded(
               child: _servers.isEmpty
-                  ? Center(child: Text(s.t('servers.empty')))
+                  ? _emptyServers(s)
                   : ListView.builder(
                       itemCount: _servers.length,
                       itemBuilder: (_, i) {

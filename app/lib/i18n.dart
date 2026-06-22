@@ -21,6 +21,7 @@ class Strings {
     'import.qr': ['اسکن QR', 'Scan QR'],
     'import.manual': ['دستی', 'Manual'],
     'servers.empty': ['هنوز سروری اضافه نکرده‌ای', 'No servers yet'],
+    'servers.empty.d': ['یک لینک/QR اضافه کن، یا روی سرورِ خودت نصب کن.', 'Add a link/QR, or set it up on your own server.'],
     'best.auto': ['انتخاب خودکار بهترین سرور', 'Auto-pick best server'],
     'offline.note': ['آخرین وضعیت (آفلاین)', 'Last state (offline)'],
     'cancel': ['انصراف', 'Cancel'],
