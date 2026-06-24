@@ -71,6 +71,16 @@ class SshInstaller {
       'KIAN_ADMIN_USER=${_q(adminUser)} '
       'KIAN_ADMIN_PASSWORD=${_q(adminPass)} kian-v2ray panel enable');
 
+  /// Update the whole server in place (Xray + scripts + panel + companion
+  /// protocols + resync everyone's subscription) — no reinstall, users kept.
+  Future<(int, String)> updateServer() =>
+      run('kian-v2ray update', timeout: const Duration(minutes: 8));
+
+  /// Regenerate every user's subscription so anyone holding a link auto-gets
+  /// the current config set (after enabling a protocol / changing methods).
+  Future<(int, String)> resync() =>
+      run('kian-v2ray resync', timeout: const Duration(minutes: 3));
+
   String _q(String s) => "'${s.replaceAll("'", "'\\''")}'";
 
   void close() {

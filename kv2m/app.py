@@ -359,7 +359,7 @@ class MainWindow(QWidget):
         self.m_action = QComboBox()
         for val,lab in [("status","📊 status"),("users","📋 users"),("add","➕ add"),("configs","🔗 configs"),
                         ("sub","⭐ sub"),("renew","🔄 renew"),("reset","♻️ reset"),("remove","🗑️ remove"),
-                        ("panel","🌐 web panel"),("update","⬆️ update"),("uninstall","❌ uninstall")]:
+                        ("panel","🌐 web panel"),("update","⬆️ update"),("resync","🔁 resync subs"),("uninstall","❌ uninstall")]:
             self.m_action.addItem(lab, val)
         self.m_name = QLineEdit(); self.m_name.setPlaceholderText("ali")
         self.m_gb = QLineEdit("100"); self.m_gb.setFixedWidth(80)
@@ -390,7 +390,7 @@ class MainWindow(QWidget):
     def _manage_cmd(self):
         a = self.m_action.currentData(); n = self.m_name.text().strip()
         def num(le,d): t=le.text().strip(); return int(t) if t.isdigit() else d
-        m = {"status":core.cmd_status,"users":core.cmd_users,"update":core.cmd_update,"uninstall":core.cmd_uninstall}
+        m = {"status":core.cmd_status,"users":core.cmd_users,"update":core.cmd_update,"resync":core.cmd_resync,"uninstall":core.cmd_uninstall}
         if a in m: return m[a]()
         if a=="add": return core.cmd_add(n,num(self.m_gb,100),num(self.m_days,30))
         if a=="configs": return core.cmd_configs(n)

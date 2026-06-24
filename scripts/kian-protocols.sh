@@ -22,6 +22,47 @@ HY2_PORT="${KIAN_HY2_PORT:-8443}"      # UDP
 TUIC_PORT="${KIAN_TUIC_PORT:-8444}"    # UDP
 ANYTLS_PORT="${KIAN_ANYTLS_PORT:-8446}" # TCP — distinct from hy2/tuic & panel(8443/TCP)
 SVC="kian-singbox"
+PORTS_FILE="$SB_DIR/ports.env"
+# Reuse ports resolved on a previous run so `links`/`adduser`/`status` (separate
+# invocations) agree with the running service.
+if [ -f "$PORTS_FILE" ]; then
+  while IFS='=' read -r k v; do
+    case "$k" in
+      KIAN_HY2_PORT)    HY2_PORT="$v" ;;
+      KIAN_TUIC_PORT)   TUIC_PORT="$v" ;;
+      KIAN_ANYTLS_PORT) ANYTLS_PORT="$v" ;;
+    esac
+  done < "$PORTS_FILE"
+fi
+
+_udp_busy(){ ss -uln 2>/dev/null | awk '{print $5}' | grep -qE "[:.]${1}\$"; }
+_tcp_busy(){ ss -tln 2>/dev/null | awk '{print $5}' | grep -qE "[:.]${1}\$"; }
+# Pick a free port near a preferred one. $1=udp|tcp $2=preferred.
+_pick_free(){
+  local proto="$1" pref="$2" i cand
+  for i in 0 1 2 3 4 5 6 7 8; do
+    cand=$(( pref + i ))
+    if [ "$proto" = udp ]; then _udp_busy "$cand" || { echo "$cand"; return; }
+    else _tcp_busy "$cand" || { echo "$cand"; return; }; fi
+  done
+  echo $(( (RANDOM % 20000) + 30000 ))
+}
+# Move companion ports off anything already listening, then persist the choice
+# so the new protocols never collide with Reality/SS/panel or each other.
+resolve_ports(){
+  mkdir -p "$SB_DIR"
+  command -v ss >/dev/null 2>&1 || return 0
+  _udp_busy "$HY2_PORT"    && HY2_PORT="$(_pick_free udp "$HY2_PORT")"
+  _udp_busy "$TUIC_PORT"   && TUIC_PORT="$(_pick_free udp "$TUIC_PORT")"
+  [ "$TUIC_PORT" = "$HY2_PORT" ] && TUIC_PORT="$(_pick_free udp $(( HY2_PORT + 1 )))"
+  _tcp_busy "$ANYTLS_PORT"  && ANYTLS_PORT="$(_pick_free tcp "$ANYTLS_PORT")"
+  cat > "$PORTS_FILE" <<EOF
+KIAN_HY2_PORT=$HY2_PORT
+KIAN_TUIC_PORT=$TUIC_PORT
+KIAN_ANYTLS_PORT=$ANYTLS_PORT
+EOF
+  inf "companion ports → hy2:$HY2_PORT/udp tuic:$TUIC_PORT/udp anytls:$ANYTLS_PORT/tcp"
+}
 
 say(){ printf '\033[32m✔\033[0m %s\n' "$*"; }
 inf(){ printf '\033[34m→\033[0m %s\n' "$*"; }
@@ -247,8 +288,8 @@ print_links(){
 
 case "${1:-enable}" in
   enable)
-    need_root; install_singbox; ensure_cert; gen_config; install_service; open_ports; print_links
-    say "Hysteria2 + TUIC enabled. (Reality/SS/TLS untouched.)" ;;
+    need_root; install_singbox; ensure_cert; resolve_ports; gen_config; install_service; open_ports; print_links
+    say "Hysteria2 + TUIC (+AnyTLS if supported) enabled. (Reality/SS/TLS untouched.)" ;;
   links)   print_links ;;
   adduser) need_root; shift; adduser "${1:-}" ;;
   deluser) need_root; shift; deluser "${1:-}" ;;

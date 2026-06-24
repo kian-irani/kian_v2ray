@@ -819,6 +819,8 @@ function initManage() {
       status: { name: false, gb: false, days: false },
       users:  { name: false, gb: false, days: false },
       update: { name: false, gb: false, days: false },
+      resync: { name: false, gb: false, days: false },
+      protocols: { name: false, gb: false, days: false },
       uninstall: { name: false, gb: false, days: false },
     }[a] || { name: false, gb: false, days: false };
     nameF.classList.toggle('hidden', !need.name);
@@ -835,6 +837,8 @@ function initManage() {
     else if (a === 'status') cmd = `kian-v2ray status`;
     else if (a === 'users')  cmd = `kian-v2ray users`;
     else if (a === 'update') cmd = `kian-v2ray update`;
+    else if (a === 'resync') cmd = `kian-v2ray resync`;
+    else if (a === 'protocols') cmd = `kian-v2ray protocols enable`;
     else if (a === 'uninstall') cmd = `kian-v2ray uninstall`;
     out.textContent = cmd;
   }

@@ -305,6 +305,7 @@ def cmd_reset(n,gb=None):  n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return (f"kia
 def cmd_sub(n=""):         n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return f"kian-v2ray sub {n}".strip()
 def cmd_installed():       return "command -v kian-v2ray >/dev/null 2>&1 && echo KV2M_OK || echo KV2M_MISSING"
 def cmd_update():          return "kian-v2ray update"
+def cmd_resync():          return "kian-v2ray resync"
 def cmd_uninstall():       return "echo DELETE | kian-v2ray uninstall"
 def cmd_panel(user="admin",password=""):
     """Deploy the web panel with the given admin user/pass (empty pass = random
