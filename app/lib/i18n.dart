@@ -19,6 +19,7 @@ class Strings {
     'import.title': ['افزودن سرور', 'Add server'],
     'import.link': ['از روی لینک Subscription', 'From subscription link'],
     'import.qr': ['اسکن QR', 'Scan QR'],
+    'import.qr.hint': ['دوربین را روی QR کانفیگ نگه دارید', 'Point the camera at a config QR code'],
     'import.manual': ['دستی', 'Manual'],
     'servers.empty': ['هنوز سروری اضافه نکرده‌ای', 'No servers yet'],
     'servers.empty.d': ['یک لینک/QR اضافه کن، یا روی سرورِ خودت نصب کن.', 'Add a link/QR, or set it up on your own server.'],

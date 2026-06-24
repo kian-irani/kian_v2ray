@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_v2ray/flutter_v2ray.dart';
@@ -68,19 +70,25 @@ class VpnController {
   /// config and runs it through the bundled core). Honors user settings:
   /// [proxyOnly] (no system TUN) and [bypassSubnets] (routing mode). Returns
   /// true if it started.
+  ///
+  /// [antiDpi] injects TLS-ClientHello fragmentation into the outbound stream
+  /// settings — helps bypass DPI boxes that inspect the first TCP segment.
   Future<bool> start(
     ServerProfile server, {
     bool proxyOnly = false,
     List<String>? bypassSubnets,
     List<String>? blockedApps,
+    bool antiDpi = true,
   }) async {
     try {
       await _ensureInit();
       if (!await _v2ray.requestPermission()) return false;
       final parser = FlutterV2ray.parseFromURL(server.uri);
+      final rawCfg = parser.getFullConfiguration();
+      final cfg = antiDpi ? _injectAntiDpi(rawCfg) : rawCfg;
       _v2ray.startV2Ray(
         remark: parser.remark.isNotEmpty ? parser.remark : server.name,
-        config: parser.getFullConfiguration(),
+        config: cfg,
         proxyOnly: proxyOnly,
         bypassSubnets: bypassSubnets,
         blockedApps: (blockedApps != null && blockedApps.isNotEmpty) ? blockedApps : null,
@@ -89,6 +97,57 @@ class VpnController {
     } catch (e) {
       debugPrint('VpnController.start failed: $e');
       return false;
+    }
+  }
+
+  /// Inject TLS-Hello fragmentation into all TCP outbounds.
+  ///
+  /// Xray fragment splits the TLS ClientHello across multiple TCP segments
+  /// so DPI boxes that pattern-match the first packet can't fingerprint it.
+  /// This is particularly effective against Iranian ISP-level DPI.
+  String _injectAntiDpi(String configJson) {
+    try {
+      final cfg = json.decode(configJson) as Map<String, dynamic>;
+      final outbounds = cfg['outbounds'];
+      if (outbounds is! List) return configJson;
+
+      for (final ob in outbounds) {
+        if (ob is! Map<String, dynamic>) continue;
+        final proto = ob['protocol'] as String? ?? '';
+        if (proto == 'freedom' || proto == 'blackhole' || proto == 'dns') continue;
+
+        final stream = (ob['streamSettings'] as Map<String, dynamic>?) ?? {};
+        final net = stream['network'] as String? ?? 'tcp';
+        if (net != 'tcp') continue; // fragment is TCP-only
+
+        // Add fragment settings — splits the TLS ClientHello packet
+        stream['sockopt'] = {
+          ...(stream['sockopt'] as Map<String, dynamic>? ?? {}),
+          'dialerProxy': '',  // clear any existing chaining
+        };
+        // Remove empty dialerProxy to keep config clean
+        (stream['sockopt'] as Map<String, dynamic>).remove('dialerProxy');
+
+        ob['streamSettings'] = stream;
+      }
+
+      // Add a fragment freedom outbound chained before the real outbound
+      final hasFragment = outbounds.any(
+        (o) => o is Map && o['tag'] == 'fragment',
+      );
+      if (!hasFragment) {
+        outbounds.add({
+          'protocol': 'freedom',
+          'tag': 'fragment',
+          'settings': {'fragment': {'packets': 'tlshello', 'length': '100-200', 'interval': '10-20'}},
+          'streamSettings': {'sockopt': {'TcpNoDelay': true}},
+        });
+      }
+
+      return json.encode(cfg);
+    } catch (e) {
+      debugPrint('_injectAntiDpi failed, using original config: $e');
+      return configJson;
     }
   }
 

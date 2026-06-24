@@ -66,5 +66,4 @@ def tor_bridge_outbound(mode: str = "obfs4",
 
 def fallback_routing_rule(primary_tag: str, fallback_tag: str = "tor-fallback") -> dict:
     """A routing rule: when the primary outbound is down, use the Tor fallback."""
-    return {"type": "field", "balancerTag": None,
-            "outboundTag": primary_tag, "fallbackTag": fallback_tag}
+    return {"type": "field", "outboundTag": primary_tag, "fallbackTag": fallback_tag}

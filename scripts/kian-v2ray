@@ -285,19 +285,52 @@ cmd_untune(){
 cmd_warp(){
   need_root
   command -v warp-cli >/dev/null 2>&1 || { err "WARP نصب نیست."; exit 1; }
-  inf "تلاش برای اتصال WARP..."
-  warp-cli --accept-tos connect >/dev/null 2>&1 || { systemctl restart warp-svc >/dev/null 2>&1; sleep 3; warp-cli --accept-tos connect >/dev/null 2>&1; }
-  sleep 5
+
+  # اول سرویس رو بالا بیار (ممکنه down باشه)
+  systemctl is-active --quiet warp-svc 2>/dev/null || systemctl start warp-svc 2>/dev/null || true
+  sleep 2
+
+  inf "تلاش برای اتصال WARP (WireGuard)..."
+  warp-cli --accept-tos disconnect >/dev/null 2>&1 || true
+  sleep 1
+  warp-cli --accept-tos connect >/dev/null 2>&1 || true
+  sleep 8   # WireGuard handshake ممکن است تا ۸ ثانیه طول بکشد
+
   if ! _warp_up; then
-    local cur alt; cur="$(warp-cli --accept-tos tunnel protocol get 2>/dev/null | grep -oiE 'wireguard|masque' | head -1)"
-    alt="WireGuard"; echo "$cur" | grep -qi wireguard && alt="MASQUE"
-    inf "تلاش با پروتکل $alt"
-    warp-cli --accept-tos tunnel protocol set "$alt" >/dev/null 2>&1 || warp-cli --accept-tos set-tunnel-protocol "$alt" >/dev/null 2>&1 || true
-    warp-cli --accept-tos disconnect >/dev/null 2>&1; sleep 1; warp-cli --accept-tos connect >/dev/null 2>&1 || true
-    sleep 6
+    # تلاش با MASQUE (HTTP/3 روی UDP 443 — اغلب از فیلترینگ رد می‌شود)
+    inf "WireGuard وصل نشد — تلاش با MASQUE (UDP 443)..."
+    warp-cli --accept-tos tunnel protocol set MASQUE >/dev/null 2>&1 \
+      || warp-cli --accept-tos set-tunnel-protocol masque >/dev/null 2>&1 || true
+    warp-cli --accept-tos disconnect >/dev/null 2>&1; sleep 1
+    warp-cli --accept-tos connect >/dev/null 2>&1 || true
+    sleep 10
   fi
-  if _warp_up; then say "WARP متصل است ✅"; _warp_restore_routing
-  else err "WARP هنوز وصل نشد — fallback (direct) فعال می‌ماند تا کاربر بی‌نت نماند. بعداً دوباره: kian-v2ray warp"; fi
+
+  if ! _warp_up; then
+    # برگشت به WireGuard یک بار دیگر با reset کامل ثبت
+    inf "MASQUE هم وصل نشد — reset و تلاش مجدد با WireGuard..."
+    warp-cli --accept-tos tunnel protocol set WireGuard >/dev/null 2>&1 || true
+    warp-cli --accept-tos registration delete >/dev/null 2>&1 || true
+    sleep 1
+    warp-cli --accept-tos registration new >/dev/null 2>&1 || true
+    sleep 2
+    warp-cli --accept-tos connect >/dev/null 2>&1 || true
+    sleep 8
+  fi
+
+  if _warp_up; then
+    say "WARP متصل است ✅"
+    # پروتکل فعلی رو ذخیره کن (برای نمایش در status)
+    warp-cli --accept-tos tunnel protocol get 2>/dev/null \
+      | grep -oiE 'wireguard|masque' | head -1 > "$ETC_DIR/warp_proto.txt" || true
+    _warp_restore_routing
+  else
+    err "WARP هنوز وصل نشد — fallback (direct) فعال می‌ماند تا کاربر بی‌نت نماند."
+    warn "راه‌حل‌های احتمالی:"
+    warn "  ۱) UDP ممکن است روی این سرور یا ISP بلاک باشد — پورت UDP 443 را چک کن"
+    warn "  ۲) دوباره امتحان کن:  kian-v2ray warp"
+    warn "  ۳) برای دیدن خطای دقیق:  warp-cli --accept-tos status"
+  fi
 }
 
 # --- رفع خودکار تداخل پورت API (۰.۱/۰.۳) ----------------------------------

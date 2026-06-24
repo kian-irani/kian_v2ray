@@ -13,6 +13,7 @@ import '../widgets/help_card.dart';
 import 'config_detail_screen.dart';
 import 'history_screen.dart';
 import 'manage_screen.dart';
+import 'qr_scan_screen.dart';
 import 'settings_screen.dart';
 import 'setup_screen.dart';
 
@@ -558,11 +559,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                 PopupMenuButton<String>(
                                   tooltip: s.t('cfg.more'),
                                   icon: const Icon(Icons.more_vert),
-                                  onSelected: (v) {
-                                    if (v == 'rename') _renameServer(srv);
-                                    if (v == 'delete') _deleteServer(srv);
+                                  onSelected: (v) async {
+                                    if (v == 'copy') {
+                                      await Clipboard.setData(ClipboardData(text: srv.uri));
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(s.t('cfg.copied')),
+                                            duration: const Duration(seconds: 2)),
+                                      );
+                                    } else if (v == 'rename') {
+                                      _renameServer(srv);
+                                    } else if (v == 'delete') {
+                                      _deleteServer(srv);
+                                    }
                                   },
                                   itemBuilder: (_) => [
+                                    PopupMenuItem(value: 'copy',
+                                        child: Row(children: [
+                                          const Icon(Icons.copy_outlined, size: 18),
+                                          const SizedBox(width: 8),
+                                          Text(s.t('cfg.copy')),
+                                        ])),
                                     PopupMenuItem(value: 'rename',
                                         child: Text(s.t('cfg.rename'))),
                                     PopupMenuItem(value: 'delete',
@@ -588,6 +605,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _scanQr(Strings s) async {
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => QrScanScreen(strings: s)),
+    );
+    if (result != null && result.isNotEmpty) await _importLink(result);
+  }
+
   void _showImport(BuildContext context, Strings s) {
     final controller = TextEditingController();
     showModalBottomSheet(
@@ -602,7 +627,20 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(s.t('import.link'), style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              children: [
+                Expanded(child: Text(s.t('import.link'),
+                    style: Theme.of(context).textTheme.titleMedium)),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _scanQr(s);
+                  },
+                  icon: const Icon(Icons.qr_code_scanner_outlined, size: 18),
+                  label: Text(s.t('import.qr')),
+                ),
+              ],
+            ),
             const SizedBox(height: 10),
             TextField(
               controller: controller,

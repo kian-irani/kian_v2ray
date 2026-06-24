@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KIAN V2Ray — Panel</title>
 <meta name="color-scheme" content="dark">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<!-- فونت‌ها با system-ui بارگذاری می‌شوند تا در ایران (بدون VPN) نیز کار کند -->
+<style>
+@font-face{font-family:'Vazirmatn';src:local('Vazirmatn'),local('IRANSans'),local('Tahoma');unicode-range:U+0600-06FF,U+FB50-FDFF,U+FE70-FEFF}
+</style>
 <style>
   :root{
     --bg:#0F172A; --surface:rgba(255,255,255,.04); --surface2:rgba(255,255,255,.06);
@@ -19,8 +20,8 @@
   html,body{margin:0;min-height:100dvh;background:
      radial-gradient(1200px 600px at 80% -10%,rgba(34,197,94,.10),transparent 60%),
      radial-gradient(900px 500px at 0% 0%,rgba(30,58,95,.35),transparent 55%),var(--bg);
-     color:var(--fg);font-family:Vazirmatn,system-ui,sans-serif;font-size:15px;line-height:1.6}
-  .mono{font-family:'Fira Code',ui-monospace,monospace}
+     color:var(--fg);font-family:Vazirmatn,Tahoma,'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.6}
+  .mono{font-family:ui-monospace,'Cascadia Code','Fira Code',monospace}
   a{color:var(--accent)}
   button{font-family:inherit;cursor:pointer}
   .hidden{display:none!important}
