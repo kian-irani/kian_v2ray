@@ -914,9 +914,9 @@ if { [ -n "$EXTRA_PROTOCOLS" ] || [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ]; } \
    && [ -x /usr/local/bin/kian-protocols.sh ]; then
   inf "فعال‌سازی پروتکل‌های اضافی (Hysteria2/TUIC روی sing-box): ${EXTRA_PROTOCOLS:-env}"
   if bash /usr/local/bin/kian-protocols.sh enable; then
-    # لینک‌های per-user (برچسب #KIAN-<name>-Hysteria2/-TUIC) را بگیر
+    # لینک‌های per-user (برچسب #KIAN-<name>-Hysteria2/-TUIC/-AnyTLS) را بگیر
     EXTRA_LINKS="$(bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
-      | grep -oE '(hysteria2|tuic)://[^[:space:]]+#[^[:space:]]+' || true)"
+      | grep -oE '(hysteria2|tuic|anytls)://[^[:space:]]+#[^[:space:]]+' || true)"
     if [ -n "$EXTRA_LINKS" ]; then
       printf '%s\n' "$EXTRA_LINKS" >> "$ETC_DIR/links.txt"
       printf '%s\n' "$EXTRA_LINKS" > "$ETC_DIR/extra_links.txt"

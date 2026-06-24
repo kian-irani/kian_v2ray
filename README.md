@@ -98,8 +98,9 @@ Features: JWT + refresh + **TOTP 2FA** (with UI) · user CRUD + search + **bulk 
 
 **No domain (Reality):** VLESS + Reality + Vision (TCP), with **spiderX** · Shadowsocks
 **With domain (TLS):** VLESS-WS · VMess-WS · VLESS-gRPC · VMess-gRPC · Trojan-WS · VLESS-HTTPUpgrade · VMess-HTTPUpgrade · **VLESS-XHTTP**
-**Opt-in companion (sing-box):** Hysteria2 · TUIC v5 · ShadowTLS v3 · AnyTLS · WireGuard · SSH outbound *(builders ready; runtime-gated like Hysteria2/TUIC)*
-**Anti-DPI:** Fragment · uTLS fingerprint · TTL · Noise padding · ECH plumbing · Tor bridge fallback
+**Opt-in companion (sing-box):** **Hysteria2** · **TUIC v5** · **AnyTLS** — each generated **per-user** on its own port (Hy2 8443/udp · TUIC 8444/udp · AnyTLS 8446/tcp), additive and guarded (if a sing-box build rejects AnyTLS it silently keeps Hy2/TUIC) · ShadowTLS v3 / WireGuard / SSH-out builders in `core/protocols.py`
+**Routing:** every config egresses through **Cloudflare WARP** (with automatic direct-fallback so you never go offline) — no "fast/direct" mode to misconfigure.
+**Anti-DPI:** Fragment (TLS-Hello split, on by default, toggle in the app) · uTLS fingerprint · TTL · Noise padding · ECH plumbing · Tor bridge fallback
 
 ## 💻 Kv2m apps
 

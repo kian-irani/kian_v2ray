@@ -17,9 +17,10 @@ set -euo pipefail
 ETC_DIR="/etc/kian-v2ray"
 SB_DIR="$ETC_DIR/singbox"
 SB_BIN="/usr/local/bin/sing-box"
-SB_VERSION="1.10.1"            # pinned, tested
-HY2_PORT="${KIAN_HY2_PORT:-8443}"
-TUIC_PORT="${KIAN_TUIC_PORT:-8444}"
+SB_VERSION="1.12.0"           # pinned, tested (1.12 adds AnyTLS)
+HY2_PORT="${KIAN_HY2_PORT:-8443}"      # UDP
+TUIC_PORT="${KIAN_TUIC_PORT:-8444}"    # UDP
+ANYTLS_PORT="${KIAN_ANYTLS_PORT:-8446}" # TCP — distinct from hy2/tuic & panel(8443/TCP)
 SVC="kian-singbox"
 
 say(){ printf '\033[32m✔\033[0m %s\n' "$*"; }
@@ -98,29 +99,32 @@ build_user_creds(){
   while IFS= read -r email; do
     [ -z "$email" ] && continue
     local name="${email%@*}"
-    local pw uuid
+    local pw uuid apw
     pw="$(openssl rand -hex 16)"; uuid="$(cat /proc/sys/kernel/random/uuid)"
-    arr="$(printf '%s' "$arr" | jq -c --arg n "$name" --arg pw "$pw" --arg u "$uuid" \
-      '. += [{name:$n, hy2_pw:$pw, tuic_uuid:$u, tuic_pw:$pw}]')"
+    apw="$(openssl rand -hex 16)"
+    arr="$(printf '%s' "$arr" | jq -c --arg n "$name" --arg pw "$pw" --arg u "$uuid" --arg apw "$apw" \
+      '. += [{name:$n, hy2_pw:$pw, tuic_uuid:$u, tuic_pw:$pw, anytls_pw:$apw}]')"
   done <<< "$emails"
   printf '%s' "$arr" > "$map"
 }
 
-# Write the sing-box config from the current per-user credential map.
-write_singbox_config(){
-  local sni cert key map
+# Render the sing-box config. $1="full" includes the AnyTLS inbound; anything
+# else writes only the always-working Hysteria2 + TUIC pair.
+_render_config(){
+  local with_anytls="$1" sni cert key map
   sni="$(cat "$SB_DIR/sni.txt" 2>/dev/null || echo www.bing.com)"
   cert="$SB_DIR/cert.pem"; key="$SB_DIR/key.pem"; map="$SB_DIR/users.json"
-  # hy2 users: [{password}], tuic users: [{uuid,password}] — one entry per VPN user
-  local hy2_users tuic_users
+  local hy2_users tuic_users anytls_users
   hy2_users="$(jq -c '[.[]|{password:.hy2_pw}]' "$map")"
   tuic_users="$(jq -c '[.[]|{uuid:.tuic_uuid, password:.tuic_pw}]' "$map")"
+  anytls_users="$(jq -c '[.[]|{password:(.anytls_pw // .hy2_pw)}]' "$map")"
   jq -n --argjson hy2u "$hy2_users" --argjson tuicu "$tuic_users" \
-        --argjson hy2 "$HY2_PORT" --argjson tuic "$TUIC_PORT" \
+        --argjson anytlsu "$anytls_users" --arg anytls_on "$with_anytls" \
+        --argjson hy2 "$HY2_PORT" --argjson tuic "$TUIC_PORT" --argjson anytls "$ANYTLS_PORT" \
         --arg cert "$cert" --arg key "$key" '
   {
     log: { level: "warn" },
-    inbounds: [
+    inbounds: ([
       { type:"hysteria2", tag:"hy2-in", listen:"::", listen_port:$hy2,
         users:$hy2u,
         tls:{ enabled:true, certificate_path:$cert, key_path:$key } },
@@ -128,9 +132,27 @@ write_singbox_config(){
         users:$tuicu,
         congestion_control:"bbr",
         tls:{ enabled:true, certificate_path:$cert, key_path:$key } }
-    ],
+    ] + (if $anytls_on=="full" then [
+      { type:"anytls", tag:"anytls-in", listen:"::", listen_port:$anytls,
+        users:$anytlsu,
+        tls:{ enabled:true, certificate_path:$cert, key_path:$key } }
+    ] else [] end)),
     outbounds: [ { type:"direct", tag:"direct" } ]
   }' > "$SB_DIR/config.json"
+}
+
+# Write the sing-box config. Tries the full set (Hy2 + TUIC + AnyTLS) first;
+# if this sing-box build rejects AnyTLS, it falls back to Hy2 + TUIC only so the
+# working protocols are NEVER broken (worst case: AnyTLS just isn't offered).
+write_singbox_config(){
+  _render_config full
+  if "$SB_BIN" check -c "$SB_DIR/config.json" 2>/dev/null; then
+    echo 1 > "$SB_DIR/anytls_active"
+    return 0
+  fi
+  inf "AnyTLS unsupported by this sing-box build — keeping Hysteria2/TUIC only"
+  rm -f "$SB_DIR/anytls_active"
+  _render_config minimal
   "$SB_BIN" check -c "$SB_DIR/config.json"
 }
 
@@ -148,11 +170,11 @@ adduser(){
   if [ "$(jq --arg n "$name" '[.[]|select(.name==$n)]|length' "$map")" -gt 0 ]; then
     inf "user $name already in companion — skipped"; return 0
   fi
-  local pw uuid tmp
-  pw="$(openssl rand -hex 16)"; uuid="$(cat /proc/sys/kernel/random/uuid)"
+  local pw uuid apw tmp
+  pw="$(openssl rand -hex 16)"; uuid="$(cat /proc/sys/kernel/random/uuid)"; apw="$(openssl rand -hex 16)"
   tmp="$(mktemp)"
-  jq --arg n "$name" --arg pw "$pw" --arg u "$uuid" \
-    '. += [{name:$n, hy2_pw:$pw, tuic_uuid:$u, tuic_pw:$pw}]' "$map" > "$tmp" && mv "$tmp" "$map"
+  jq --arg n "$name" --arg pw "$pw" --arg u "$uuid" --arg apw "$apw" \
+    '. += [{name:$n, hy2_pw:$pw, tuic_uuid:$u, tuic_pw:$pw, anytls_pw:$apw}]' "$map" > "$tmp" && mv "$tmp" "$map"
   write_singbox_config
   systemctl restart "$SVC" 2>/dev/null || true
   say "added $name to Hysteria2/TUIC companion"
@@ -194,7 +216,9 @@ open_ports(){
   if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q active; then
     ufw allow "${HY2_PORT}/udp"  >/dev/null 2>&1 || true
     ufw allow "${TUIC_PORT}/udp" >/dev/null 2>&1 || true
-    inf "opened ${HY2_PORT}/udp, ${TUIC_PORT}/udp on ufw"
+    # AnyTLS is TCP — only open it if this build actually enabled it.
+    [ -f "$SB_DIR/anytls_active" ] && ufw allow "${ANYTLS_PORT}/tcp" >/dev/null 2>&1 || true
+    inf "opened ${HY2_PORT}/udp, ${TUIC_PORT}/udp$([ -f "$SB_DIR/anytls_active" ] && echo ", ${ANYTLS_PORT}/tcp") on ufw"
   fi
 }
 
@@ -206,12 +230,17 @@ print_links(){
   sni="$(cat "$SB_DIR/sni.txt" 2>/dev/null || echo www.bing.com)"
   map="$SB_DIR/users.json"
   [ -f "$map" ] || { err "no user map — run 'enable' first"; return 1; }
+  local anytls_on=0; [ -f "$SB_DIR/anytls_active" ] && anytls_on=1
   echo
-  jq -r '.[]|[.name,.hy2_pw,.tuic_uuid,.tuic_pw]|@tsv' "$map" \
-    | while IFS=$'\t' read -r name hy2pw tuicuuid tuicpw; do
+  jq -r '.[]|[.name,.hy2_pw,.tuic_uuid,.tuic_pw,(.anytls_pw//"")]|@tsv' "$map" \
+    | while IFS=$'\t' read -r name hy2pw tuicuuid tuicpw anytlspw; do
         [ -z "$name" ] && continue
         echo "hysteria2://${hy2pw}@${ip}:${HY2_PORT}/?sni=${sni}&insecure=1#KIAN-${name}-Hysteria2"
         echo "tuic://${tuicuuid}:${tuicpw}@${ip}:${TUIC_PORT}/?sni=${sni}&congestion_control=bbr&allow_insecure=1#KIAN-${name}-TUIC"
+        # AnyTLS only when this sing-box build accepted it (guarded in write_singbox_config)
+        if [ "$anytls_on" = 1 ] && [ -n "$anytlspw" ]; then
+          echo "anytls://${anytlspw}@${ip}:${ANYTLS_PORT}/?sni=${sni}&insecure=1#KIAN-${name}-AnyTLS"
+        fi
       done
   echo
 }
