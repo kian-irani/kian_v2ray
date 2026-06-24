@@ -41,7 +41,7 @@ class _SetupScreenState extends State<SetupScreen> {
   ];
   final Set<String> _tlsSelected = {'vless-ws'};
 
-  bool _warp = false;
+  // اتصال همیشه از WARP عبور می‌کند (غیرقابل‌انتخاب) — حالتِ «سریع» حذف شد.
   bool _ss = false;
   bool _tls = false;
   bool _hy2 = false;
@@ -115,7 +115,7 @@ class _SetupScreenState extends State<SetupScreen> {
         serverIp: _ip.text.trim(),
         userPrefix: _username.text.trim().isEmpty ? 'user' : _username.text.trim(),
         count: (int.tryParse(_numUsers.text.trim()) ?? 1).clamp(1, 50),
-        warp: _warp,
+        warp: true,   // همیشه WARP — حالتِ «سریع» حذف شد
         ss: _ss,
         ssPort: int.tryParse(_ssPort.text.trim()) ?? 8388,
         tlsDomain: _tls ? _tlsDomain.text.trim() : null,
@@ -191,7 +191,7 @@ class _SetupScreenState extends State<SetupScreen> {
           panelPass: panelPass,
           protocols: [
             'reality',
-            if (_warp) 'warp',
+            'warp',
             if (_ss) 'shadowsocks',
             if (_tls) 'tls',
             if (_hy2) 'hysteria2',
@@ -238,11 +238,6 @@ class _SetupScreenState extends State<SetupScreen> {
           ]),
           _field(_customSni, s.t('setup.sni'), hint: 'www.microsoft.com'),
           const SizedBox(height: 4),
-          SwitchListTile(
-            value: _warp, onChanged: (v) => setState(() => _warp = v),
-            title: Text(s.t('setup.warp')), subtitle: Text(s.t('setup.warp.d')),
-            contentPadding: EdgeInsets.zero,
-          ),
           SwitchListTile(
             value: _ss, onChanged: (v) => setState(() => _ss = v),
             title: Text(s.t('setup.ss')), subtitle: Text(s.t('setup.ss.d')),

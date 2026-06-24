@@ -174,10 +174,10 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
 def generate(opts):
     reality=gen_reality()
     ss={"enabled":bool(opts.get("ss_enabled")),"port":int(opts.get("ss_port") or 8388),"password":""}
-    mode=opts.get("mode","both")
-    if mode=="nosni": ss["enabled"]=True
+    # حالتِ اتصال حذف شد — همیشه از WARP عبور می‌کند (غیرقابل‌انتخاب).
+    mode="warp"
     if ss["enabled"]:  ss["password"]=gen_password()
-    channels=["direct","warp"] if mode=="both" else ([] if mode=="nosni" else [mode])
+    channels=["warp"]
     if opts.get("sni_mode")=="manual" and opts.get("sni_manual"):
         sni_list=[opts["sni_manual"]]
     elif mode!="nosni":
@@ -214,8 +214,8 @@ def generate(opts):
            for i in range(1,num_users+1)]
     # TLS/دامنه (فاز ۳): پروفایل‌های پشت Caddy روی :443 — هر پروتکل پورت داخلی و path یکتا
     tls_domain=(opts.get("tls_domain") or "").strip().lower()
-    tls_channel=opts.get("tls_channel","direct")   # direct | warp | both
-    tls_channels=["direct","warp"] if tls_channel=="both" else [tls_channel]
+    tls_channel="warp"   # همیشه از WARP — حالتِ مستقیم حذف شد
+    tls_channels=["warp"]
     tls_protos=[k for k in (opts.get("tls_protos") or []) if k in TLS_PROTOS]
     tls_enabled=bool(opts.get("tls_enabled") and is_domain(tls_domain) and tls_protos)
     tls_profiles=[]

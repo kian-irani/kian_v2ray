@@ -127,42 +127,6 @@
         </div>
       </div>
 
-      <!-- حالت: کارت‌های ساده و درشت -->
-      <div class="field">
-        <label data-i18n="g.mode.l">🌐 حالت اتصال</label>
-        <div class="modes">
-          <label class="mode">
-            <input type="radio" name="mode" value="both" checked>
-            <span class="mode-box">
-              <span class="mode-title" data-i18n="g.mode.both.t">هر دو ✨</span>
-              <span class="mode-sub" data-i18n="g.mode.both.s">پیشنهادی — هم سریع، هم همه‌چیز باز. دو لینک می‌گیری.</span>
-            </span>
-          </label>
-          <label class="mode">
-            <input type="radio" name="mode" value="direct">
-            <span class="mode-box">
-              <span class="mode-title" data-i18n="g.mode.dir.t">سریع</span>
-              <span class="mode-sub" data-i18n="g.mode.dir.s">سریع‌ترین، ولی شاید بعضی سایت‌ها باز نشه.</span>
-            </span>
-          </label>
-          <label class="mode">
-            <input type="radio" name="mode" value="warp">
-            <span class="mode-box">
-              <span class="mode-title" data-i18n="g.mode.warp.t">همه‌چیز باز</span>
-              <span class="mode-sub" data-i18n="g.mode.warp.s">از WARP رد می‌شه، کمی کندتر.</span>
-            </span>
-          </label>
-          <label class="mode">
-            <input type="radio" name="mode" value="nosni">
-            <span class="mode-box">
-              <span class="mode-title" data-i18n="g.mode.ns.t">بدون SNI ⚠️</span>
-              <span class="mode-sub" data-i18n="g.mode.ns.s">Shadowsocks ساده — بدون استتار. فقط برای خودت.</span>
-            </span>
-          </label>
-        </div>
-        <small class="hint" data-i18n="g.mode.h">نمی‌دونی کدوم؟ همون «هر دو» رو بذار — هر دو لینک رو می‌گیری و هرکدوم بهتر بود استفاده کن. «بدون SNI» ساده‌ست ولی ممکنه آی‌پی سرورت زودتر فیلتر بشه (پایین توضیح دادم).</small>
-      </div>
-
       <!-- ⚠️ هشدار فیلتر IP در حالت بدون دامنه -->
       <div id="ip-blacklist-warn" class="ip-warn">
         <div class="ip-warn-head" data-i18n="g.ipwarn.head">⚠️ هشدار مهم — فیلتر شدن IP سرور</div>
@@ -348,14 +312,6 @@
               <small class="hint" data-i18n-html="g.tls.proto.h">پیشنهاد: اگر مطمئن نیستی، فقط <b>VLESS-WS</b> را بگذار — برای اکثر موارد بهترین است.</small>
             </div>
 
-            <div class="field">
-              <label data-i18n="g.tls.channel.l">مسیر خروجی این کانفیگ‌ها</label>
-              <div class="seg">
-                <label><input type="radio" name="tls-channel" value="direct" checked> <span data-i18n="g.tls.channel.direct">سریع (مستقیم)</span></label>
-                <label><input type="radio" name="tls-channel" value="warp"> <span data-i18n="g.tls.channel.warp">از WARP (دور زدن بلاک خروجی سرور)</span></label>
-              </div>
-              <small class="hint" data-i18n="g.tls.channel.h">اگر سرورت سایت‌هایی را بلاک می‌کند (مثل بعضی پروایدرهای ترکیه)، WARP را انتخاب کن.</small>
-            </div>
           </div>
         </div>
       </details>

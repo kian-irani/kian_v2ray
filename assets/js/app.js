@@ -314,7 +314,8 @@ function buildCaddyfile(domain, tlsProfiles) {
 
 /* --------------------------- read the form ----------------------------- */
 function readForm() {
-  const mode      = ($('input[name="mode"]:checked') || {}).value || 'both';
+  // حالتِ اتصال حذف شد — همیشه از WARP عبور می‌کند (غیرقابل‌انتخاب).
+  const mode      = 'warp';
   const ssEnabled = $('#ss-enabled').checked;
   const sniMode   = ($('#sni-mode') && $('#sni-mode').value) || 'auto';   // auto | manual
   const manualSni = ($('#sni').value === '__custom__' ? $('#sni-custom').value.trim() : $('#sni').value).trim();
@@ -338,7 +339,7 @@ function readForm() {
     tls: {
       enabled: !!($('#tls-enabled') && $('#tls-enabled').checked),
       domain: ($('#tls-domain') && $('#tls-domain').value.trim().toLowerCase()) || '',
-      channel: ($('input[name="tls-channel"]:checked') || {}).value || 'direct',
+      channel: 'warp',   // همیشه از WARP — حالتِ مستقیم حذف شد
       protos: $$('input[name="tls-proto"]:checked').map(el => el.value),
     },
     // پروتکل‌های اضافه روی sing-box (مستقل از TLS/دامنه — UDP، ضدِDPI قوی)
@@ -636,8 +637,8 @@ function render(out) {
 
   const step3 = document.createElement('div');
   step3.className = 'panel reveal';
-  const isNoSni = out.f.mode === 'nosni';
-  const modeLabel  = { direct: 'سریع', warp: 'WARP', both: 'سریع + WARP', nosni: 'بدون SNI' }[out.f.mode];
+  const isNoSni = false;   // حالتِ بدون-SNI/سریع حذف شد
+  const modeLabel  = 'WARP';
   const quotaLabel = out.f.quotaGb > 0 ? `${out.f.quotaGb}GB` : 'نامحدود';
   const daysLabel  = out.f.days > 0 ? `${out.f.days} روز` : 'دائمی';
   const linksPerUser = out.profiles.length;
@@ -684,8 +685,7 @@ function render(out) {
         sep.textContent = 'کانفیگ‌های تکی (پشتیبان):';
         card.appendChild(sep);
         u.items.forEach(it => {
-          const tag = it.channel === 'warp' ? 'WARP — همه‌چیز باز' : 'سریع — Direct';
-          card.appendChild(linkRow(`${tag} · ${it.sni}`, it.link));
+          card.appendChild(linkRow(`WARP · ${it.sni}`, it.link));
         });
         if (u.tlsLinks && u.tlsLinks.length) {
           const tlsSep = document.createElement('div');
@@ -716,16 +716,12 @@ function render(out) {
 
 /* ------------------------------- wiring -------------------------------- */
 function syncVisibility() {
-  const mode = ($('input[name="mode"]:checked') || {}).value || 'both';
-  const noSni = mode === 'nosni';
-  const sniBlock = $('#sni-block');
-  if (sniBlock) sniBlock.classList.toggle('hidden', noSni);   // در حالت بدون SNI کل بخش SNI پنهان
-
+  // حالتِ اتصال حذف شد — همیشه WARP. (دیگر noSni/سریع نداریم)
   const sniMode = ($('#sni-mode') && $('#sni-mode').value) || 'auto';
   const isManual = sniMode === 'manual';
-  $('#field-sni-count').classList.toggle('hidden', noSni || isManual);
-  $('#field-sni').classList.toggle('hidden', noSni || !isManual);
-  $('#field-sni-custom').classList.toggle('hidden', noSni || !(isManual && $('#sni').value === '__custom__'));
+  $('#field-sni-count').classList.toggle('hidden', isManual);
+  $('#field-sni').classList.toggle('hidden', !isManual);
+  $('#field-sni-custom').classList.toggle('hidden', !(isManual && $('#sni').value === '__custom__'));
   $('#field-ss-port').classList.toggle('hidden', !$('#ss-enabled').checked);
   const tlsEn = $('#tls-enabled');
   const tlsOpts = $('#tls-options');
