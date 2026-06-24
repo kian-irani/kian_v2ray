@@ -37,7 +37,7 @@ A **free, open-source** stack to run your own anti-censorship VPN on **your own 
 | **Web generator** | In-browser config builder, 100% bilingual (FA/EN), client-side keys | ✅ stable |
 | **Web panel** (`panel/`) | FastAPI + JWT/2FA · dark-glass dashboard (users/nodes/audit/charts/settings) · IP/speed/HWID limits · WebSocket stats · `/metrics` | ✅ code-complete |
 | **Multi-server** (`core/cluster.py` + `node-agent/`) | One panel → many VPS · health/failover/load-balance/GeoIP · Marzban/3X-UI import | ✅ code-complete |
-| **New protocols** (`scripts/kian-protocols.sh` + `core/protocols.py`) | **Hysteria2 + TUIC v5** via a sing-box companion (opt-in) · **ShadowTLS v3 / AnyTLS / SSH-out / ECH** builders · Fragment/uTLS/TTL/Noise · **Reality spiderX** · sing-box/Clash sub export · REALITY SNI scanner · Tor fallback | ✅ code · ⏳ server test |
+| **New protocols** (`scripts/kian-protocols.sh` + `core/protocols.py`) | **Hysteria2 + TUIC v5 + AnyTLS + ShadowTLS v3** via a sing-box companion (opt-in, **per-user**, layer-guarded, auto port-resolve) · Fragment/uTLS/TTL/Noise anti-DPI · **Reality spiderX** · sing-box/Clash sub export · REALITY SNI scanner · Tor fallback · SSH-out/ECH builders | ✅ code · ⏳ server test |
 | **Kv2m desktop** (`kv2m/`) | PySide6/Qt app, **multi-server**, web-panel deploy, **Hysteria2/TUIC** generator, auto-update — Windows/macOS/Linux | ✅ **v3.6.0** |
 | **Kv2m mobile** (`app/`) | Flutter Android client — **on-device tunnel** (bundled Xray core), in-app SSH install, config **QR + copy**, **install history**, **per-app split-tunnel**, routing/DNS/kill-switch settings, web-panel deploy, GMS-free, offline mode | ✅ **v0.5.0** |
 | **Monitoring** (`monitoring/`) | Prometheus + node/Xray exporters + Grafana dashboard + alert rules | ✅ configs |
@@ -98,7 +98,7 @@ Features: JWT + refresh + **TOTP 2FA** (with UI) · user CRUD + search + **bulk 
 
 **No domain (Reality):** VLESS + Reality + Vision (TCP), with **spiderX** · Shadowsocks
 **With domain (TLS):** VLESS-WS · VMess-WS · VLESS-gRPC · VMess-gRPC · Trojan-WS · VLESS-HTTPUpgrade · VMess-HTTPUpgrade · **VLESS-XHTTP**
-**Opt-in companion (sing-box):** **Hysteria2** · **TUIC v5** · **AnyTLS** — each generated **per-user** on its own port (Hy2 8443/udp · TUIC 8444/udp · AnyTLS 8446/tcp), additive and guarded (if a sing-box build rejects AnyTLS it silently keeps Hy2/TUIC) · ShadowTLS v3 / WireGuard / SSH-out builders in `core/protocols.py`
+**Opt-in companion (sing-box):** **Hysteria2** · **TUIC v5** · **AnyTLS** · **ShadowTLS v3** — each generated **per-user** on its own port (Hy2 8443/udp · TUIC 8444/udp · AnyTLS 8446/tcp · ShadowTLS 8447/tcp, auto-moved if busy), additive and **layer-guarded**: a sing-box build that rejects a newer layer silently drops just that one and keeps the rest, so the working protocols never break · WireGuard / SSH-out builders in `core/protocols.py`
 **Routing:** every config egresses through **Cloudflare WARP** (with automatic direct-fallback so you never go offline) — no "fast/direct" mode to misconfigure.
 **Anti-DPI:** Fragment (TLS-Hello split, on by default, toggle in the app) · uTLS fingerprint · TTL · Noise padding · ECH plumbing · Tor bridge fallback
 
@@ -181,7 +181,7 @@ Issues and suggestions welcome — see [`docs/CONTRIBUTING.md`](docs/CONTRIBUTIN
 | **صفحهٔ تعاملی** | سازندهٔ کانفیگ در مرورگر، **۱۰۰٪ دوزبانه**، کلید سمتِ کاربر | ✅ پایدار |
 | **پنلِ وب** | FastAPI + JWT/**2FA** · داشبوردِ dark-glass (کاربران/سرورها/ممیزی/نمودار/تنظیمات) · محدودیتِ IP/سرعت/HWID · آمارِ زنده | ✅ کد کامل |
 | **چندسرور** | یک پنل → چند VPS · health/failover/load-balance/GeoIP · مهاجرت از Marzban/3X-UI | ✅ کد کامل |
-| **پروتکل‌های جدید** | **Hysteria2 + TUIC v5** روی sing-box (اختیاری) · builderهای **ShadowTLS v3 / AnyTLS / SSH-out / ECH** · Fragment/uTLS/TTL/Noise · **Reality spiderX** · خروجیِ sing-box/Clash · REALITY scanner · Tor fallback | ✅ کد · ⏳ تستِ سرور |
+| **پروتکل‌های جدید** | **Hysteria2 + TUIC v5 + AnyTLS + ShadowTLS v3** روی sing-box (اختیاری، per-user، گارد‌دار، انتخابِ خودکارِ پورت) · ضدِDPI: Fragment/uTLS/TTL/Noise · **Reality spiderX** · خروجیِ sing-box/Clash · REALITY scanner · Tor fallback | ✅ کد · ⏳ تستِ سرور |
 | **Kv2m دسکتاپ** | اپِ PySide6/Qt، **چندسرور**، راه‌اندازیِ پنل، سازندهٔ **Hysteria2/TUIC**، auto-update — ویندوز/مک/لینوکس | ✅ **v3.6.0** |
 | **Kv2m موبایل** | کلاینتِ Flutter اندروید — **اتصالِ روی‌دستگاه** (هستهٔ Xray bundle‌شده)، نصبِ SSH داخلِ اپ، **QR و کپیِ کانفیگ**، **تاریخچهٔ نصب**، **split-tunnel per-app**، تنظیماتِ routing/DNS/kill-switch، بدونِ GMS، آفلاین | ✅ **v0.5.0** |
 | **پایش** | Prometheus + اکسپورترها + داشبوردِ Grafana + قوانینِ هشدار | ✅ پیکربندی |

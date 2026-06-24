@@ -703,7 +703,7 @@ cmd_update(){
 _refresh_extra_links(){
   if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
     bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
-      | grep -oE '(hysteria2|tuic|anytls)://[^[:space:]]+#[^[:space:]]+' \
+      | grep -oE '(hysteria2|tuic|anytls|ss)://[^[:space:]]+#KIAN-[^[:space:]]+' \
       > "$ETC_DIR/extra_links.txt" 2>/dev/null || true
   fi
 }

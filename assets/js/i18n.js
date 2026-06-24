@@ -214,8 +214,8 @@
     "proto.vless-httpupgrade": { fa: "سبک‌تر از WS", en: "Lighter than WS" },
     "proto.vmess-httpupgrade": { fa: "HTTPUpgrade با VMess", en: "HTTPUpgrade with VMess" },
     "proto.vless-xhttp":       { fa: "جدید — مقاوم‌ترین در برابر DPI، عالی روی CDN", en: "New — most DPI-resistant, great over CDN" },
-    "gen.extra.label": { fa: "پروتکل‌های اضافه (UDP — ضدِ DPI قوی)", en: "Extra protocols (UDP — strong anti-DPI)" },
-    "gen.extra.note":  { fa: "روی سرویسِ مستقلِ sing-box کنارِ Xray نصب می‌شوند و مسیرِ Reality/SS/TLS را دست‌نمی‌زنند. نیازمندِ بازبودنِ پورتِ UDP روی سرور. لینک‌ها خودکار به Subscription اضافه می‌شوند.", en: "Installed on a standalone sing-box service next to Xray; they don't touch the Reality/SS/TLS path. Needs a UDP port open on the server. Links are added to your subscription automatically." },
+    "gen.extra.label": { fa: "پروتکل‌های اضافه (ضدِ DPI قوی)", en: "Extra protocols (strong anti-DPI)" },
+    "gen.extra.note":  { fa: "با فعال‌کردن، یک سرویسِ مستقلِ sing-box کنارِ Xray نصب می‌شود که هر چهار پروتکلِ Hysteria2، TUIC v5، AnyTLS و ShadowTLS v3 را برای هر کاربر می‌سازد (هرکدام پورتِ جدا، اگر اشغال بود خودکار جابه‌جا می‌شود). مسیرِ Reality/SS/TLS دست‌نخورده می‌ماند و لینک‌ها خودکار به Subscription اضافه می‌شوند. اگر نسخهٔ sing-box پروتکلی را نپذیرفت، فقط همان حذف و بقیه فعال می‌مانند.", en: "Enabling this installs a standalone sing-box service next to Xray that builds all four — Hysteria2, TUIC v5, AnyTLS and ShadowTLS v3 — per user (each on its own port, auto-moved if busy). The Reality/SS/TLS path stays untouched and links are added to your subscription automatically. If a sing-box build rejects one protocol, only that one is dropped and the rest stay live." },
     "gen.extra.hy2":   { fa: "سریع روی شبکهٔ پُرافت/پُرتأخیر، عبورِ عالی از DPI", en: "Fast on lossy/high-latency networks, great DPI evasion" },
     "gen.extra.tuic":  { fa: "QUIC، 0-RTT، کنترلِ ازدحام BBR", en: "QUIC, 0-RTT, BBR congestion control" },
 

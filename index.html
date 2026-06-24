@@ -205,9 +205,9 @@
           <input id="ss-port" type="number" min="1" max="65535" value="8388">
         </div>
         <div class="field" id="field-extra-protos">
-          <label data-i18n="gen.extra.label">پروتکل‌های اضافه (UDP — ضدِ DPI قوی)</label>
+          <label data-i18n="gen.extra.label">پروتکل‌های اضافه (ضدِ DPI قوی)</label>
           <p class="muted small" style="margin:.2rem 0 .6rem" data-i18n="gen.extra.note">
-            روی سرویسِ مستقلِ sing-box کنارِ Xray نصب می‌شوند و مسیرِ Reality/SS/TLS را دست‌نمی‌زنند. نیازمندِ بازبودنِ پورتِ UDP روی سرور. لینک‌ها خودکار به Subscription اضافه می‌شوند.
+            با فعال‌کردن، یک سرویسِ مستقلِ sing-box کنارِ Xray نصب می‌شود که <b>هر چهار پروتکلِ Hysteria2، TUIC v5، AnyTLS و ShadowTLS v3</b> را برای هر کاربر می‌سازد (هرکدام پورتِ جدا، اگر اشغال بود خودکار جابه‌جا می‌شود). مسیرِ Reality/SS/TLS دست‌نخورده می‌ماند و لینک‌ها خودکار به Subscription اضافه می‌شوند. اگر نسخهٔ sing-box پروتکلی را نپذیرفت، فقط همان حذف و بقیه فعال می‌مانند.
           </p>
           <div class="tls-protos">
             <label class="proto-chk"><input type="checkbox" name="extra-proto" value="hysteria2"> <b>Hysteria2</b><small data-i18n="gen.extra.hy2">سریع روی شبکهٔ پُرافت/پُرتأخیر، عبورِ عالی از DPI</small></label>
