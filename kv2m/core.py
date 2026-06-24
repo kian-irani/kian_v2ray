@@ -4,7 +4,7 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "3.6.0"  # 3.6: Reality spiderX (spx) + phase 10/11 parity (ShadowTLS/AnyTLS/SSH core, per-user routing/DNS)
+APP_VERSION = "3.7.0"  # 3.7: always-WARP, AnyTLS, in-place server/panel update + sub auto-resync, bulk delete/copy
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
