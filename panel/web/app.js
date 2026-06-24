@@ -42,6 +42,7 @@
     "cfg.none": ["کانفیگی یافت نشد", "No configs found"],
     "copyall.btn": ["کپی همه کانفیگ‌ها", "Copy all configs"],
     "copyall.ok": ["کانفیگ کپی شد ✓", "configs copied ✓"],
+    "detail.open": ["نمایش جزئیات، کانفیگ و لینک", "Show detail, configs & link"],
     "sys.load": ["بار", "Load"], "sys.mem": ["رم", "RAM"],
     "stat.total": ["کل کاربران", "Total users"], "stat.active": ["فعال", "Active"],
     "stat.traffic": ["مصرف کل", "Total traffic"],
@@ -238,7 +239,7 @@
       var lim = (u.ip_limit ? ("IP " + u.ip_limit) : "—") + (u.speed_kbps ? (" · " + u.speed_kbps + "KB/s") : "");
       return "<tr data-name=\"" + esc(u.name) + "\">" +
         "<td><input type=\"checkbox\" class=\"rowchk\" aria-label=\"select\"></td>" +
-        "<td><b>" + esc(u.name) + "</b></td>" +
+        "<td><button class=\"btn sm ghost act-detail\" style=\"font-weight:700;padding:4px 8px\" title=\"" + t("detail.open") + "\">" + esc(u.name) + "</button></td>" +
         "<td class=\"hide mono muted\">" + esc(String(u.uuid).slice(0, 8)) + "…</td>" +
         "<td>" + usageBar(u) + "</td>" +
         "<td class=\"hide muted\">" + esc(lim) + "</td>" +
@@ -404,6 +405,12 @@
     });
   }
 
+  function _fmtTs(ts) {
+    if (!ts) return "∞";
+    try { return new Date(ts * 1000).toISOString().slice(0, 10); } catch (e) { return "—"; }
+  }
+
+  /// Full per-user detail: usage, expiry, status, sub link, every config + QR.
   async function _showCfgModal(name) {
     _buildCfgModal();
     document.getElementById("cfg-modal-title").textContent = t("cfg.modal.title") + ": " + name;
@@ -411,12 +418,40 @@
     var qrdiv = document.getElementById("cfg-modal-qr");
     body.textContent = t("cfg.loading"); qrdiv.innerHTML = "";
     _cfgModal.classList.remove("hidden");
+
+    // Usage / expiry / status header (from the already-loaded user row, no extra call).
+    var u = state.users.filter(function (x) { return x.name === name; })[0];
+    var headHtml = "";
+    if (u) {
+      var pct = u.quota_bytes > 0 ? Math.min(100, u.used_bytes / u.quota_bytes * 100) : 0;
+      var q = u.quota_bytes > 0 ? fmtGB(u.quota_bytes) + " GB" : "∞";
+      var subUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "/sub.html") + "?name=" + encodeURIComponent(name);
+      headHtml =
+        '<div style="margin-bottom:12px;padding:10px;background:#0b1426;border-radius:10px">' +
+          '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px">' +
+            '<span>' + t("th.usage") + ': <b>' + fmtGB(u.used_bytes) + ' / ' + q + '</b></span>' +
+            '<span>' + t("f.days") + ': <b>' + _fmtTs(u.expires_at) + '</b></span>' +
+            '<span>' + t("th.status") + ': <b>' + (u.enabled ? t("enable") : t("disable")) + '</b></span>' +
+          '</div>' +
+          '<div class="bar" style="margin-top:8px"><i style="width:' + pct + '%"></i></div>' +
+          '<div style="display:flex;gap:8px;align-items:center;margin-top:10px">' +
+            '<span style="flex:1;font-family:ui-monospace,monospace;font-size:11px;word-break:break-all">' + esc(subUrl) + '</span>' +
+            '<button class="btn sm" id="cfg-modal-copy-sub">' + t("copy.sub") + '</button>' +
+          '</div>' +
+        '</div>';
+    }
+
     try {
       var data = await api("/api/users/" + encodeURIComponent(name) + "/links");
       if (!data || !data.links || !data.links.length) {
-        body.textContent = t("cfg.none"); return;
+        body.innerHTML = headHtml + '<div class="muted" style="padding:8px">' + t("cfg.none") + '</div>';
+        var sb0 = document.getElementById("cfg-modal-copy-sub");
+        if (sb0 && u) sb0.onclick = function () {
+          _copyText(window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "/sub.html") + "?name=" + encodeURIComponent(name), sb0);
+        };
+        return;
       }
-      body.innerHTML = data.links.map(function (l) {
+      body.innerHTML = headHtml + data.links.map(function (l) {
         return '<div style="margin:6px 0;padding:8px;background:#0b1426;border-radius:8px;display:flex;gap:8px;align-items:flex-start">' +
           '<span style="flex:1;font-family:ui-monospace,monospace;font-size:11px">' + esc(l) + '</span>' +
           '<button class="btn sm ghost" onclick="(function(el,link){var b=el;if(navigator.clipboard){navigator.clipboard.writeText(link).then(function(){b.textContent=\'✓\';setTimeout(function(){b.textContent=\'⎘\'},1500)})}else{var t=document.createElement(\'textarea\');t.value=link;document.body.appendChild(t);t.select();document.execCommand(\'copy\');document.body.removeChild(t);b.textContent=\'✓\';setTimeout(function(){b.textContent=\'⎘\'},1500)}})(this,' + JSON.stringify(l) + ')" title="copy">⎘</button>' +
@@ -431,8 +466,12 @@
       document.getElementById("cfg-modal-copy-all").onclick = function () {
         _copyText(allLinks, document.getElementById("cfg-modal-copy-all"));
       };
+      var sb = document.getElementById("cfg-modal-copy-sub");
+      if (sb) sb.onclick = function () {
+        _copyText(window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "/sub.html") + "?name=" + encodeURIComponent(name), sb);
+      };
     } catch (e) {
-      body.textContent = "Error: " + e.message;
+      body.innerHTML = headHtml + '<div class="muted" style="padding:8px">Error: ' + esc(e.message) + '</div>';
     }
   }
 
@@ -448,7 +487,9 @@
     var name = tr.getAttribute("data-name");
     if (!name) return;
     var u = state.users.filter(function (x) { return x.name === name; })[0];
-    if (e.target.closest(".act-copy-sub")) {
+    if (e.target.closest(".act-detail")) {
+      _showCfgModal(name);
+    } else if (e.target.closest(".act-copy-sub")) {
       var subUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "/sub.html") + "?name=" + encodeURIComponent(name);
       _copyText(subUrl, e.target.closest(".act-copy-sub"));
     } else if (e.target.closest(".act-copy-cfg")) {

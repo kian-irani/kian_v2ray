@@ -100,47 +100,57 @@ class VpnController {
     }
   }
 
-  /// Inject TLS-Hello fragmentation into all TCP outbounds.
+  /// Inject TLS-Hello fragmentation into the proxy outbound(s).
   ///
-  /// Xray fragment splits the TLS ClientHello across multiple TCP segments
-  /// so DPI boxes that pattern-match the first packet can't fingerprint it.
-  /// This is particularly effective against Iranian ISP-level DPI.
+  /// How Xray fragment actually works (same wiring v2rayNG / Hiddify use): the
+  /// real proxy outbound dials its TCP socket THROUGH a `freedom` outbound whose
+  /// `settings.fragment` splits the TLS ClientHello across several TCP segments.
+  /// We do that by:
+  ///   1. adding a `fragment` freedom outbound (packets=tlshello), and
+  ///   2. pointing each TCP proxy outbound's `sockopt.dialerProxy` at it.
+  /// Without step 2 the fragment outbound is dead weight — which is the bug this
+  /// replaces. Effective against Iranian ISP-level DPI that fingerprints the
+  /// first packet of the handshake.
   String _injectAntiDpi(String configJson) {
     try {
       final cfg = json.decode(configJson) as Map<String, dynamic>;
       final outbounds = cfg['outbounds'];
       if (outbounds is! List) return configJson;
 
+      var wiredAny = false;
       for (final ob in outbounds) {
         if (ob is! Map<String, dynamic>) continue;
+        final tag = ob['tag'] as String? ?? '';
+        if (tag == 'fragment') continue; // never chain the fragment to itself
         final proto = ob['protocol'] as String? ?? '';
+        // Only the real proxy outbounds carry the handshake we want to fragment.
         if (proto == 'freedom' || proto == 'blackhole' || proto == 'dns') continue;
 
         final stream = (ob['streamSettings'] as Map<String, dynamic>?) ?? {};
         final net = stream['network'] as String? ?? 'tcp';
-        if (net != 'tcp') continue; // fragment is TCP-only
+        if (net != 'tcp' && net != 'raw') continue; // fragment is TCP/raw only
 
-        // Add fragment settings — splits the TLS ClientHello packet
-        stream['sockopt'] = {
-          ...(stream['sockopt'] as Map<String, dynamic>? ?? {}),
-          'dialerProxy': '',  // clear any existing chaining
-        };
-        // Remove empty dialerProxy to keep config clean
-        (stream['sockopt'] as Map<String, dynamic>).remove('dialerProxy');
-
+        // Dial this outbound's TCP socket through the fragment outbound.
+        final sockopt = (stream['sockopt'] as Map<String, dynamic>?) ?? {};
+        sockopt['dialerProxy'] = 'fragment';
+        stream['sockopt'] = sockopt;
         ob['streamSettings'] = stream;
+        wiredAny = true;
       }
 
-      // Add a fragment freedom outbound chained before the real outbound
-      final hasFragment = outbounds.any(
-        (o) => o is Map && o['tag'] == 'fragment',
-      );
+      // Nothing TCP to fragment (e.g. a pure UDP outbound) → leave config as-is.
+      if (!wiredAny) return configJson;
+
+      final hasFragment = outbounds.any((o) => o is Map && o['tag'] == 'fragment');
       if (!hasFragment) {
         outbounds.add({
           'protocol': 'freedom',
           'tag': 'fragment',
-          'settings': {'fragment': {'packets': 'tlshello', 'length': '100-200', 'interval': '10-20'}},
-          'streamSettings': {'sockopt': {'TcpNoDelay': true}},
+          'settings': {
+            'domainStrategy': 'UseIP',
+            'fragment': {'packets': 'tlshello', 'length': '100-200', 'interval': '10-20'},
+          },
+          'streamSettings': {'sockopt': {'tcpNoDelay': true}},
         });
       }
 
