@@ -103,6 +103,11 @@ class Strings {
     'hist.delete.confirm': ['این رکوردِ تاریخچه حذف شود؟', 'Delete this history record?'],
     'copyall.title': ['کپیِ همهٔ کانفیگ‌ها', 'Copy all configs'],
     'copyall.done': ['همهٔ لینک‌ها کپی شد', 'All links copied'],
+    'sel.select': ['انتخابِ چندتایی', 'Select multiple'],
+    'sel.count': ['انتخاب‌شده', 'selected'],
+    'sel.all': ['انتخابِ همه', 'Select all'],
+    'sel.delete.title': ['حذفِ گروهی', 'Delete selected'],
+    'sel.delete.body': ['سرور حذف شود؟', 'servers will be deleted?'],
     'help.title': ['راهنما', 'Help'],
     'help.home': [
       'دکمهٔ بزرگ وصل/قطع می‌کند. سرورها را از + (لینک/QR) اضافه کن یا از «نصب روی سرور» بساز. دکمهٔ سرعت بهترین سرور را تست و انتخاب می‌کند. آیکنِ QR روی هر سرور کانفیگ و QR را نشان می‌دهد. رفرش، Subscriptionها را به‌روز می‌کند.',

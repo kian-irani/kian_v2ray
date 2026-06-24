@@ -147,6 +147,32 @@ def read_user_links(name: str) -> list[str]:
         return []
 
 
+def read_all_links() -> list[str]:
+    """Return every config share-URI on the server (the whole links.txt).
+
+    Lets the panel offer "copy all configs" so an operator never has to SSH in
+    and copy from the terminal when a subscription link fails.
+    """
+    if os.path.exists(LINKS_FILE):
+        try:
+            with open(LINKS_FILE, "r", encoding="utf-8") as fh:
+                return [l.strip() for l in fh
+                        if l.strip().startswith(
+                            ("vless://", "vmess://", "ss://", "trojan://",
+                             "hysteria2://", "tuic://"))]
+        except OSError:
+            pass
+    # fall back to the CLI (strip ANSI colour codes)
+    rc, out = cli("configs", timeout=20.0)
+    if rc == 0:
+        import re
+        ansi = re.compile(r'\x1b\[[0-9;]*m')
+        return [l for l in ansi.sub("", out).splitlines()
+                if l.startswith(("vless://", "vmess://", "ss://", "trojan://",
+                                 "hysteria2://", "tuic://"))]
+    return []
+
+
 # --------------------------------------------------------------------------- #
 # per-user routing / DNS (phase 11.2)
 # --------------------------------------------------------------------------- #

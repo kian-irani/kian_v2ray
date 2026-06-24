@@ -40,6 +40,8 @@
     "cfg.modal.title": ["کانفیگ‌های کاربر", "User configs"],
     "cfg.loading": ["در حال بارگذاری…", "Loading…"],
     "cfg.none": ["کانفیگی یافت نشد", "No configs found"],
+    "copyall.btn": ["کپی همه کانفیگ‌ها", "Copy all configs"],
+    "copyall.ok": ["کانفیگ کپی شد ✓", "configs copied ✓"],
     "sys.load": ["بار", "Load"], "sys.mem": ["رم", "RAM"],
     "stat.total": ["کل کاربران", "Total users"], "stat.active": ["فعال", "Active"],
     "stat.traffic": ["مصرف کل", "Total traffic"],
@@ -483,6 +485,18 @@
     if (action === "delete" && !confirm(t("del.confirm"))) return;
     await api("/api/users/bulk", { method: "POST", body: JSON.stringify({ action: action, names: names }) });
     refreshUsers(); refreshStats();
+  });
+  $("#copy-all-cfg").addEventListener("click", async function () {
+    var btn = this;
+    try {
+      var d = await api("/api/links");
+      if (d && d.links && d.links.length) {
+        _copyText(d.links.join("\n"), null);
+        _flashBtn(btn, d.links.length + " " + t("copyall.ok"));
+      } else {
+        _flashBtn(btn, t("cfg.none"));
+      }
+    } catch (e) { _flashBtn(btn, "error"); }
   });
   $("#search").addEventListener("input", debounce(refreshUsers, 300));
   $("#export").addEventListener("click", async function () {

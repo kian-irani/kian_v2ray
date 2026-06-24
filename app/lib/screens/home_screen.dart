@@ -46,6 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _busy = false;
   bool _refreshing = false;
 
+  // Multi-select mode for bulk delete (config management). Keyed by identity.
+  bool _selectionMode = false;
+  final Set<ServerProfile> _checked = {};
+
   @override
   void initState() {
     super.initState();
@@ -381,6 +385,77 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
   }
 
+  PopupMenuItem<String> _menuItem(String value, IconData icon, String label) =>
+      PopupMenuItem<String>(
+        value: value,
+        child: Row(children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 10),
+          Text(label),
+        ]),
+      );
+
+  /// App bar shown while in multi-select mode (bulk delete).
+  AppBar _selectionAppBar(Strings s) => AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          tooltip: s.t('cancel'),
+          onPressed: () => setState(() {
+            _selectionMode = false;
+            _checked.clear();
+          }),
+        ),
+        title: Text('${_checked.length} ${s.t('sel.count')}'),
+        actions: [
+          IconButton(
+            tooltip: s.t('sel.all'),
+            icon: const Icon(Icons.select_all),
+            onPressed: () => setState(() {
+              if (_checked.length == _servers.length) {
+                _checked.clear();
+              } else {
+                _checked
+                  ..clear()
+                  ..addAll(_servers);
+              }
+            }),
+          ),
+          IconButton(
+            tooltip: s.t('cfg.delete'),
+            icon: const Icon(Icons.delete_outline),
+            onPressed: _checked.isEmpty ? null : () => _deleteChecked(s),
+          ),
+        ],
+      );
+
+  /// Delete all checked servers at once (bulk delete — no more one-by-one).
+  Future<void> _deleteChecked(Strings s) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(s.t('sel.delete.title')),
+        content: Text('${_checked.length} ${s.t('sel.delete.body')}'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false),
+              child: Text(s.t('cancel'))),
+          FilledButton(onPressed: () => Navigator.pop(context, true),
+              child: Text(s.t('cfg.delete'))),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() {
+      _servers.removeWhere(_checked.contains);
+      if (_selected != null && _checked.contains(_selected)) {
+        _selected = _servers.isNotEmpty ? _servers.first : null;
+      }
+      _checked.clear();
+      _selectionMode = false;
+    });
+    await _cache.saveServers(_servers);
+    if (_selected != null) await _cache.saveSelected(_selected!.name);
+  }
+
   /// Copy every server's share URI (newline-separated) to the clipboard.
   Future<void> _copyAllConfigs() async {
     if (_servers.isEmpty) return;
@@ -397,36 +472,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final s = widget.strings;
     return Scaffold(
-      appBar: AppBar(
+      appBar: _selectionMode ? _selectionAppBar(s) : AppBar(
         title: Text(s.t('app.title')),
         actions: [
-          IconButton(
-            tooltip: s.t('open.setup'),
-            onPressed: () async {
-              await Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => SetupScreen(strings: s)));
-              // Setup may have auto-imported configs into the cache — reload.
-              await _reloadFromCache();
-            },
-            icon: const Icon(Icons.rocket_launch_outlined),
-          ),
-          IconButton(
-            tooltip: s.t('open.manage'),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => ManageScreen(strings: s))),
-            icon: const Icon(Icons.admin_panel_settings_outlined),
-          ),
-          IconButton(
-            tooltip: s.t('hist.open'),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => HistoryScreen(strings: s))),
-            icon: const Icon(Icons.history_outlined),
-          ),
-          IconButton(
-            tooltip: s.t('best.auto'),
-            onPressed: _servers.isEmpty ? null : _pickBest,
-            icon: const Icon(Icons.speed_outlined),
-          ),
+          // Two quick-access actions kept as icons; everything else moves into
+          // the overflow menu so the title stays visible (design review).
           IconButton(
             tooltip: s.t('sub.refresh'),
             onPressed: _refreshing ? null : () => _refreshSubs(),
@@ -436,16 +486,49 @@ class _HomeScreenState extends State<HomeScreen> {
                 : const Icon(Icons.refresh_outlined),
           ),
           IconButton(
-            tooltip: s.t('settings.open'),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => SettingsScreen(
-                  strings: s,
-                  onToggleLang: widget.onToggleLang,
-                  onThemeMode: widget.onThemeMode,
-                ))),
-            icon: const Icon(Icons.settings_outlined),
+            tooltip: s.t('best.auto'),
+            onPressed: _servers.isEmpty ? null : _pickBest,
+            icon: const Icon(Icons.speed_outlined),
           ),
-          TextButton(onPressed: widget.onToggleLang, child: Text(s.lang == 'fa' ? 'EN' : 'FA')),
+          PopupMenuButton<String>(
+            tooltip: s.t('cfg.more'),
+            icon: const Icon(Icons.more_vert),
+            onSelected: (v) async {
+              switch (v) {
+                case 'setup':
+                  await Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => SetupScreen(strings: s)));
+                  await _reloadFromCache();
+                  break;
+                case 'manage':
+                  await Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => ManageScreen(strings: s)));
+                  break;
+                case 'history':
+                  await Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => HistoryScreen(strings: s)));
+                  break;
+                case 'settings':
+                  await Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => SettingsScreen(
+                        strings: s,
+                        onToggleLang: widget.onToggleLang,
+                        onThemeMode: widget.onThemeMode,
+                      )));
+                  break;
+                case 'lang':
+                  widget.onToggleLang();
+                  break;
+              }
+            },
+            itemBuilder: (_) => [
+              _menuItem('setup', Icons.rocket_launch_outlined, s.t('open.setup')),
+              _menuItem('manage', Icons.admin_panel_settings_outlined, s.t('open.manage')),
+              _menuItem('history', Icons.history_outlined, s.t('hist.open')),
+              _menuItem('settings', Icons.settings_outlined, s.t('settings.open')),
+              _menuItem('lang', Icons.translate_outlined, s.lang == 'fa' ? 'English' : 'فارسی'),
+            ],
+          ),
         ],
       ),
       body: Padding(
@@ -516,12 +599,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text(s.t('tab.servers'),
                       style: Theme.of(context).textTheme.titleMedium),
                 ),
-                if (_servers.isNotEmpty)
+                if (_servers.isNotEmpty) ...[
                   TextButton.icon(
                     onPressed: _copyAllConfigs,
                     icon: const Icon(Icons.copy_all_outlined, size: 18),
                     label: Text(s.t('copyall.title')),
                   ),
+                  IconButton(
+                    tooltip: s.t('sel.select'),
+                    icon: const Icon(Icons.checklist_outlined, size: 20),
+                    onPressed: () => setState(() => _selectionMode = true),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 8),
@@ -533,6 +622,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (_, i) {
                         final srv = _servers[i];
                         final sel = srv == _selected;
+                        final ticked = _checked.contains(srv);
+                        if (_selectionMode) {
+                          return Card(
+                            child: CheckboxListTile(
+                              value: ticked,
+                              onChanged: (v) => setState(() {
+                                if (v == true) {
+                                  _checked.add(srv);
+                                } else {
+                                  _checked.remove(srv);
+                                }
+                              }),
+                              title: Text(srv.name),
+                              subtitle: Text('${srv.protocol ?? '?'} · ${srv.host ?? ''}'),
+                              activeColor: KianTheme.accent,
+                            ),
+                          );
+                        }
                         return Card(
                           child: ListTile(
                             leading: Icon(sel ? Icons.check_circle : Icons.circle_outlined,
@@ -571,6 +678,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       _renameServer(srv);
                                     } else if (v == 'delete') {
                                       _deleteServer(srv);
+                                    } else if (v == 'select') {
+                                      setState(() {
+                                        _selectionMode = true;
+                                        _checked.add(srv);
+                                      });
                                     }
                                   },
                                   itemBuilder: (_) => [
@@ -582,6 +694,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ])),
                                     PopupMenuItem(value: 'rename',
                                         child: Text(s.t('cfg.rename'))),
+                                    PopupMenuItem(value: 'select',
+                                        child: Text(s.t('sel.select'))),
                                     PopupMenuItem(value: 'delete',
                                         child: Text(s.t('cfg.delete'))),
                                   ],
@@ -589,6 +703,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                             onTap: () => _select(srv),
+                            onLongPress: () => setState(() {
+                              _selectionMode = true;
+                              _checked.add(srv);
+                            }),
                           ),
                         );
                       },

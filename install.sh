@@ -914,19 +914,27 @@ if { [ -n "$EXTRA_PROTOCOLS" ] || [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ]; } \
    && [ -x /usr/local/bin/kian-protocols.sh ]; then
   inf "فعال‌سازی پروتکل‌های اضافی (Hysteria2/TUIC روی sing-box): ${EXTRA_PROTOCOLS:-env}"
   if bash /usr/local/bin/kian-protocols.sh enable; then
-    # لینک‌های اشتراکیِ hy2/tuic را بگیر (خطوطی که با پروتکل شروع می‌شوند)
+    # لینک‌های per-user (برچسب #KIAN-<name>-Hysteria2/-TUIC) را بگیر
     EXTRA_LINKS="$(bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
-      | grep -oE '(hysteria2|tuic)://[^[:space:]]+' || true)"
+      | grep -oE '(hysteria2|tuic)://[^[:space:]]+#[^[:space:]]+' || true)"
     if [ -n "$EXTRA_LINKS" ]; then
       printf '%s\n' "$EXTRA_LINKS" >> "$ETC_DIR/links.txt"
       printf '%s\n' "$EXTRA_LINKS" > "$ETC_DIR/extra_links.txt"
-      # به Subscription هر کاربر اضافه کن (لینک‌ها اشتراکی‌اند) و دوباره base64 کن
-      if [ -d "$ETC_DIR/sub" ]; then
-        for f in "$ETC_DIR/sub"/*.txt; do
-          [ -f "$f" ] || continue
-          { base64 -d "$f" 2>/dev/null; printf '%s\n' "$EXTRA_LINKS"; } \
-            | sed '/^$/d' | base64 -w0 > "${f}.new" && mv "${f}.new" "$f"
-        done
+      # به Subscription هرکاربر فقط لینکِ خودش را اضافه کن (per-user، نه اشتراکی).
+      # توکن‌ها در sub_tokens.json به ایمیل کاربر نگاشت شده‌اند.
+      if [ -d "$ETC_DIR/sub" ] && [ -f "$ETC_DIR/sub_tokens.json" ]; then
+        jq -r 'to_entries[]|.key+"\t"+.value' "$ETC_DIR/sub_tokens.json" \
+          | while IFS=$'\t' read -r email token; do
+              [ -z "$token" ] && continue
+              local_name="${email%@*}"
+              f="$ETC_DIR/sub/${token}.txt"
+              [ -f "$f" ] || continue
+              # فقط لینک‌های همان کاربر (#KIAN-<name>-Hysteria2/-TUIC)
+              user_extra="$(printf '%s\n' "$EXTRA_LINKS" | grep -E "#KIAN-${local_name}-" || true)"
+              [ -z "$user_extra" ] && continue
+              { base64 -d "$f" 2>/dev/null; printf '%s\n' "$user_extra"; } \
+                | sed '/^$/d' | base64 -w0 > "${f}.new" && mv "${f}.new" "$f"
+            done
         # Gist را دوباره همگام کن تا لینکِ HTTPS هم به‌روز شود
         GIST_PROXY_VAL="$(printf '%s' "$PAYLOAD_JSON" | jq -r '.gist_proxy // ""')"
         if [ -n "$GIST_PROXY_VAL" ] && [ -x /usr/local/bin/kian-gist-sync.py ]; then

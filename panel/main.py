@@ -317,6 +317,14 @@ def api_user_links(name: str, admin: str = Depends(require_admin),
     return {"name": name, "links": links}
 
 
+@app.get("/api/links")
+def api_all_links(admin: str = Depends(require_admin)):
+    """Return every config link on the server, so the panel can offer a
+    one-click "copy all configs" instead of forcing terminal access."""
+    links = bridge.read_all_links()
+    return {"links": links, "count": len(links)}
+
+
 @app.post("/api/users/bulk")
 def api_bulk(body: BulkAction, admin: str = Depends(require_admin),
              conn=Depends(get_db)):

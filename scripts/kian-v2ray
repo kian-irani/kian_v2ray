@@ -468,6 +468,11 @@ EOF
       read -r sp sm spw <<<"$ss"
       all="${all}ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#KIAN-${local_name}-SS"$'\n'
     fi
+    # لینک‌های Hysteria2/TUIC این کاربر (اگر کامپنیون sing-box فعال است) — per-user
+    if [ -f "$ETC_DIR/extra_links.txt" ]; then
+      local ex; ex="$(grep -E "#KIAN-${local_name}-" "$ETC_DIR/extra_links.txt" 2>/dev/null || true)"
+      [ -n "$ex" ] && all="${all}${ex}"$'\n'
+    fi
     # فایل subscription = base64 از مجموعهٔ لینک‌ها (فرمت v2rayNG)
     local outfile="$subdir/${tok}.txt"
     printf '%s' "$all" | base64 -w0 > "$outfile"
@@ -518,7 +523,22 @@ cmd_add(){
     '.users += [{id:$id,email:$e,quota_bytes:$q,used_bytes:0,expires_at:$x,active:true,note:""}]' \
     "$USERS_FILE" > "$tmp" && mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
   rebuild_and_restart
+  # اگر کامپنیون Hysteria2/TUIC فعال است، کاربر جدید را به آن هم اضافه کن و
+  # لینک‌های per-user او را به links.txt + extra_links.txt اضافه کن تا در
+  # Subscription کاربر بیاید (وگرنه کاربر جدید این پروتکل‌ها را نمی‌گرفت).
+  if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
+    if bash /usr/local/bin/kian-protocols.sh adduser "$name" >/dev/null 2>&1; then
+      local new_extra; new_extra="$(bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
+        | grep -E "#KIAN-${name}-" || true)"
+      if [ -n "$new_extra" ]; then
+        printf '%s\n' "$new_extra" >> "$ETC_DIR/links.txt"
+        printf '%s\n' "$new_extra" >> "$ETC_DIR/extra_links.txt"
+      fi
+    fi
+  fi
   say "کاربر افزوده شد: $email  (حجم: $([ "$gb" -le 0 ] && echo ∞ || echo ${gb}G) / مدت: $([ "$days" -le 0 ] && echo دائمی || echo ${days}روز))"
+  # لینک Subscription کاربر را بساز (Reality + TLS + SS + Hy2/TUIC) و در Gist همگام کن
+  cmd_sub "$name"
   cmd_configs "$name"
 }
 
@@ -530,6 +550,21 @@ cmd_remove(){
   local tmp; tmp="$(mktemp)"
   jq --arg e "$email" '.users |= map(select(.email != $e))' "$USERS_FILE" > "$tmp" && mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
   rebuild_and_restart
+  # کاربر را از کامپنیون Hysteria2/TUIC و از extra_links.txt هم حذف کن
+  local rm_name="${email%@*}"
+  if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
+    bash /usr/local/bin/kian-protocols.sh deluser "$rm_name" >/dev/null 2>&1 || true
+  fi
+  if [ -f "$ETC_DIR/extra_links.txt" ]; then
+    grep -vE "#KIAN-${rm_name}-" "$ETC_DIR/extra_links.txt" > "$tmp" 2>/dev/null && mv "$tmp" "$ETC_DIR/extra_links.txt" || rm -f "$tmp"
+  fi
+  # توکن Subscription کاربر را پاک کن و فایل sub او را حذف کن
+  if [ -f "$ETC_DIR/sub_tokens.json" ]; then
+    local rmtok; rmtok="$(jq -r --arg e "$email" '.[$e]//empty' "$ETC_DIR/sub_tokens.json" 2>/dev/null)"
+    [ -n "$rmtok" ] && rm -f "$ETC_DIR/sub/${rmtok}.txt"
+    tmp="$(mktemp)"; jq --arg e "$email" 'del(.[$e])' "$ETC_DIR/sub_tokens.json" > "$tmp" 2>/dev/null && mv "$tmp" "$ETC_DIR/sub_tokens.json" || rm -f "$tmp"
+  fi
+  gist_sync
   say "کاربر حذف شد: $email"
 }
 

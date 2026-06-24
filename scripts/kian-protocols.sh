@@ -78,31 +78,96 @@ ensure_cert(){
   fi
 }
 
-gen_config(){
-  local pw uuid sni
-  pw="$(openssl rand -hex 16)"; uuid="$(cat /proc/sys/kernel/random/uuid)"
+# Build a per-user credential map from the installer's users.json so each VPN
+# user gets their OWN Hysteria2 password + TUIC uuid/password (not one shared
+# secret for everyone — the previous behaviour, which broke multi-user installs).
+# Falls back to a single "shared" user when users.json is absent.
+build_user_creds(){
+  local users_json="$ETC_DIR/users.json"
+  local map="$SB_DIR/users.json"
+  # If a map already exists, keep it stable across re-runs (don't rotate secrets).
+  if [ -f "$map" ] && [ "$(jq 'length' "$map" 2>/dev/null || echo 0)" -gt 0 ]; then
+    return 0
+  fi
+  local emails=""
+  if [ -f "$users_json" ]; then
+    emails="$(jq -r '.users[]?|select(.active!=false)|.email' "$users_json" 2>/dev/null)"
+  fi
+  [ -z "$emails" ] && emails="shared"
+  local arr="[]"
+  while IFS= read -r email; do
+    [ -z "$email" ] && continue
+    local name="${email%@*}"
+    local pw uuid
+    pw="$(openssl rand -hex 16)"; uuid="$(cat /proc/sys/kernel/random/uuid)"
+    arr="$(printf '%s' "$arr" | jq -c --arg n "$name" --arg pw "$pw" --arg u "$uuid" \
+      '. += [{name:$n, hy2_pw:$pw, tuic_uuid:$u, tuic_pw:$pw}]')"
+  done <<< "$emails"
+  printf '%s' "$arr" > "$map"
+}
+
+# Write the sing-box config from the current per-user credential map.
+write_singbox_config(){
+  local sni cert key map
   sni="$(cat "$SB_DIR/sni.txt" 2>/dev/null || echo www.bing.com)"
-  echo "$pw"   > "$SB_DIR/hy2_pw.txt"
-  echo "$uuid" > "$SB_DIR/tuic_uuid.txt"
-  echo "$pw"   > "$SB_DIR/tuic_pw.txt"
-  jq -n --arg pw "$pw" --arg uuid "$uuid" \
+  cert="$SB_DIR/cert.pem"; key="$SB_DIR/key.pem"; map="$SB_DIR/users.json"
+  # hy2 users: [{password}], tuic users: [{uuid,password}] — one entry per VPN user
+  local hy2_users tuic_users
+  hy2_users="$(jq -c '[.[]|{password:.hy2_pw}]' "$map")"
+  tuic_users="$(jq -c '[.[]|{uuid:.tuic_uuid, password:.tuic_pw}]' "$map")"
+  jq -n --argjson hy2u "$hy2_users" --argjson tuicu "$tuic_users" \
         --argjson hy2 "$HY2_PORT" --argjson tuic "$TUIC_PORT" \
-        --arg cert "$SB_DIR/cert.pem" --arg key "$SB_DIR/key.pem" '
+        --arg cert "$cert" --arg key "$key" '
   {
     log: { level: "warn" },
     inbounds: [
       { type:"hysteria2", tag:"hy2-in", listen:"::", listen_port:$hy2,
-        users:[{password:$pw}],
+        users:$hy2u,
         tls:{ enabled:true, certificate_path:$cert, key_path:$key } },
       { type:"tuic", tag:"tuic-in", listen:"::", listen_port:$tuic,
-        users:[{uuid:$uuid, password:$pw}],
+        users:$tuicu,
         congestion_control:"bbr",
         tls:{ enabled:true, certificate_path:$cert, key_path:$key } }
     ],
     outbounds: [ { type:"direct", tag:"direct" } ]
   }' > "$SB_DIR/config.json"
   "$SB_BIN" check -c "$SB_DIR/config.json"
-  say "sing-box config generated (hy2:$HY2_PORT tuic:$TUIC_PORT)"
+}
+
+gen_config(){
+  build_user_creds
+  write_singbox_config
+  say "sing-box config generated ($(jq 'length' "$SB_DIR/users.json") user(s), hy2:$HY2_PORT tuic:$TUIC_PORT)"
+}
+
+# Add one VPN user to the companion (per-user creds) and reload sing-box.
+adduser(){
+  local name="${1:-}"; [ -n "$name" ] || { err "usage: adduser <name>"; return 1; }
+  local map="$SB_DIR/users.json"
+  [ -f "$map" ] || { err "companion not initialised — run 'enable' first"; return 1; }
+  if [ "$(jq --arg n "$name" '[.[]|select(.name==$n)]|length' "$map")" -gt 0 ]; then
+    inf "user $name already in companion — skipped"; return 0
+  fi
+  local pw uuid tmp
+  pw="$(openssl rand -hex 16)"; uuid="$(cat /proc/sys/kernel/random/uuid)"
+  tmp="$(mktemp)"
+  jq --arg n "$name" --arg pw "$pw" --arg u "$uuid" \
+    '. += [{name:$n, hy2_pw:$pw, tuic_uuid:$u, tuic_pw:$pw}]' "$map" > "$tmp" && mv "$tmp" "$map"
+  write_singbox_config
+  systemctl restart "$SVC" 2>/dev/null || true
+  say "added $name to Hysteria2/TUIC companion"
+}
+
+# Remove one VPN user from the companion and reload sing-box.
+deluser(){
+  local name="${1:-}"; [ -n "$name" ] || { err "usage: deluser <name>"; return 1; }
+  local map="$SB_DIR/users.json"
+  [ -f "$map" ] || return 0
+  local tmp; tmp="$(mktemp)"
+  jq --arg n "$name" 'map(select(.name!=$n))' "$map" > "$tmp" && mv "$tmp" "$map"
+  write_singbox_config
+  systemctl restart "$SVC" 2>/dev/null || true
+  say "removed $name from companion"
 }
 
 install_service(){
@@ -133,14 +198,21 @@ open_ports(){
   fi
 }
 
+# Per-user share links, labeled #KIAN-<name>-Hysteria2 / -TUIC so the installer's
+# per-user subscription builder (grep "#KIAN-<name>-") picks the right one up.
 print_links(){
-  local ip sni pw uuid
+  local ip sni map
   ip="$(curl -fsS4 https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')"
   sni="$(cat "$SB_DIR/sni.txt" 2>/dev/null || echo www.bing.com)"
-  pw="$(cat "$SB_DIR/hy2_pw.txt")"; uuid="$(cat "$SB_DIR/tuic_uuid.txt")"
+  map="$SB_DIR/users.json"
+  [ -f "$map" ] || { err "no user map — run 'enable' first"; return 1; }
   echo
-  echo "Hysteria2:  hysteria2://${pw}@${ip}:${HY2_PORT}/?sni=${sni}&insecure=1#KIAN-Hysteria2"
-  echo "TUIC v5:    tuic://${uuid}:${pw}@${ip}:${TUIC_PORT}/?sni=${sni}&congestion_control=bbr&allow_insecure=1#KIAN-TUIC"
+  jq -r '.[]|[.name,.hy2_pw,.tuic_uuid,.tuic_pw]|@tsv' "$map" \
+    | while IFS=$'\t' read -r name hy2pw tuicuuid tuicpw; do
+        [ -z "$name" ] && continue
+        echo "hysteria2://${hy2pw}@${ip}:${HY2_PORT}/?sni=${sni}&insecure=1#KIAN-${name}-Hysteria2"
+        echo "tuic://${tuicuuid}:${tuicpw}@${ip}:${TUIC_PORT}/?sni=${sni}&congestion_control=bbr&allow_insecure=1#KIAN-${name}-TUIC"
+      done
   echo
 }
 
@@ -149,11 +221,13 @@ case "${1:-enable}" in
     need_root; install_singbox; ensure_cert; gen_config; install_service; open_ports; print_links
     say "Hysteria2 + TUIC enabled. (Reality/SS/TLS untouched.)" ;;
   links)   print_links ;;
+  adduser) need_root; shift; adduser "${1:-}" ;;
+  deluser) need_root; shift; deluser "${1:-}" ;;
   disable)
     need_root
     systemctl disable --now "$SVC" 2>/dev/null || true
     rm -f "/etc/systemd/system/${SVC}.service"; systemctl daemon-reload
     say "companion disabled (sing-box binary kept)" ;;
   status)  systemctl status "$SVC" --no-pager 2>/dev/null || echo "not installed" ;;
-  *) err "usage: kian-protocols.sh {enable|links|disable|status}"; exit 2 ;;
+  *) err "usage: kian-protocols.sh {enable|links|adduser <name>|deluser <name>|disable|status}"; exit 2 ;;
 esac
