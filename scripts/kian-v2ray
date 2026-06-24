@@ -12,7 +12,8 @@
 #     kian-v2ray remove <نام>        حذف کاربر
 #     kian-v2ray reset <نام> [حجم_GB]   صفر کردن مصرف (و در صورت دادن، تنظیم حجم)
 #     kian-v2ray renew <نام> [روز]   تمدید اعتبار از همین لحظه
-#     kian-v2ray update              به‌روزرسانی Xray به آخرین نسخه
+#     kian-v2ray update              به‌روزرسانی کامل: Xray + اسکریپت‌ها + پنل + پروتکل‌ها + سینکِ سابسکرایب
+#     kian-v2ray resync              بازسازیِ لینکِ Subscription همهٔ کاربران + همگام‌سازیِ Gist (بعد از تغییرِ پروتکل/متد)
 #     kian-v2ray fixport             رفع تداخل پورت API (کرش‌لوپ روی سرور دارای پنل دیگر)
 #     kian-v2ray rebind              بازسازی Xray با اجازهٔ bind روی پورت‌های زیر ۱۰۲۴ (۴۴۳/۸۰)
 #     kian-v2ray warp                تلاش مجدد WARP (WireGuard/MASQUE) و برگرداندن از fallback
@@ -285,19 +286,52 @@ cmd_untune(){
 cmd_warp(){
   need_root
   command -v warp-cli >/dev/null 2>&1 || { err "WARP نصب نیست."; exit 1; }
-  inf "تلاش برای اتصال WARP..."
-  warp-cli --accept-tos connect >/dev/null 2>&1 || { systemctl restart warp-svc >/dev/null 2>&1; sleep 3; warp-cli --accept-tos connect >/dev/null 2>&1; }
-  sleep 5
+
+  # اول سرویس رو بالا بیار (ممکنه down باشه)
+  systemctl is-active --quiet warp-svc 2>/dev/null || systemctl start warp-svc 2>/dev/null || true
+  sleep 2
+
+  inf "تلاش برای اتصال WARP (WireGuard)..."
+  warp-cli --accept-tos disconnect >/dev/null 2>&1 || true
+  sleep 1
+  warp-cli --accept-tos connect >/dev/null 2>&1 || true
+  sleep 8   # WireGuard handshake ممکن است تا ۸ ثانیه طول بکشد
+
   if ! _warp_up; then
-    local cur alt; cur="$(warp-cli --accept-tos tunnel protocol get 2>/dev/null | grep -oiE 'wireguard|masque' | head -1)"
-    alt="WireGuard"; echo "$cur" | grep -qi wireguard && alt="MASQUE"
-    inf "تلاش با پروتکل $alt"
-    warp-cli --accept-tos tunnel protocol set "$alt" >/dev/null 2>&1 || warp-cli --accept-tos set-tunnel-protocol "$alt" >/dev/null 2>&1 || true
-    warp-cli --accept-tos disconnect >/dev/null 2>&1; sleep 1; warp-cli --accept-tos connect >/dev/null 2>&1 || true
-    sleep 6
+    # تلاش با MASQUE (HTTP/3 روی UDP 443 — اغلب از فیلترینگ رد می‌شود)
+    inf "WireGuard وصل نشد — تلاش با MASQUE (UDP 443)..."
+    warp-cli --accept-tos tunnel protocol set MASQUE >/dev/null 2>&1 \
+      || warp-cli --accept-tos set-tunnel-protocol masque >/dev/null 2>&1 || true
+    warp-cli --accept-tos disconnect >/dev/null 2>&1; sleep 1
+    warp-cli --accept-tos connect >/dev/null 2>&1 || true
+    sleep 10
   fi
-  if _warp_up; then say "WARP متصل است ✅"; _warp_restore_routing
-  else err "WARP هنوز وصل نشد — fallback (direct) فعال می‌ماند تا کاربر بی‌نت نماند. بعداً دوباره: kian-v2ray warp"; fi
+
+  if ! _warp_up; then
+    # برگشت به WireGuard یک بار دیگر با reset کامل ثبت
+    inf "MASQUE هم وصل نشد — reset و تلاش مجدد با WireGuard..."
+    warp-cli --accept-tos tunnel protocol set WireGuard >/dev/null 2>&1 || true
+    warp-cli --accept-tos registration delete >/dev/null 2>&1 || true
+    sleep 1
+    warp-cli --accept-tos registration new >/dev/null 2>&1 || true
+    sleep 2
+    warp-cli --accept-tos connect >/dev/null 2>&1 || true
+    sleep 8
+  fi
+
+  if _warp_up; then
+    say "WARP متصل است ✅"
+    # پروتکل فعلی رو ذخیره کن (برای نمایش در status)
+    warp-cli --accept-tos tunnel protocol get 2>/dev/null \
+      | grep -oiE 'wireguard|masque' | head -1 > "$ETC_DIR/warp_proto.txt" || true
+    _warp_restore_routing
+  else
+    err "WARP هنوز وصل نشد — fallback (direct) فعال می‌ماند تا کاربر بی‌نت نماند."
+    warn "راه‌حل‌های احتمالی:"
+    warn "  ۱) UDP ممکن است روی این سرور یا ISP بلاک باشد — پورت UDP 443 را چک کن"
+    warn "  ۲) دوباره امتحان کن:  kian-v2ray warp"
+    warn "  ۳) برای دیدن خطای دقیق:  warp-cli --accept-tos status"
+  fi
 }
 
 # --- رفع خودکار تداخل پورت API (۰.۱/۰.۳) ----------------------------------
@@ -435,6 +469,11 @@ EOF
       read -r sp sm spw <<<"$ss"
       all="${all}ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#KIAN-${local_name}-SS"$'\n'
     fi
+    # لینک‌های Hysteria2/TUIC این کاربر (اگر کامپنیون sing-box فعال است) — per-user
+    if [ -f "$ETC_DIR/extra_links.txt" ]; then
+      local ex; ex="$(grep -E "#KIAN-${local_name}-" "$ETC_DIR/extra_links.txt" 2>/dev/null || true)"
+      [ -n "$ex" ] && all="${all}${ex}"$'\n'
+    fi
     # فایل subscription = base64 از مجموعهٔ لینک‌ها (فرمت v2rayNG)
     local outfile="$subdir/${tok}.txt"
     printf '%s' "$all" | base64 -w0 > "$outfile"
@@ -485,7 +524,22 @@ cmd_add(){
     '.users += [{id:$id,email:$e,quota_bytes:$q,used_bytes:0,expires_at:$x,active:true,note:""}]' \
     "$USERS_FILE" > "$tmp" && mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
   rebuild_and_restart
+  # اگر کامپنیون Hysteria2/TUIC فعال است، کاربر جدید را به آن هم اضافه کن و
+  # لینک‌های per-user او را به links.txt + extra_links.txt اضافه کن تا در
+  # Subscription کاربر بیاید (وگرنه کاربر جدید این پروتکل‌ها را نمی‌گرفت).
+  if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
+    if bash /usr/local/bin/kian-protocols.sh adduser "$name" >/dev/null 2>&1; then
+      local new_extra; new_extra="$(bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
+        | grep -E "#KIAN-${name}-" || true)"
+      if [ -n "$new_extra" ]; then
+        printf '%s\n' "$new_extra" >> "$ETC_DIR/links.txt"
+        printf '%s\n' "$new_extra" >> "$ETC_DIR/extra_links.txt"
+      fi
+    fi
+  fi
   say "کاربر افزوده شد: $email  (حجم: $([ "$gb" -le 0 ] && echo ∞ || echo ${gb}G) / مدت: $([ "$days" -le 0 ] && echo دائمی || echo ${days}روز))"
+  # لینک Subscription کاربر را بساز (Reality + TLS + SS + Hy2/TUIC) و در Gist همگام کن
+  cmd_sub "$name"
   cmd_configs "$name"
 }
 
@@ -497,6 +551,21 @@ cmd_remove(){
   local tmp; tmp="$(mktemp)"
   jq --arg e "$email" '.users |= map(select(.email != $e))' "$USERS_FILE" > "$tmp" && mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
   rebuild_and_restart
+  # کاربر را از کامپنیون Hysteria2/TUIC و از extra_links.txt هم حذف کن
+  local rm_name="${email%@*}"
+  if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
+    bash /usr/local/bin/kian-protocols.sh deluser "$rm_name" >/dev/null 2>&1 || true
+  fi
+  if [ -f "$ETC_DIR/extra_links.txt" ]; then
+    grep -vE "#KIAN-${rm_name}-" "$ETC_DIR/extra_links.txt" > "$tmp" 2>/dev/null && mv "$tmp" "$ETC_DIR/extra_links.txt" || rm -f "$tmp"
+  fi
+  # توکن Subscription کاربر را پاک کن و فایل sub او را حذف کن
+  if [ -f "$ETC_DIR/sub_tokens.json" ]; then
+    local rmtok; rmtok="$(jq -r --arg e "$email" '.[$e]//empty' "$ETC_DIR/sub_tokens.json" 2>/dev/null)"
+    [ -n "$rmtok" ] && rm -f "$ETC_DIR/sub/${rmtok}.txt"
+    tmp="$(mktemp)"; jq --arg e "$email" 'del(.[$e])' "$ETC_DIR/sub_tokens.json" > "$tmp" 2>/dev/null && mv "$tmp" "$ETC_DIR/sub_tokens.json" || rm -f "$tmp"
+  fi
+  gist_sync
   say "کاربر حذف شد: $email"
 }
 
@@ -551,12 +620,21 @@ cmd_update(){
   local prev_img; prev_img="$(cat "$IMAGE_FILE" 2>/dev/null || echo '')"
   echo "ROLLBACK_IMG=$prev_img" > "$bdir/rollback_${bts}.env"
 
-  # ۱) آپدیت اسکریپت‌ها (manager + watchdog + sub-server)
+  # ۱) آپدیت اسکریپت‌ها (manager + watchdog + sub-server + protocols + panel)
   inf "دریافت اسکریپت‌های جدید..."
   local ok_scripts=1
   curl -fsSL "$RAW_BASE/scripts/kian-v2ray"   -o /usr/local/bin/kian-v2ray.new   && chmod +x /usr/local/bin/kian-v2ray.new   || ok_scripts=0
   curl -fsSL "$RAW_BASE/scripts/watchdog.sh"  -o /usr/local/bin/kian-v2ray-watchdog.sh.new && chmod +x /usr/local/bin/kian-v2ray-watchdog.sh.new || ok_scripts=0
   curl -fsSL "$RAW_BASE/scripts/sub-server.py" -o /usr/local/bin/kian-sub-server.py.new && chmod +x /usr/local/bin/kian-sub-server.py.new || ok_scripts=0
+  # protocols + panel helper اسکریپت‌ها (برای قابلیت‌های جدید مثل AnyTLS و آپدیت پنل)
+  curl -fsSL "$RAW_BASE/scripts/kian-protocols.sh" -o /usr/local/bin/kian-protocols.sh.tmp 2>/dev/null \
+    && bash -n /usr/local/bin/kian-protocols.sh.tmp 2>/dev/null \
+    && mv /usr/local/bin/kian-protocols.sh.tmp /usr/local/bin/kian-protocols.sh && chmod +x /usr/local/bin/kian-protocols.sh \
+    || rm -f /usr/local/bin/kian-protocols.sh.tmp
+  curl -fsSL "$RAW_BASE/scripts/kian-panel.sh" -o /usr/local/bin/kian-panel.sh.tmp 2>/dev/null \
+    && bash -n /usr/local/bin/kian-panel.sh.tmp 2>/dev/null \
+    && mv /usr/local/bin/kian-panel.sh.tmp /usr/local/bin/kian-panel.sh && chmod +x /usr/local/bin/kian-panel.sh \
+    || rm -f /usr/local/bin/kian-panel.sh.tmp
   # اعتبارسنجی نحوی قبل از جایگزینی
   if [ "$ok_scripts" = 1 ] && bash -n /usr/local/bin/kian-v2ray.new 2>/dev/null && bash -n /usr/local/bin/kian-v2ray-watchdog.sh.new 2>/dev/null && python3 -c "import ast,sys; ast.parse(open('/usr/local/bin/kian-sub-server.py.new').read())" 2>/dev/null; then
     mv /usr/local/bin/kian-v2ray.new /usr/local/bin/kian-v2ray
@@ -591,10 +669,54 @@ cmd_update(){
     fi
   else warn "pull نسخهٔ $img ناموفق — Xray دست‌نخورده ماند"; fi
 
-  # ۳) ثبت نسخهٔ جدید + کاربران دست‌نخورده می‌مانند (config/users.json تغییر نکرد)
+  # ۳) اگر کامپنیون پروتکل‌ها (Hysteria2/TUIC/AnyTLS) فعال بود، دوباره enable کن
+  #    تا پروتکل‌های جدید (مثل AnyTLS) خودکار اضافه شوند — بدون نصبِ دوباره.
+  if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
+    inf "به‌روزرسانیِ پروتکل‌های جانبی (sing-box: Hysteria2/TUIC/AnyTLS)..."
+    bash /usr/local/bin/kian-protocols.sh enable >/dev/null 2>&1 \
+      && say "پروتکل‌های جانبی به‌روز شدند (قابلیت‌های جدید اضافه شد)" \
+      || warn "به‌روزرسانیِ پروتکل‌های جانبی ناموفق — پروتکل‌های فعلی دست‌نخورده‌اند"
+  fi
+
+  # ۴) اگر پنلِ وب نصب است، کد و وابستگی‌هایش را به‌روز کن (بدون ریست رمز)
+  if [ -x /usr/local/bin/kian-panel.sh ] && systemctl is-active --quiet kian-panel 2>/dev/null; then
+    inf "به‌روزرسانیِ پنلِ وب..."
+    bash /usr/local/bin/kian-panel.sh update >/dev/null 2>&1 \
+      && say "پنلِ وب به‌روز شد (قابلیت‌های جدید اضافه شد)" \
+      || warn "به‌روزرسانیِ پنل ناموفق — بررسی: systemctl status kian-panel"
+  fi
+
+  # ۵) همهٔ لینک‌های Subscription را بازسازی و با Gist همگام کن تا قابلیت‌های جدید
+  #    (پروتکل‌های اضافه‌شده) خودکار در لینکِ همهٔ کاربران بیاید — بدونِ دادنِ لینکِ تازه.
+  cmd_resync_quiet
+
+  # ۶) ثبت نسخهٔ جدید + کاربران دست‌نخورده می‌مانند (config/users.json تغییر نکرد)
   [ -n "$sv" ] && echo "$sv" > "$ETC_DIR/script_version.txt"
-  say "آپدیت کامل شد. کاربران و کانفیگ‌ها حفظ شدند. (بکاپ: $bdir/*_${bts}.*)"
+  say "آپدیت کامل شد. کاربران، کانفیگ‌ها و لینک‌های Subscription حفظ و به‌روز شدند. (بکاپ: $bdir/*_${bts}.*)"
   inf "برای دیدن وضعیت: kian-v2ray status"
+}
+
+# --- بازسازیِ همهٔ سابسکرایب‌ها (resync) -----------------------------------
+# همهٔ لینک‌های کاربران را از روی config + کامپنیون بازمی‌سازد و با Gist همگام می‌کند.
+# کاربردِ اصلی: بعد از فعال‌کردن پروتکلِ جدید یا تغییرِ متد، لینکِ همهٔ کاربران
+# خودکار به‌روز می‌شود — لازم نیست کاربر لینکِ تازه به کسی بدهد.
+_refresh_extra_links(){
+  if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
+    bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
+      | grep -oE '(hysteria2|tuic|anytls|ss)://[^[:space:]]+#KIAN-[^[:space:]]+' \
+      > "$ETC_DIR/extra_links.txt" 2>/dev/null || true
+  fi
+}
+cmd_resync_quiet(){
+  _refresh_extra_links
+  cmd_sub "" >/dev/null 2>&1 || true
+}
+cmd_resync(){
+  need_root; need_jq; need_files
+  inf "بازسازیِ لینک‌های Subscription همهٔ کاربران..."
+  _refresh_extra_links
+  cmd_sub ""
+  say "همهٔ لینک‌های Subscription بازسازی و با Gist همگام شد — کاربران با رفرش، کانفیگ‌های جدید را می‌گیرند."
 }
 
 cmd_uninstall(){
@@ -742,15 +864,20 @@ case "${1:-help}" in
   reset)     shift; cmd_reset "$@" ;;
   renew)     shift; cmd_renew "$@" ;;
   update)    cmd_update ;;
+  resync|sync) cmd_resync ;;
   fixport)   cmd_fixport ;;
   fixperm)   cmd_fixperm ;;
   rebind)    cmd_rebind ;;
   openports) cmd_openports ;;
   warp)      cmd_warp ;;
-  protocols) # Hysteria2/TUIC companion (sing-box) — additive, opt-in
+  protocols) # Hysteria2/TUIC/AnyTLS companion (sing-box) — additive, opt-in
     shift
     if [ -x /usr/local/bin/kian-protocols.sh ]; then
-      bash /usr/local/bin/kian-protocols.sh "${1:-enable}"
+      sub="${1:-enable}"
+      bash /usr/local/bin/kian-protocols.sh "$sub"
+      # بعد از فعال/غیرفعال‌کردن، لینکِ همهٔ کاربران را خودکار به‌روز کن تا
+      # پروتکلِ جدید بدونِ دادنِ لینکِ تازه به کاربران اضافه (یا حذف) شود.
+      case "$sub" in enable|adduser|deluser|disable) cmd_resync_quiet; say "لینک‌های Subscription به‌روز شد (پروتکل‌ها سینک شد)";; esac
     else
       err "kian-protocols.sh نصب نیست — دوباره نصب کن یا از RAW بگیر"; exit 1
     fi ;;

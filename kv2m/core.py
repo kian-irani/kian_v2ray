@@ -4,7 +4,7 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "3.6.0"  # 3.6: Reality spiderX (spx) + phase 10/11 parity (ShadowTLS/AnyTLS/SSH core, per-user routing/DNS)
+APP_VERSION = "4.0.0"  # 4.0: unified release — always-WARP, AnyTLS+ShadowTLS, in-place update + sub auto-resync, bulk delete/copy
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
@@ -174,10 +174,10 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
 def generate(opts):
     reality=gen_reality()
     ss={"enabled":bool(opts.get("ss_enabled")),"port":int(opts.get("ss_port") or 8388),"password":""}
-    mode=opts.get("mode","both")
-    if mode=="nosni": ss["enabled"]=True
+    # حالتِ اتصال حذف شد — همیشه از WARP عبور می‌کند (غیرقابل‌انتخاب).
+    mode="warp"
     if ss["enabled"]:  ss["password"]=gen_password()
-    channels=["direct","warp"] if mode=="both" else ([] if mode=="nosni" else [mode])
+    channels=["warp"]
     if opts.get("sni_mode")=="manual" and opts.get("sni_manual"):
         sni_list=[opts["sni_manual"]]
     elif mode!="nosni":
@@ -214,8 +214,8 @@ def generate(opts):
            for i in range(1,num_users+1)]
     # TLS/دامنه (فاز ۳): پروفایل‌های پشت Caddy روی :443 — هر پروتکل پورت داخلی و path یکتا
     tls_domain=(opts.get("tls_domain") or "").strip().lower()
-    tls_channel=opts.get("tls_channel","direct")   # direct | warp | both
-    tls_channels=["direct","warp"] if tls_channel=="both" else [tls_channel]
+    tls_channel="warp"   # همیشه از WARP — حالتِ مستقیم حذف شد
+    tls_channels=["warp"]
     tls_protos=[k for k in (opts.get("tls_protos") or []) if k in TLS_PROTOS]
     tls_enabled=bool(opts.get("tls_enabled") and is_domain(tls_domain) and tls_protos)
     tls_profiles=[]
@@ -305,6 +305,7 @@ def cmd_reset(n,gb=None):  n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return (f"kia
 def cmd_sub(n=""):         n=re.sub(r'[^a-zA-Z0-9_-]','',n or ''); return f"kian-v2ray sub {n}".strip()
 def cmd_installed():       return "command -v kian-v2ray >/dev/null 2>&1 && echo KV2M_OK || echo KV2M_MISSING"
 def cmd_update():          return "kian-v2ray update"
+def cmd_resync():          return "kian-v2ray resync"
 def cmd_uninstall():       return "echo DELETE | kian-v2ray uninstall"
 def cmd_panel(user="admin",password=""):
     """Deploy the web panel with the given admin user/pass (empty pass = random

@@ -158,13 +158,12 @@ class MainWindow(QWidget):
         c = card(); g = QGridLayout(c); g.setContentsMargins(16,14,16,14); g.setSpacing(10)
         def mut(t): x=QLabel(t); x.setObjectName("muted"); return x
         self.g_ip = QLineEdit(); self.g_ip.setPlaceholderText("1.2.3.4")
-        self.g_mode = QComboBox(); [self.g_mode.addItem(tr(m[1]), m[0]) for m in MODES]
+        # حالتِ اتصال حذف شد — همیشه از WARP عبور می‌کند (غیرقابل‌انتخاب).
         self.g_users = QLineEdit("1"); self.g_users.setFixedWidth(70)
         self.g_prefix = QLineEdit("user")
         self.g_quota = QLineEdit("0"); self.g_quota.setFixedWidth(80)
         self.g_days = QLineEdit("0"); self.g_days.setFixedWidth(80)
-        g.addWidget(mut(tr("gen.serverip")),0,0); g.addWidget(self.g_ip,0,1)
-        g.addWidget(mut(tr("gen.mode")),0,2); g.addWidget(self.g_mode,0,3)
+        g.addWidget(mut(tr("gen.serverip")),0,0); g.addWidget(self.g_ip,0,1,1,3)
         g.addWidget(mut(tr("gen.users")),1,0); g.addWidget(self.g_users,1,1)
         g.addWidget(mut(tr("gen.prefix")),1,2); g.addWidget(self.g_prefix,1,3)
         g.addWidget(mut(tr("gen.quota")),2,0); g.addWidget(self.g_quota,2,1)
@@ -198,9 +197,8 @@ class MainWindow(QWidget):
         tlshelp = QLabel(tr("gen.tlshelp")); tlshelp.setObjectName("muted"); tlshelp.setWordWrap(True)
         ab.addWidget(tlshelp,4,0,1,4)
         self.a_domain = QLineEdit(); self.a_domain.setPlaceholderText("vpn.example.com")
-        self.a_chan = QComboBox()
-        self.a_chan.addItem(tr("ch.direct"),"direct"); self.a_chan.addItem(tr("ch.warp"),"warp"); self.a_chan.addItem(tr("ch.both"),"both")
-        ab.addWidget(mut(tr("gen.domain")),5,0); ab.addWidget(self.a_domain,5,1,1,2); ab.addWidget(self.a_chan,5,3)
+        # مسیرِ خروجیِ TLS هم همیشه WARP است — انتخابگر حذف شد.
+        ab.addWidget(mut(tr("gen.domain")),5,0); ab.addWidget(self.a_domain,5,1,1,3)
         protrow = QWidget(); pr = QGridLayout(protrow); pr.setContentsMargins(0,0,0,0); pr.setSpacing(6)
         pr.addWidget(mut(tr("gen.protocols")),0,0,1,4)
         self.a_protos = {}
@@ -249,7 +247,7 @@ class MainWindow(QWidget):
         def num(le, d):
             t = le.text().strip(); return int(t) if t.isdigit() else d
         opts = {
-            "server_ip": ip, "mode": self.g_mode.currentData(),
+            "server_ip": ip, "mode": "warp",   # همیشه WARP — حالتِ اتصال حذف شد
             "num_users": max(1,min(50,num(self.g_users,1))), "prefix": (self.g_prefix.text().strip() or "user"),
             "quota_gb": num(self.g_quota,0), "days": num(self.g_days,0),
             "sni_mode": self.a_snimode.currentData(),
@@ -258,7 +256,7 @@ class MainWindow(QWidget):
             "ss_enabled": self.a_ss.isChecked(), "ss_port": num(self.a_ssport,8388),
             "base_port": num(self.a_base,8443) if self.a_base.text().strip() else None,
             "tls_enabled": self.a_tls.isChecked(), "tls_domain": self.a_domain.text().strip().lower(),
-            "tls_channel": self.a_chan.currentData(),
+            "tls_channel": "warp",   # همیشه WARP
             "tls_protos": [k for k,cb in self.a_protos.items() if cb.isChecked()],
             "extra_protocols": ([ "hysteria2" ] if self.a_hy2.isChecked() else []) +
                                ([ "tuic" ] if self.a_tuic.isChecked() else []),
@@ -361,7 +359,7 @@ class MainWindow(QWidget):
         self.m_action = QComboBox()
         for val,lab in [("status","📊 status"),("users","📋 users"),("add","➕ add"),("configs","🔗 configs"),
                         ("sub","⭐ sub"),("renew","🔄 renew"),("reset","♻️ reset"),("remove","🗑️ remove"),
-                        ("panel","🌐 web panel"),("update","⬆️ update"),("uninstall","❌ uninstall")]:
+                        ("panel","🌐 web panel"),("update","⬆️ update"),("resync","🔁 resync subs"),("uninstall","❌ uninstall")]:
             self.m_action.addItem(lab, val)
         self.m_name = QLineEdit(); self.m_name.setPlaceholderText("ali")
         self.m_gb = QLineEdit("100"); self.m_gb.setFixedWidth(80)
@@ -392,7 +390,7 @@ class MainWindow(QWidget):
     def _manage_cmd(self):
         a = self.m_action.currentData(); n = self.m_name.text().strip()
         def num(le,d): t=le.text().strip(); return int(t) if t.isdigit() else d
-        m = {"status":core.cmd_status,"users":core.cmd_users,"update":core.cmd_update,"uninstall":core.cmd_uninstall}
+        m = {"status":core.cmd_status,"users":core.cmd_users,"update":core.cmd_update,"resync":core.cmd_resync,"uninstall":core.cmd_uninstall}
         if a in m: return m[a]()
         if a=="add": return core.cmd_add(n,num(self.m_gb,100),num(self.m_days,30))
         if a=="configs": return core.cmd_configs(n)

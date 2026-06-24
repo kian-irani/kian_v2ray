@@ -122,8 +122,8 @@ async def security_headers(request: Request, call_next):
     resp.headers["Strict-Transport-Security"] = "max-age=63072000"
     resp.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com data:; "
+        "style-src 'self' 'unsafe-inline'; "
+        "font-src 'self' data:; "
         "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
         "img-src 'self' data: blob:; "
         "connect-src 'self' ws: wss:; "
@@ -301,6 +301,28 @@ def api_delete_user(name: str, admin: str = Depends(require_admin),
     if not repo.delete_user(conn, actor=admin, name=name):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
     return {"ok": True}
+
+
+@app.get("/api/users/{name}/links")
+def api_user_links(name: str, admin: str = Depends(require_admin),
+                   conn=Depends(get_db)):
+    """Return the share-URI config links for a specific user.
+
+    Reads them from the installer's links.txt (filtered by UUID) so the panel
+    can show a copy/QR for each user without re-generating configs.
+    """
+    if not repo.get_user(conn, name):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
+    links = bridge.read_user_links(name)
+    return {"name": name, "links": links}
+
+
+@app.get("/api/links")
+def api_all_links(admin: str = Depends(require_admin)):
+    """Return every config link on the server, so the panel can offer a
+    one-click "copy all configs" instead of forcing terminal access."""
+    links = bridge.read_all_links()
+    return {"links": links, "count": len(links)}
 
 
 @app.post("/api/users/bulk")

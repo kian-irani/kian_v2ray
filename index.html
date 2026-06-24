@@ -127,42 +127,6 @@
         </div>
       </div>
 
-      <!-- حالت: کارت‌های ساده و درشت -->
-      <div class="field">
-        <label data-i18n="g.mode.l">🌐 حالت اتصال</label>
-        <div class="modes">
-          <label class="mode">
-            <input type="radio" name="mode" value="both" checked>
-            <span class="mode-box">
-              <span class="mode-title" data-i18n="g.mode.both.t">هر دو ✨</span>
-              <span class="mode-sub" data-i18n="g.mode.both.s">پیشنهادی — هم سریع، هم همه‌چیز باز. دو لینک می‌گیری.</span>
-            </span>
-          </label>
-          <label class="mode">
-            <input type="radio" name="mode" value="direct">
-            <span class="mode-box">
-              <span class="mode-title" data-i18n="g.mode.dir.t">سریع</span>
-              <span class="mode-sub" data-i18n="g.mode.dir.s">سریع‌ترین، ولی شاید بعضی سایت‌ها باز نشه.</span>
-            </span>
-          </label>
-          <label class="mode">
-            <input type="radio" name="mode" value="warp">
-            <span class="mode-box">
-              <span class="mode-title" data-i18n="g.mode.warp.t">همه‌چیز باز</span>
-              <span class="mode-sub" data-i18n="g.mode.warp.s">از WARP رد می‌شه، کمی کندتر.</span>
-            </span>
-          </label>
-          <label class="mode">
-            <input type="radio" name="mode" value="nosni">
-            <span class="mode-box">
-              <span class="mode-title" data-i18n="g.mode.ns.t">بدون SNI ⚠️</span>
-              <span class="mode-sub" data-i18n="g.mode.ns.s">Shadowsocks ساده — بدون استتار. فقط برای خودت.</span>
-            </span>
-          </label>
-        </div>
-        <small class="hint" data-i18n="g.mode.h">نمی‌دونی کدوم؟ همون «هر دو» رو بذار — هر دو لینک رو می‌گیری و هرکدوم بهتر بود استفاده کن. «بدون SNI» ساده‌ست ولی ممکنه آی‌پی سرورت زودتر فیلتر بشه (پایین توضیح دادم).</small>
-      </div>
-
       <!-- ⚠️ هشدار فیلتر IP در حالت بدون دامنه -->
       <div id="ip-blacklist-warn" class="ip-warn">
         <div class="ip-warn-head" data-i18n="g.ipwarn.head">⚠️ هشدار مهم — فیلتر شدن IP سرور</div>
@@ -241,9 +205,9 @@
           <input id="ss-port" type="number" min="1" max="65535" value="8388">
         </div>
         <div class="field" id="field-extra-protos">
-          <label data-i18n="gen.extra.label">پروتکل‌های اضافه (UDP — ضدِ DPI قوی)</label>
+          <label data-i18n="gen.extra.label">پروتکل‌های اضافه (ضدِ DPI قوی)</label>
           <p class="muted small" style="margin:.2rem 0 .6rem" data-i18n="gen.extra.note">
-            روی سرویسِ مستقلِ sing-box کنارِ Xray نصب می‌شوند و مسیرِ Reality/SS/TLS را دست‌نمی‌زنند. نیازمندِ بازبودنِ پورتِ UDP روی سرور. لینک‌ها خودکار به Subscription اضافه می‌شوند.
+            با فعال‌کردن، یک سرویسِ مستقلِ sing-box کنارِ Xray نصب می‌شود که <b>هر چهار پروتکلِ Hysteria2، TUIC v5، AnyTLS و ShadowTLS v3</b> را برای هر کاربر می‌سازد (هرکدام پورتِ جدا، اگر اشغال بود خودکار جابه‌جا می‌شود). مسیرِ Reality/SS/TLS دست‌نخورده می‌ماند و لینک‌ها خودکار به Subscription اضافه می‌شوند. اگر نسخهٔ sing-box پروتکلی را نپذیرفت، فقط همان حذف و بقیه فعال می‌مانند.
           </p>
           <div class="tls-protos">
             <label class="proto-chk"><input type="checkbox" name="extra-proto" value="hysteria2"> <b>Hysteria2</b><small data-i18n="gen.extra.hy2">سریع روی شبکهٔ پُرافت/پُرتأخیر، عبورِ عالی از DPI</small></label>
@@ -348,14 +312,6 @@
               <small class="hint" data-i18n-html="g.tls.proto.h">پیشنهاد: اگر مطمئن نیستی، فقط <b>VLESS-WS</b> را بگذار — برای اکثر موارد بهترین است.</small>
             </div>
 
-            <div class="field">
-              <label data-i18n="g.tls.channel.l">مسیر خروجی این کانفیگ‌ها</label>
-              <div class="seg">
-                <label><input type="radio" name="tls-channel" value="direct" checked> <span data-i18n="g.tls.channel.direct">سریع (مستقیم)</span></label>
-                <label><input type="radio" name="tls-channel" value="warp"> <span data-i18n="g.tls.channel.warp">از WARP (دور زدن بلاک خروجی سرور)</span></label>
-              </div>
-              <small class="hint" data-i18n="g.tls.channel.h">اگر سرورت سایت‌هایی را بلاک می‌کند (مثل بعضی پروایدرهای ترکیه)، WARP را انتخاب کن.</small>
-            </div>
           </div>
         </div>
       </details>
@@ -439,10 +395,12 @@
 
     <div class="step-list">
       <div class="stp"><span class="stp-n">۱</span><div>
-        <b data-i18n="an.s1t">اپ v2rayNG رو نصب کن</b>
-        <p data-i18n="an.s1d">رایگان و متن‌باز — از Reality پشتیبانی می‌کنه.</p>
-        <a class="btn-link" href="https://github.com/2dust/v2rayNG/releases/latest" target="_blank" rel="noopener" data-i18n="an.dl">دانلود v2rayNG از گیت‌هاب ↗</a>
-        <p class="muted small" data-i18n="an.alt">جایگزین: NekoBox for Android.</p>
+        <b data-i18n="an.s1t">اپ Kv2m یا Hiddify رو نصب کن (پیشنهادی)</b>
+        <p data-i18n-html="an.s1d"><b>Kv2m</b> (همین پروژه) و <b>Hiddify</b> همهٔ پروتکل‌های ما را روی یک لینک پشتیبانی می‌کنند: Reality، Hysteria2، TUIC، AnyTLS و ShadowTLS. اگر فقط Reality می‌خواهی، v2rayNG هم همان لینک را می‌خواند.</p>
+        <a class="btn-link" href="https://github.com/kian-irani/kian_v2ray/releases/latest" target="_blank" rel="noopener">دانلود Kv2m ↗</a>
+        <a class="btn-link" href="https://github.com/hiddify/hiddify-app/releases/latest" target="_blank" rel="noopener">Hiddify ↗</a>
+        <a class="btn-link" href="https://github.com/2dust/v2rayNG/releases/latest" target="_blank" rel="noopener">v2rayNG ↗</a>
+        <p class="muted small" data-i18n="an.alt">هر کلاینتی که لینکِ Subscription می‌پذیرد کار می‌کند (NekoBox/husi، sing-box، Streisand…).</p>
       </div></div>
 
       <div class="stp"><span class="stp-n">۲</span><div>
@@ -459,7 +417,7 @@
 
       <div class="stp"><span class="stp-n">۴</span><div>
         <b data-i18n="an.s4t">اگه «هر دو» رو ساخته بودی</b>
-        <p data-i18n-html="an.s4d">دو کانفیگ داری: یکی <b>سریع (Direct)</b> و یکی <b>WARP</b>. اول سریع رو امتحان کن؛ اگه سایتی باز نشد، به WARP سوییچ کن.</p>
+        <p data-i18n-html="an.s4d">همهٔ کانفیگ‌های تو از <b>WARP</b> عبور می‌کنند (تقریباً همه‌چیز باز). فقط لینکِ Subscription را در v2rayNG/Kv2m وارد کن و وصل شو — انتخابِ حالت لازم نیست.</p>
       </div></div>
     </div>
 
@@ -474,10 +432,12 @@
 
     <div class="step-list">
       <div class="stp"><span class="stp-n">۱</span><div>
-        <b data-i18n="pc.s1t">اپ v2rayN رو دانلود کن</b>
-        <p data-i18n="pc.s1d">برای ویندوز — از Reality پشتیبانی می‌کنه.</p>
-        <a class="btn-link" href="https://github.com/2dust/v2rayN/releases/latest" target="_blank" rel="noopener" data-i18n="pc.dl">دانلود v2rayN ↗</a>
-        <p class="muted small" data-i18n="pc.alt">جایگزین چندسکویی (ویندوز/مک/لینوکس): NekoRay.</p>
+        <b data-i18n="pc.s1t">اپ Kv2m یا Hiddify رو دانلود کن (پیشنهادی)</b>
+        <p data-i18n-html="pc.s1d"><b>Kv2m</b> (ویندوز/مک/لینوکس) و <b>Hiddify</b> همهٔ پروتکل‌ها را روی یک لینک پشتیبانی می‌کنند. v2rayN هم همان لینک را برای Reality/TLS می‌خواند.</p>
+        <a class="btn-link" href="https://github.com/kian-irani/kian_v2ray/releases/latest" target="_blank" rel="noopener">دانلود Kv2m ↗</a>
+        <a class="btn-link" href="https://github.com/hiddify/hiddify-app/releases/latest" target="_blank" rel="noopener">Hiddify ↗</a>
+        <a class="btn-link" href="https://github.com/2dust/v2rayN/releases/latest" target="_blank" rel="noopener">v2rayN ↗</a>
+        <p class="muted small" data-i18n="pc.alt">هر کلاینتی که لینکِ Subscription می‌پذیرد کار می‌کند (NekoRay، sing-box…).</p>
       </div></div>
 
       <div class="stp"><span class="stp-n">۲</span><div>
@@ -502,11 +462,11 @@
   <div class="card prose">
     <h2 data-i18n="s.tips.h">💡 نکات و عیب‌یابی</h2>
 
-    <h3 data-i18n="tp.h.diff">فرق «سریع» و «WARP» چیه؟</h3>
+    <h3 data-i18n="tp.h.diff">چرا همه‌چیز از WARP می‌رود؟</h3>
     <ul class="tips">
-      <li data-i18n-html="tp.diff.1"><b>سریع (Direct):</b> ترافیک مستقیم از سرورت می‌ره بیرون. سریع‌ترینه، ولی بعضی سایت‌ها رو ممکنه پروایدرِ سرور بسته باشه.</li>
-      <li data-i18n-html="tp.diff.2"><b>WARP:</b> ترافیک از WARP کلودفلر رد می‌شه و تقریباً همه‌چیز باز می‌شه، فقط کمی کندتره.</li>
-      <li data-i18n-html="tp.diff.3">پیشنهاد: حالت <b>«هر دو»</b> رو بساز و هرکدوم بهتر جواب داد استفاده کن.</li>
+      <li data-i18n-html="tp.diff.1"><b>همهٔ کانفیگ‌ها از WARP کلودفلر خارج می‌شوند</b> — تقریباً همه‌چیز باز می‌شود و IP واقعیِ خروجیِ سرورت کمتر دیده می‌شود.</li>
+      <li data-i18n-html="tp.diff.2">اگر WARP موقتاً قطع شود، سرور خودکار به خروجیِ مستقیم سوییچ می‌کند تا بی‌نت نمانی و بعد دوباره به WARP برمی‌گردد.</li>
+      <li data-i18n-html="tp.diff.3">حالتِ «سریع/مستقیم» حذف شده است؛ دیگر لازم نیست بینِ کانفیگ‌ها انتخاب کنی.</li>
     </ul>
 
     <h3 data-i18n="tp.h.filter">🚨 آی‌پی سرورت کِی فیلتر می‌شه؟ (مهم‌ترین نکته)</h3>
@@ -693,7 +653,9 @@
         <option value="remove" data-i18n="m.act.remove">🗑️ حذف کاربر</option>
         <option value="users" data-i18n="m.act.users">📋 لیست همهٔ کاربرها و مصرف</option>
         <option value="status" data-i18n="m.act.status">📊 وضعیت سرویس</option>
-        <option value="update" data-i18n="m.act.update">⬆️ آپدیت به آخرین نسخه (حفظ کاربران)</option>
+        <option value="update" data-i18n="m.act.update">⬆️ آپدیت کامل سرور (Xray+پنل+پروتکل‌ها، حفظ کاربران)</option>
+        <option value="protocols" data-i18n="m.act.protocols">➕ فعال‌سازی پروتکل‌های جدید (Hysteria2/TUIC/AnyTLS)</option>
+        <option value="resync" data-i18n="m.act.resync">🔁 سینک لینک‌های Subscription (بعد از تغییرات)</option>
         <option value="uninstall" data-i18n="m.act.uninst">❌ حذف کامل نصب از سرور</option>
       </select>
     </div>
@@ -794,78 +756,6 @@
     </p>
     <p class="muted small" data-i18n="ab.footer">ساخته شده با ❤️ توسط Kian Irani</p>
   </div>
-</section>
-
-<!-- ===================== ROADMAP / VISION ===================== -->
-<section class="wrap roadmap" id="roadmap" aria-labelledby="roadmap-title">
-  <div class="roadmap-head">
-    <span class="rm-eyebrow" data-i18n="rm.eyebrow">نقشه‌ی راه</span>
-    <h2 id="roadmap-title" data-i18n="rm.title">از یک نصب‌کننده، به یک پلتفرمِ کاملِ VPN</h2>
-    <p class="muted" data-i18n="rm.sub">امروز ساده و رایگان نصب می‌کنی؛ مسیر، یک اکوسیستمِ چندسرور با پنل و اپ موبایل است. این‌ها در دست ساخت‌اند:</p>
-  </div>
-  <div class="rm-grid">
-    <article class="rm-card is-done">
-      <div class="rm-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
-      </div>
-      <div class="rm-body">
-        <span class="rm-status done" data-i18n="rm.now">موجود</span>
-        <h3 data-i18n="rm.privacy.t">حریمِ خصوصیِ واقعی</h3>
-        <p data-i18n="rm.privacy.d">کلیدهای خصوصی در مرورگرِ خودت ساخته می‌شوند و هرگز به سرور نمی‌رسند — مزیتی که قابلِ کپی نیست.</p>
-      </div>
-    </article>
-    <article class="rm-card">
-      <div class="rm-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="11" width="18" height="5" rx="1.5"/><path d="M7 6.5h.01M7 13.5h.01"/></svg>
-      </div>
-      <div class="rm-body">
-        <span class="rm-status done" data-i18n="rm.ready">آماده</span>
-        <h3 data-i18n="rm.multi.t">مدیریتِ چندسرور</h3>
-        <p data-i18n="rm.multi.d">یک پنل، چندین VPS: سلامت، Failover، توزیعِ بار و مسیریابیِ جغرافیایی — به‌علاوه‌ی مهاجرت از Marzban/3X-UI.</p>
-      </div>
-    </article>
-    <article class="rm-card">
-      <div class="rm-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 21h8"/></svg>
-      </div>
-      <div class="rm-body">
-        <span class="rm-status done" data-i18n="rm.ready">آماده</span>
-        <h3 data-i18n="rm.panel.t">پنلِ وبِ کامل</h3>
-        <p data-i18n="rm.panel.d">FastAPI + JWT، آمارِ زنده، محدودیتِ IP/سرعت/HWID، غیرفعال‌سازیِ خودکار و اکشن‌های گروهی برای هر کاربر.</p>
-      </div>
-    </article>
-    <article class="rm-card">
-      <div class="rm-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
-      </div>
-      <div class="rm-body">
-        <span class="rm-status" data-i18n="rm.soon">به‌زودی</span>
-        <h3 data-i18n="rm.app.t">اپِ موبایلِ Flutter</h3>
-        <p data-i18n="rm.app.d">کلاینتِ چندسکویی برای اندروید و iOS — با انتشار در کافه‌بازار، مایکت، F-Droid و سپس گوگل‌پلی.</p>
-      </div>
-    </article>
-    <article class="rm-card">
-      <div class="rm-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12l1-9z"/></svg>
-      </div>
-      <div class="rm-body">
-        <span class="rm-status done" data-i18n="rm.ready">آماده</span>
-        <h3 data-i18n="rm.proto.t">پروتکل‌های ضدسانسورِ جدید</h3>
-        <p data-i18n="rm.proto.d">Hysteria2، TUIC v5، WireGuard، Fragment/uTLS و خروجیِ Sing-box/Clash برای پایداریِ بیشتر در شرایطِ سخت.</p>
-      </div>
-    </article>
-    <article class="rm-card">
-      <div class="rm-ic" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/><circle cx="12" cy="12" r="3"/></svg>
-      </div>
-      <div class="rm-body">
-        <span class="rm-status done" data-i18n="rm.ready">آماده</span>
-        <h3 data-i18n="rm.ops.t">پایش و اتوماسیون</h3>
-        <p data-i18n="rm.ops.d">بکاپِ خودکار (Telegram/S3/R2)، Audit Log، و داشبوردِ Prometheus + Grafana برای دیدِ کامل به سلامتِ سرویس.</p>
-      </div>
-    </article>
-  </div>
-  <p class="rm-foot muted" data-i18n-html="rm.foot">می‌خواهی در ساختش سهیم باشی یا پیشنهاد بدهی؟ کدِ کامل و نقشه‌ی راه در <a href="https://github.com/kian-irani/kian_v2ray" target="_blank" rel="noopener">گیت‌هاب</a> باز است.</p>
 </section>
 
 </main>

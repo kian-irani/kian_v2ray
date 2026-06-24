@@ -99,6 +99,80 @@ def remove_user(name: str) -> tuple[int, str]:
     return cli("remove", name)
 
 
+LINKS_FILE = os.environ.get("KIAN_LINKS_FILE", "/etc/kian-v2ray/links.txt")
+USERS_FILE_PATH = USERS_JSON
+
+
+def read_user_links(name: str) -> list[str]:
+    """Return the share-URI config links that belong to ``name`` (by uuid match).
+
+    Reads the installer's links.txt (one URI per line) and filters lines whose
+    path/query contains the user's UUID.  Falls back to CLI if links.txt absent.
+    """
+    # get uuid from users.json
+    uuid = ""
+    users = read_installer_users()
+    for u in users:
+        local = (u.get("name") or "").split("@")[0]
+        if u.get("name") == name or local == name:
+            uuid = u.get("uuid") or ""
+            break
+
+    if not uuid:
+        # try CLI (kian-v2ray configs <name>) — strip ANSI, keep URI lines
+        rc, out = cli("configs", name, timeout=15.0)
+        if rc == 0:
+            import re
+            ansi = re.compile(r'\x1b\[[0-9;]*m')
+            return [l for l in (ansi.sub("", out)).splitlines()
+                    if l.startswith(("vless://", "vmess://", "ss://", "trojan://",
+                                     "hysteria2://", "tuic://"))]
+        return []
+
+    # filter links.txt by uuid
+    if not os.path.exists(LINKS_FILE):
+        rc, out = cli("configs", name, timeout=15.0)
+        if rc == 0:
+            import re
+            ansi = re.compile(r'\x1b\[[0-9;]*m')
+            return [l for l in (ansi.sub("", out)).splitlines()
+                    if l.startswith(("vless://", "vmess://", "ss://", "trojan://",
+                                     "hysteria2://", "tuic://"))]
+        return []
+
+    try:
+        with open(LINKS_FILE, "r", encoding="utf-8") as fh:
+            return [l.strip() for l in fh if uuid in l and l.strip()]
+    except OSError:
+        return []
+
+
+def read_all_links() -> list[str]:
+    """Return every config share-URI on the server (the whole links.txt).
+
+    Lets the panel offer "copy all configs" so an operator never has to SSH in
+    and copy from the terminal when a subscription link fails.
+    """
+    if os.path.exists(LINKS_FILE):
+        try:
+            with open(LINKS_FILE, "r", encoding="utf-8") as fh:
+                return [l.strip() for l in fh
+                        if l.strip().startswith(
+                            ("vless://", "vmess://", "ss://", "trojan://",
+                             "hysteria2://", "tuic://"))]
+        except OSError:
+            pass
+    # fall back to the CLI (strip ANSI colour codes)
+    rc, out = cli("configs", timeout=20.0)
+    if rc == 0:
+        import re
+        ansi = re.compile(r'\x1b\[[0-9;]*m')
+        return [l for l in ansi.sub("", out).splitlines()
+                if l.startswith(("vless://", "vmess://", "ss://", "trojan://",
+                                 "hysteria2://", "tuic://"))]
+    return []
+
+
 # --------------------------------------------------------------------------- #
 # per-user routing / DNS (phase 11.2)
 # --------------------------------------------------------------------------- #

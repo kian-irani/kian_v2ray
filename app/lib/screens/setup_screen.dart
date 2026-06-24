@@ -41,7 +41,7 @@ class _SetupScreenState extends State<SetupScreen> {
   ];
   final Set<String> _tlsSelected = {'vless-ws'};
 
-  bool _warp = false;
+  // اتصال همیشه از WARP عبور می‌کند (غیرقابل‌انتخاب) — حالتِ «سریع» حذف شد.
   bool _ss = false;
   bool _tls = false;
   bool _hy2 = false;
@@ -115,7 +115,7 @@ class _SetupScreenState extends State<SetupScreen> {
         serverIp: _ip.text.trim(),
         userPrefix: _username.text.trim().isEmpty ? 'user' : _username.text.trim(),
         count: (int.tryParse(_numUsers.text.trim()) ?? 1).clamp(1, 50),
-        warp: _warp,
+        warp: true,   // همیشه WARP — حالتِ «سریع» حذف شد
         ss: _ss,
         ssPort: int.tryParse(_ssPort.text.trim()) ?? 8388,
         tlsDomain: _tls ? _tlsDomain.text.trim() : null,
@@ -191,7 +191,7 @@ class _SetupScreenState extends State<SetupScreen> {
           panelPass: panelPass,
           protocols: [
             'reality',
-            if (_warp) 'warp',
+            'warp',
             if (_ss) 'shadowsocks',
             if (_tls) 'tls',
             if (_hy2) 'hysteria2',
@@ -203,6 +203,41 @@ class _SetupScreenState extends State<SetupScreen> {
       } else {
         _say('⚠️ کدِ خروجی $code — لاگ را ببین.');
       }
+    } catch (e) {
+      _say('✘ خطا: $e');
+    } finally {
+      ssh.close();
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Update an already-installed server in place over SSH — pulls new Xray,
+  /// scripts, panel and companion protocols, and resyncs every subscription.
+  /// No reinstall, users kept. Uses the same IP + SSH fields above.
+  Future<void> _update() async {
+    if (_ip.text.trim().isEmpty || _sshPass.text.isEmpty) {
+      _say('✘ ${widget.strings.t('setup.update.need')}');
+      return;
+    }
+    setState(() { _busy = true; _log.clear(); });
+    final ssh = SshInstaller();
+    try {
+      _say('• ${widget.strings.t('setup.update.connecting')} ${_ip.text.trim()}…');
+      final err = await ssh.connect(
+        host: _ip.text.trim(),
+        port: int.tryParse(_sshPort.text.trim()) ?? 22,
+        user: _sshUser.text.trim().isEmpty ? 'root' : _sshUser.text.trim(),
+        password: _sshPass.text,
+      );
+      if (err != null) { _say('✘ $err'); return; }
+      _say('✔ ${widget.strings.t('setup.update.running')}');
+      final (code, out) = await ssh.updateServer();
+      // Show the last meaningful lines of the update log.
+      final lines = out.trim().split('\n');
+      _say(lines.length > 12 ? lines.sublist(lines.length - 12).join('\n') : out.trim());
+      _say(code == 0
+          ? '✅ ${widget.strings.t('setup.update.done')}'
+          : '⚠️ ${widget.strings.t('setup.update.fail')} ($code)');
     } catch (e) {
       _say('✘ خطا: $e');
     } finally {
@@ -238,11 +273,6 @@ class _SetupScreenState extends State<SetupScreen> {
           ]),
           _field(_customSni, s.t('setup.sni'), hint: 'www.microsoft.com'),
           const SizedBox(height: 4),
-          SwitchListTile(
-            value: _warp, onChanged: (v) => setState(() => _warp = v),
-            title: Text(s.t('setup.warp')), subtitle: Text(s.t('setup.warp.d')),
-            contentPadding: EdgeInsets.zero,
-          ),
           SwitchListTile(
             value: _ss, onChanged: (v) => setState(() => _ss = v),
             title: Text(s.t('setup.ss')), subtitle: Text(s.t('setup.ss.d')),
@@ -314,6 +344,36 @@ class _SetupScreenState extends State<SetupScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.rocket_launch_outlined),
             label: Text(_busy ? '…' : s.t('setup.install')),
+          ),
+          const SizedBox(height: 18),
+          // به‌روزرسانیِ سرورِ از-قبل-نصب‌شده (بدون نصبِ دوباره)
+          Card(
+            color: const Color(0xFF0E1B33),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    const Icon(Icons.system_update_alt_outlined,
+                        color: KianTheme.accent, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(s.t('setup.update'),
+                        style: const TextStyle(
+                            color: KianTheme.accent, fontWeight: FontWeight.bold))),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(s.t('setup.update.d'),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF8AA0C0))),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : _update,
+                    icon: const Icon(Icons.system_update_alt_outlined, size: 18),
+                    label: Text(s.t('setup.update.btn')),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 14),
           if (_log.isNotEmpty)

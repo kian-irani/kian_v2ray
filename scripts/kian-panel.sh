@@ -137,11 +137,22 @@ print_url(){
 case "${1:-enable}" in
   enable)
     need_root; fetch_code; setup_venv; ask_admin; install_service; sync_users; open_port; print_url ;;
+  update)
+    # Refresh panel + core code and dependencies WITHOUT resetting admin creds,
+    # so a server update picks up new panel features without a reinstall.
+    need_root
+    if [ ! -d "$APP_DIR" ]; then err "panel not installed — run: kian-panel.sh enable"; exit 1; fi
+    PORT="$(cat "$APP_DIR/port" 2>/dev/null || echo 8443)"
+    fetch_code; setup_venv
+    systemctl restart "$SVC" 2>/dev/null || true
+    sleep 2
+    systemctl is-active --quiet "$SVC" && say "panel updated & restarted (creds kept)" \
+      || err "panel did not come back up — check: systemctl status $SVC" ;;
   url)     ADMIN_PASS=""; print_url ;;
   disable)
     need_root; systemctl disable --now "$SVC" 2>/dev/null || true
     rm -f "/etc/systemd/system/${SVC}.service"; systemctl daemon-reload
     say "panel service removed (code kept in ${APP_DIR})" ;;
   status)  systemctl status "$SVC" --no-pager 2>/dev/null || echo "not installed" ;;
-  *) err "usage: kian-panel.sh {enable|url|disable|status}"; exit 2 ;;
+  *) err "usage: kian-panel.sh {enable|update|url|disable|status}"; exit 2 ;;
 esac

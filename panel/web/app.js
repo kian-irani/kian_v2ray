@@ -33,6 +33,16 @@
     "login.user": ["نام کاربری", "Username"], "login.pass": ["رمز عبور", "Password"],
     "login.totp": ["کد ۲FA", "2FA Code"],
     "login.btn": ["ورود", "Sign in"], "logout": ["خروج", "Logout"],
+    "copy.sub": ["کپی لینک ساب‌سکرایب", "Copy sub link"],
+    "copy.cfg": ["کپی کانفیگ", "Copy config links"],
+    "copy.ok": ["کپی شد ✓", "Copied ✓"],
+    "cfg.qr": ["نمایش QR", "Show QR"],
+    "cfg.modal.title": ["کانفیگ‌های کاربر", "User configs"],
+    "cfg.loading": ["در حال بارگذاری…", "Loading…"],
+    "cfg.none": ["کانفیگی یافت نشد", "No configs found"],
+    "copyall.btn": ["کپی همه کانفیگ‌ها", "Copy all configs"],
+    "copyall.ok": ["کانفیگ کپی شد ✓", "configs copied ✓"],
+    "detail.open": ["نمایش جزئیات، کانفیگ و لینک", "Show detail, configs & link"],
     "sys.load": ["بار", "Load"], "sys.mem": ["رم", "RAM"],
     "stat.total": ["کل کاربران", "Total users"], "stat.active": ["فعال", "Active"],
     "stat.traffic": ["مصرف کل", "Total traffic"],
@@ -229,13 +239,16 @@
       var lim = (u.ip_limit ? ("IP " + u.ip_limit) : "—") + (u.speed_kbps ? (" · " + u.speed_kbps + "KB/s") : "");
       return "<tr data-name=\"" + esc(u.name) + "\">" +
         "<td><input type=\"checkbox\" class=\"rowchk\" aria-label=\"select\"></td>" +
-        "<td><b>" + esc(u.name) + "</b></td>" +
+        "<td><button class=\"btn sm ghost act-detail\" style=\"font-weight:700;padding:4px 8px\" title=\"" + t("detail.open") + "\">" + esc(u.name) + "</button></td>" +
         "<td class=\"hide mono muted\">" + esc(String(u.uuid).slice(0, 8)) + "…</td>" +
         "<td>" + usageBar(u) + "</td>" +
         "<td class=\"hide muted\">" + esc(lim) + "</td>" +
         "<td><span class=\"tag " + (u.enabled ? "on" : "off") + "\">" + (u.enabled ? t("enable") : t("disable")) + "</span></td>" +
         "<td><div class=\"row-actions\">" +
-          "<a class=\"btn sm ghost act-sub\" title=\"config\" aria-label=\"config\" target=\"_blank\" href=\"sub.html?name=" + encodeURIComponent(u.name) + "\"><svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1\"/></svg></a>" +
+          "<button class=\"btn sm ghost act-copy-sub\" title=\"" + t("copy.sub") + "\" aria-label=\"copy sub\"><svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1\"/></svg></button>" +
+          "<button class=\"btn sm ghost act-copy-cfg\" title=\"" + t("copy.cfg") + "\" aria-label=\"copy config\"><svg class=\"icon\" viewBox=\"0 0 24 24\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\" ry=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg></button>" +
+          "<button class=\"btn sm ghost act-qr\" title=\"" + t("cfg.qr") + "\" aria-label=\"qr\"><svg class=\"icon\" viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/><path d=\"M14 14h3v3M17 21v-3M21 14v3M21 21h-3M21 17h-3\"/></svg></button>" +
+          "<a class=\"btn sm ghost act-sub\" title=\"sub page\" aria-label=\"sub page\" target=\"_blank\" href=\"sub.html?name=" + encodeURIComponent(u.name) + "\"><svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3\"/></svg></button>" +
           "<button class=\"btn sm ghost act-toggle\" title=\"toggle\" aria-label=\"toggle\"><svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M12 2v10M18.4 6.6a9 9 0 1 1-12.8 0\"/></svg></button>" +
           "<button class=\"btn sm ghost act-edit\" aria-label=\"edit\"><svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z\"/></svg></button>" +
           "<button class=\"btn sm danger act-del\" aria-label=\"delete\"><svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6\"/></svg></button>" +
@@ -344,12 +357,152 @@
   }
 
   /* ── events ────────────────────────────────────────────────────────────── */
+  /* ── copy helpers ─────────────────────────────────────────────────────────── */
+  function _flashBtn(btn, text) {
+    var orig = btn.innerHTML;
+    btn.textContent = text;
+    setTimeout(function () { btn.innerHTML = orig; }, 1800);
+  }
+  function _copyText(text, btn) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function () {
+        if (btn) _flashBtn(btn, t("copy.ok"));
+      }).catch(function () { _legacyCopy(text, btn); });
+    } else { _legacyCopy(text, btn); }
+  }
+  function _legacyCopy(text, btn) {
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand("copy"); if (btn) _flashBtn(btn, t("copy.ok")); } catch (_) {}
+    document.body.removeChild(ta);
+  }
+
+  /* ── user config / QR modal ────────────────────────────────────────────── */
+  var _cfgModal = null;
+  function _buildCfgModal() {
+    if (_cfgModal) return;
+    _cfgModal = document.createElement("div");
+    _cfgModal.id = "cfg-modal";
+    _cfgModal.className = "scrim hidden";
+    _cfgModal.innerHTML = [
+      '<div class="modal" style="max-width:520px">',
+        '<h3 id="cfg-modal-title"></h3>',
+        '<div id="cfg-modal-body" style="font-size:13px;word-break:break-all;max-height:360px;overflow:auto"></div>',
+        '<div id="cfg-modal-qr" style="text-align:center;margin:12px 0"></div>',
+        '<div class="modal-actions">',
+          '<button class="btn ghost" id="cfg-modal-copy-all">' + t("copy.cfg") + '</button>',
+          '<button class="btn" id="cfg-modal-close">' + t("cancel") + '</button>',
+        '</div>',
+      '</div>'
+    ].join('');
+    document.body.appendChild(_cfgModal);
+    _cfgModal.addEventListener("click", function (e) {
+      if (e.target === _cfgModal) _cfgModal.classList.add("hidden");
+    });
+    document.getElementById("cfg-modal-close").addEventListener("click", function () {
+      _cfgModal.classList.add("hidden");
+    });
+  }
+
+  function _fmtTs(ts) {
+    if (!ts) return "∞";
+    try { return new Date(ts * 1000).toISOString().slice(0, 10); } catch (e) { return "—"; }
+  }
+
+  /// Full per-user detail: usage, expiry, status, sub link, every config + QR.
+  async function _showCfgModal(name) {
+    _buildCfgModal();
+    document.getElementById("cfg-modal-title").textContent = t("cfg.modal.title") + ": " + name;
+    var body = document.getElementById("cfg-modal-body");
+    var qrdiv = document.getElementById("cfg-modal-qr");
+    body.textContent = t("cfg.loading"); qrdiv.innerHTML = "";
+    _cfgModal.classList.remove("hidden");
+
+    // Usage / expiry / status header (from the already-loaded user row, no extra call).
+    var u = state.users.filter(function (x) { return x.name === name; })[0];
+    var headHtml = "";
+    if (u) {
+      var pct = u.quota_bytes > 0 ? Math.min(100, u.used_bytes / u.quota_bytes * 100) : 0;
+      var q = u.quota_bytes > 0 ? fmtGB(u.quota_bytes) + " GB" : "∞";
+      var subUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "/sub.html") + "?name=" + encodeURIComponent(name);
+      headHtml =
+        '<div style="margin-bottom:12px;padding:10px;background:#0b1426;border-radius:10px">' +
+          '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px">' +
+            '<span>' + t("th.usage") + ': <b>' + fmtGB(u.used_bytes) + ' / ' + q + '</b></span>' +
+            '<span>' + t("f.days") + ': <b>' + _fmtTs(u.expires_at) + '</b></span>' +
+            '<span>' + t("th.status") + ': <b>' + (u.enabled ? t("enable") : t("disable")) + '</b></span>' +
+          '</div>' +
+          '<div class="bar" style="margin-top:8px"><i style="width:' + pct + '%"></i></div>' +
+          '<div style="display:flex;gap:8px;align-items:center;margin-top:10px">' +
+            '<span style="flex:1;font-family:ui-monospace,monospace;font-size:11px;word-break:break-all">' + esc(subUrl) + '</span>' +
+            '<button class="btn sm" id="cfg-modal-copy-sub">' + t("copy.sub") + '</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    try {
+      var data = await api("/api/users/" + encodeURIComponent(name) + "/links");
+      if (!data || !data.links || !data.links.length) {
+        body.innerHTML = headHtml + '<div class="muted" style="padding:8px">' + t("cfg.none") + '</div>';
+        var sb0 = document.getElementById("cfg-modal-copy-sub");
+        if (sb0 && u) sb0.onclick = function () {
+          _copyText(window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "/sub.html") + "?name=" + encodeURIComponent(name), sb0);
+        };
+        return;
+      }
+      body.innerHTML = headHtml + data.links.map(function (l) {
+        return '<div style="margin:6px 0;padding:8px;background:#0b1426;border-radius:8px;display:flex;gap:8px;align-items:flex-start">' +
+          '<span style="flex:1;font-family:ui-monospace,monospace;font-size:11px">' + esc(l) + '</span>' +
+          '<button class="btn sm ghost" onclick="(function(el,link){var b=el;if(navigator.clipboard){navigator.clipboard.writeText(link).then(function(){b.textContent=\'✓\';setTimeout(function(){b.textContent=\'⎘\'},1500)})}else{var t=document.createElement(\'textarea\');t.value=link;document.body.appendChild(t);t.select();document.execCommand(\'copy\');document.body.removeChild(t);b.textContent=\'✓\';setTimeout(function(){b.textContent=\'⎘\'},1500)}})(this,' + JSON.stringify(l) + ')" title="copy">⎘</button>' +
+        '</div>';
+      }).join('');
+      /* QR برای اولین لینک */
+      if (data.links[0] && window.QRCode) {
+        qrdiv.innerHTML = '<canvas id="_kqr"></canvas>';
+        new QRCode(document.getElementById("_kqr"), { text: data.links[0], width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
+      }
+      var allLinks = data.links.join('\n');
+      document.getElementById("cfg-modal-copy-all").onclick = function () {
+        _copyText(allLinks, document.getElementById("cfg-modal-copy-all"));
+      };
+      var sb = document.getElementById("cfg-modal-copy-sub");
+      if (sb) sb.onclick = function () {
+        _copyText(window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "/sub.html") + "?name=" + encodeURIComponent(name), sb);
+      };
+    } catch (e) {
+      body.innerHTML = headHtml + '<div class="muted" style="padding:8px">Error: ' + esc(e.message) + '</div>';
+    }
+  }
+
+  /* lazy-load qrcode.js برای QR در مدال */
+  (function () {
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
+    document.head.appendChild(s);
+  })();
+
   $("#users-body").addEventListener("click", async function (e) {
     var tr = e.target.closest("tr"); if (!tr) return;
     var name = tr.getAttribute("data-name");
     if (!name) return;
     var u = state.users.filter(function (x) { return x.name === name; })[0];
-    if (e.target.closest(".act-toggle") && u) {
+    if (e.target.closest(".act-detail")) {
+      _showCfgModal(name);
+    } else if (e.target.closest(".act-copy-sub")) {
+      var subUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "/sub.html") + "?name=" + encodeURIComponent(name);
+      _copyText(subUrl, e.target.closest(".act-copy-sub"));
+    } else if (e.target.closest(".act-copy-cfg")) {
+      var btn = e.target.closest(".act-copy-cfg");
+      try {
+        var data = await api("/api/users/" + encodeURIComponent(name) + "/links");
+        if (data && data.links && data.links.length) {
+          _copyText(data.links.join('\n'), btn);
+        } else { _flashBtn(btn, t("cfg.none")); }
+      } catch (_) { _flashBtn(btn, "error"); }
+    } else if (e.target.closest(".act-qr")) {
+      _showCfgModal(name);
+    } else if (e.target.closest(".act-toggle") && u) {
       await api("/api/users/" + encodeURIComponent(name), { method: "PATCH", body: JSON.stringify({ enabled: !u.enabled }) });
       refreshUsers(); refreshStats();
     } else if (e.target.closest(".act-edit") && u) {
@@ -373,6 +526,18 @@
     if (action === "delete" && !confirm(t("del.confirm"))) return;
     await api("/api/users/bulk", { method: "POST", body: JSON.stringify({ action: action, names: names }) });
     refreshUsers(); refreshStats();
+  });
+  $("#copy-all-cfg").addEventListener("click", async function () {
+    var btn = this;
+    try {
+      var d = await api("/api/links");
+      if (d && d.links && d.links.length) {
+        _copyText(d.links.join("\n"), null);
+        _flashBtn(btn, d.links.length + " " + t("copyall.ok"));
+      } else {
+        _flashBtn(btn, t("cfg.none"));
+      }
+    } catch (e) { _flashBtn(btn, "error"); }
   });
   $("#search").addEventListener("input", debounce(refreshUsers, 300));
   $("#export").addEventListener("click", async function () {

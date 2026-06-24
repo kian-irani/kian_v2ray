@@ -37,7 +37,7 @@ A **free, open-source** stack to run your own anti-censorship VPN on **your own 
 | **Web generator** | In-browser config builder, 100% bilingual (FA/EN), client-side keys | ✅ stable |
 | **Web panel** (`panel/`) | FastAPI + JWT/2FA · dark-glass dashboard (users/nodes/audit/charts/settings) · IP/speed/HWID limits · WebSocket stats · `/metrics` | ✅ code-complete |
 | **Multi-server** (`core/cluster.py` + `node-agent/`) | One panel → many VPS · health/failover/load-balance/GeoIP · Marzban/3X-UI import | ✅ code-complete |
-| **New protocols** (`scripts/kian-protocols.sh` + `core/protocols.py`) | **Hysteria2 + TUIC v5** via a sing-box companion (opt-in) · **ShadowTLS v3 / AnyTLS / SSH-out / ECH** builders · Fragment/uTLS/TTL/Noise · **Reality spiderX** · sing-box/Clash sub export · REALITY SNI scanner · Tor fallback | ✅ code · ⏳ server test |
+| **New protocols** (`scripts/kian-protocols.sh` + `core/protocols.py`) | **Hysteria2 + TUIC v5 + AnyTLS + ShadowTLS v3** via a sing-box companion (opt-in, **per-user**, layer-guarded, auto port-resolve) · Fragment/uTLS/TTL/Noise anti-DPI · **Reality spiderX** · sing-box/Clash sub export · REALITY SNI scanner · Tor fallback · SSH-out/ECH builders | ✅ code · ⏳ server test |
 | **Kv2m desktop** (`kv2m/`) | PySide6/Qt app, **multi-server**, web-panel deploy, **Hysteria2/TUIC** generator, auto-update — Windows/macOS/Linux | ✅ **v3.6.0** |
 | **Kv2m mobile** (`app/`) | Flutter Android client — **on-device tunnel** (bundled Xray core), in-app SSH install, config **QR + copy**, **install history**, **per-app split-tunnel**, routing/DNS/kill-switch settings, web-panel deploy, GMS-free, offline mode | ✅ **v0.5.0** |
 | **Monitoring** (`monitoring/`) | Prometheus + node/Xray exporters + Grafana dashboard + alert rules | ✅ configs |
@@ -67,7 +67,7 @@ All builds are on the **[latest release](https://github.com/kian-irani/kian_v2ra
 2. Open the [web generator](https://kian-irani.github.io/kian_v2ray/) or the **Kv2m** app.
 3. Enter your server IP (+ a username).
 4. Paste the install command into your server's SSH (or hit "run on server" in Kv2m).
-5. Import the **Subscription** link into v2rayNG (Android) or v2rayN (Windows).
+5. Import the **Subscription** link into a client. **Recommended: Kv2m (this project) or [Hiddify](https://github.com/hiddify/hiddify-app)** — they support **every** protocol we generate on one link (Reality, Hysteria2, TUIC, AnyTLS, ShadowTLS). v2rayNG / v2rayN read the same link too (they just skip the UDP-based ones). One link works everywhere.
 
 ### Server commands
 
@@ -98,8 +98,9 @@ Features: JWT + refresh + **TOTP 2FA** (with UI) · user CRUD + search + **bulk 
 
 **No domain (Reality):** VLESS + Reality + Vision (TCP), with **spiderX** · Shadowsocks
 **With domain (TLS):** VLESS-WS · VMess-WS · VLESS-gRPC · VMess-gRPC · Trojan-WS · VLESS-HTTPUpgrade · VMess-HTTPUpgrade · **VLESS-XHTTP**
-**Opt-in companion (sing-box):** Hysteria2 · TUIC v5 · ShadowTLS v3 · AnyTLS · WireGuard · SSH outbound *(builders ready; runtime-gated like Hysteria2/TUIC)*
-**Anti-DPI:** Fragment · uTLS fingerprint · TTL · Noise padding · ECH plumbing · Tor bridge fallback
+**Opt-in companion (sing-box):** **Hysteria2** · **TUIC v5** · **AnyTLS** · **ShadowTLS v3** — each generated **per-user** on its own port (Hy2 8443/udp · TUIC 8444/udp · AnyTLS 8446/tcp · ShadowTLS 8447/tcp, auto-moved if busy), additive and **layer-guarded**: a sing-box build that rejects a newer layer silently drops just that one and keeps the rest, so the working protocols never break · WireGuard / SSH-out builders in `core/protocols.py`
+**Routing:** every config egresses through **Cloudflare WARP** (with automatic direct-fallback so you never go offline) — no "fast/direct" mode to misconfigure.
+**Anti-DPI:** Fragment (TLS-Hello split, on by default, toggle in the app) · uTLS fingerprint · TTL · Noise padding · ECH plumbing · Tor bridge fallback
 
 ## 💻 Kv2m apps
 
@@ -121,6 +122,42 @@ From a one-command installer to a full multi-server VPN platform. Full plan & st
 - The **Gist token** lives only in the Cloudflare Worker (secret); never on the page or the user's server.
 - Public repo, auditable code. CI runs a secret-scan + CodeQL + Trivy on every push.
 - See the [Privacy Policy](privacy.html) and [Terms of Service](terms.html).
+
+## 📚 Documentation & project map
+
+Everything in the repo, indexed in one place:
+
+| Area | Document | What's inside |
+|---|---|---|
+| 🚀 **Start here** | [Web generator](https://kian-irani.github.io/kian_v2ray/) · [Quick start](#quick-start-the-installer) | Build configs & install in minutes |
+| 🔌 **Connectivity** | [`docs/connect-now.md`](docs/connect-now.md) | Which servers the direct-IP method works on, and when to use a domain |
+| 🔄 **Migrating in** | [`docs/MIGRATION.md`](docs/MIGRATION.md) | Import users from **Marzban / 3X-UI** |
+| 🗺️ **Roadmap** | [`ROADMAP.md`](ROADMAP.md) · [legacy](ROADMAP-legacy.md) | Phase plan & current status |
+| 📋 **Product spec** | [`docs/PRD.md`](docs/PRD.md) · [`PRD-V2.md`](PRD-V2.md) | Product requirements (v1 + feature-parity v2) |
+| ✅ **Task plan** | [`PLAN.md`](PLAN.md) | Task-level breakdown & ✅/⬜ status |
+| 🔐 **Security** | [`SECURITY.md`](SECURITY.md) · [Privacy](privacy.html) · [Terms](terms.html) | Threat model, secret-free repo policy, legal |
+| 🌍 **Translations** | [`docs/TRANSLATIONS.md`](docs/TRANSLATIONS.md) | Add a language (single flat key→string map) |
+| 🏷️ **Versioning** | [`docs/VERSIONING.md`](docs/VERSIONING.md) · [`CHANGELOG.md`](CHANGELOG.md) | SemVer scheme + release history |
+| 🔁 **Reproducible builds** | [`docs/REPRODUCIBLE-BUILDS.md`](docs/REPRODUCIBLE-BUILDS.md) | Verify release artifacts from a tagged commit |
+| 🤝 **Contributing** | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | How to contribute, code style, PR flow |
+| 📊 **Monitoring** | [`monitoring/`](monitoring/) | Prometheus + Loki + Grafana dashboard & alerts |
+| ☁️ **Deploy / IaC** | [`deploy/terraform/`](deploy/terraform/) · [`docker-compose.yml`](docker-compose.yml) | One-command stack + Terraform VPS provisioning |
+
+### Repository layout
+
+```
+install.sh           one-command server installer (Reality/WARP/SS/TLS)
+index.html           in-browser config generator (client-side keys)
+scripts/             kian-v2ray CLI · kian-protocols.sh (Hy2/TUIC) · watchdog · backup · bot
+core/                shared lib: db · cluster · protocols · notify · audit · analytics · censorship
+panel/               FastAPI web panel (main/bridge/repo/security) + dark-glass UI (web/)
+app/                 Flutter Android client (Kv2m) — on-device tunnel
+kv2m/                PySide6/Qt desktop app (Kv2m)
+node-agent/          lightweight per-VPS health/metrics agent
+monitoring/          Prometheus · Loki · Grafana · alert rules
+deploy/              Terraform / IaC
+docs/                guides (migration, translations, versioning, reproducible builds, …)
+```
 
 ## Contributing & license
 
@@ -144,7 +181,7 @@ Issues and suggestions welcome — see [`docs/CONTRIBUTING.md`](docs/CONTRIBUTIN
 | **صفحهٔ تعاملی** | سازندهٔ کانفیگ در مرورگر، **۱۰۰٪ دوزبانه**، کلید سمتِ کاربر | ✅ پایدار |
 | **پنلِ وب** | FastAPI + JWT/**2FA** · داشبوردِ dark-glass (کاربران/سرورها/ممیزی/نمودار/تنظیمات) · محدودیتِ IP/سرعت/HWID · آمارِ زنده | ✅ کد کامل |
 | **چندسرور** | یک پنل → چند VPS · health/failover/load-balance/GeoIP · مهاجرت از Marzban/3X-UI | ✅ کد کامل |
-| **پروتکل‌های جدید** | **Hysteria2 + TUIC v5** روی sing-box (اختیاری) · builderهای **ShadowTLS v3 / AnyTLS / SSH-out / ECH** · Fragment/uTLS/TTL/Noise · **Reality spiderX** · خروجیِ sing-box/Clash · REALITY scanner · Tor fallback | ✅ کد · ⏳ تستِ سرور |
+| **پروتکل‌های جدید** | **Hysteria2 + TUIC v5 + AnyTLS + ShadowTLS v3** روی sing-box (اختیاری، per-user، گارد‌دار، انتخابِ خودکارِ پورت) · ضدِDPI: Fragment/uTLS/TTL/Noise · **Reality spiderX** · خروجیِ sing-box/Clash · REALITY scanner · Tor fallback | ✅ کد · ⏳ تستِ سرور |
 | **Kv2m دسکتاپ** | اپِ PySide6/Qt، **چندسرور**، راه‌اندازیِ پنل، سازندهٔ **Hysteria2/TUIC**، auto-update — ویندوز/مک/لینوکس | ✅ **v3.6.0** |
 | **Kv2m موبایل** | کلاینتِ Flutter اندروید — **اتصالِ روی‌دستگاه** (هستهٔ Xray bundle‌شده)، نصبِ SSH داخلِ اپ، **QR و کپیِ کانفیگ**، **تاریخچهٔ نصب**، **split-tunnel per-app**، تنظیماتِ routing/DNS/kill-switch، بدونِ GMS، آفلاین | ✅ **v0.5.0** |
 | **پایش** | Prometheus + اکسپورترها + داشبوردِ Grafana + قوانینِ هشدار | ✅ پیکربندی |
@@ -188,6 +225,20 @@ uvicorn panel.main:app --host 0.0.0.0 --port 8443   # داشبورد: /app  ·  
 - ✅ **انجام‌شده (در کد)** — فاز ۱ تا ۱۲: زیرساختِ core، پنلِ وب + 2FA + routing/DNSِ هر کاربر، چندسرور + node agent، پروتکل‌ها (Reality spiderX/XHTTP + builderهای ShadowTLS/AnyTLS/SSH/ECH)، اپِ موبایلِ خوداتصال + split-tunnel، **صفحهٔ ۱۰۰٪ دوزبانه (هر تب)**، CI/CD + پایش، اعلان‌ها.
 - ⏳ **نیازِ سرورِ زنده** — تستِ واقعیِ end-to-end اتصالِ Hysteria2/TUIC/TLS روی VPS.
 - 🙋 **نیازِ تو** — حساب‌های مارکت (گوگل‌پلی/کافه‌بازار/مایکت/F-Droid)، Keystore، انتشار.
+
+### 📚 مستندات
+
+| موضوع | فایل |
+|---|---|
+| 🔌 روشِ اتصالِ فعلی | [`docs/connect-now.md`](docs/connect-now.md) |
+| 🔄 مهاجرت از Marzban/3X-UI | [`docs/MIGRATION.md`](docs/MIGRATION.md) |
+| 🗺️ نقشهٔ راه | [`ROADMAP.md`](ROADMAP.md) |
+| 📋 سندِ محصول | [`docs/PRD.md`](docs/PRD.md) · [`PRD-V2.md`](PRD-V2.md) |
+| 🔐 امنیت | [`SECURITY.md`](SECURITY.md) · [حریم خصوصی](privacy.html) · [شرایط](terms.html) |
+| 🌍 ترجمه | [`docs/TRANSLATIONS.md`](docs/TRANSLATIONS.md) |
+| 🏷️ نسخه‌بندی | [`docs/VERSIONING.md`](docs/VERSIONING.md) · [`CHANGELOG.md`](CHANGELOG.md) |
+| 🤝 مشارکت | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) |
+| 📊 پایش | [`monitoring/`](monitoring/) |
 
 ### امنیت و حریم خصوصی
 
