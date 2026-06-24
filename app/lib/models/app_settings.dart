@@ -7,6 +7,7 @@ class AppSettings {
   bool autoConnect; // connect on app launch to the last server
   bool proxyOnly;   // proxy mode instead of full VPN/TUN
   bool autoRefreshSubs; // refresh subscriptions on launch
+  bool antiDpi;     // inject TLS-Hello fragmentation to defeat DPI (Fragment)
   String remoteDns; // DNS for proxied queries
   String directDns; // DNS for direct queries
   List<String> perAppProxy; // package names EXCLUDED from VPN (bypass); [] = all apps tunneled
@@ -18,6 +19,7 @@ class AppSettings {
     this.autoConnect = false,
     this.proxyOnly = false,
     this.autoRefreshSubs = true,
+    this.antiDpi = true,
     this.remoteDns = '1.1.1.1',
     this.directDns = '8.8.8.8',
     this.perAppProxy = const [],
@@ -30,6 +32,7 @@ class AppSettings {
         'autoConnect': autoConnect,
         'proxyOnly': proxyOnly,
         'autoRefreshSubs': autoRefreshSubs,
+        'antiDpi': antiDpi,
         'remoteDns': remoteDns,
         'directDns': directDns,
         'perAppProxy': perAppProxy,
@@ -42,6 +45,7 @@ class AppSettings {
         autoConnect: j['autoConnect'] as bool? ?? false,
         proxyOnly: j['proxyOnly'] as bool? ?? false,
         autoRefreshSubs: j['autoRefreshSubs'] as bool? ?? true,
+        antiDpi: j['antiDpi'] as bool? ?? true,
         remoteDns: j['remoteDns'] as String? ?? '1.1.1.1',
         directDns: j['directDns'] as String? ?? '8.8.8.8',
         perAppProxy:

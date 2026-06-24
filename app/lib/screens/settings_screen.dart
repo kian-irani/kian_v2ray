@@ -102,6 +102,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: Text(s.t('settings.proxyonly')),
             subtitle: Text(s.t('settings.proxyonly.d')),
           ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _s.antiDpi,
+            onChanged: (v) { setState(() => _s.antiDpi = v); _save(); },
+            title: Text(s.t('settings.antidpi')),
+            subtitle: Text(s.t('settings.antidpi.d')),
+          ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.apps_outlined),

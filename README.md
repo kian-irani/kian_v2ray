@@ -122,6 +122,42 @@ From a one-command installer to a full multi-server VPN platform. Full plan & st
 - Public repo, auditable code. CI runs a secret-scan + CodeQL + Trivy on every push.
 - See the [Privacy Policy](privacy.html) and [Terms of Service](terms.html).
 
+## 📚 Documentation & project map
+
+Everything in the repo, indexed in one place:
+
+| Area | Document | What's inside |
+|---|---|---|
+| 🚀 **Start here** | [Web generator](https://kian-irani.github.io/kian_v2ray/) · [Quick start](#quick-start-the-installer) | Build configs & install in minutes |
+| 🔌 **Connectivity** | [`docs/connect-now.md`](docs/connect-now.md) | Which servers the direct-IP method works on, and when to use a domain |
+| 🔄 **Migrating in** | [`docs/MIGRATION.md`](docs/MIGRATION.md) | Import users from **Marzban / 3X-UI** |
+| 🗺️ **Roadmap** | [`ROADMAP.md`](ROADMAP.md) · [legacy](ROADMAP-legacy.md) | Phase plan & current status |
+| 📋 **Product spec** | [`docs/PRD.md`](docs/PRD.md) · [`PRD-V2.md`](PRD-V2.md) | Product requirements (v1 + feature-parity v2) |
+| ✅ **Task plan** | [`PLAN.md`](PLAN.md) | Task-level breakdown & ✅/⬜ status |
+| 🔐 **Security** | [`SECURITY.md`](SECURITY.md) · [Privacy](privacy.html) · [Terms](terms.html) | Threat model, secret-free repo policy, legal |
+| 🌍 **Translations** | [`docs/TRANSLATIONS.md`](docs/TRANSLATIONS.md) | Add a language (single flat key→string map) |
+| 🏷️ **Versioning** | [`docs/VERSIONING.md`](docs/VERSIONING.md) · [`CHANGELOG.md`](CHANGELOG.md) | SemVer scheme + release history |
+| 🔁 **Reproducible builds** | [`docs/REPRODUCIBLE-BUILDS.md`](docs/REPRODUCIBLE-BUILDS.md) | Verify release artifacts from a tagged commit |
+| 🤝 **Contributing** | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | How to contribute, code style, PR flow |
+| 📊 **Monitoring** | [`monitoring/`](monitoring/) | Prometheus + Loki + Grafana dashboard & alerts |
+| ☁️ **Deploy / IaC** | [`deploy/terraform/`](deploy/terraform/) · [`docker-compose.yml`](docker-compose.yml) | One-command stack + Terraform VPS provisioning |
+
+### Repository layout
+
+```
+install.sh           one-command server installer (Reality/WARP/SS/TLS)
+index.html           in-browser config generator (client-side keys)
+scripts/             kian-v2ray CLI · kian-protocols.sh (Hy2/TUIC) · watchdog · backup · bot
+core/                shared lib: db · cluster · protocols · notify · audit · analytics · censorship
+panel/               FastAPI web panel (main/bridge/repo/security) + dark-glass UI (web/)
+app/                 Flutter Android client (Kv2m) — on-device tunnel
+kv2m/                PySide6/Qt desktop app (Kv2m)
+node-agent/          lightweight per-VPS health/metrics agent
+monitoring/          Prometheus · Loki · Grafana · alert rules
+deploy/              Terraform / IaC
+docs/                guides (migration, translations, versioning, reproducible builds, …)
+```
+
 ## Contributing & license
 
 Issues and suggestions welcome — see [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md), open an issue, or write in the [channel](https://t.me/kian_irani_cdn_f). License: **MIT**.
@@ -188,6 +224,20 @@ uvicorn panel.main:app --host 0.0.0.0 --port 8443   # داشبورد: /app  ·  
 - ✅ **انجام‌شده (در کد)** — فاز ۱ تا ۱۲: زیرساختِ core، پنلِ وب + 2FA + routing/DNSِ هر کاربر، چندسرور + node agent، پروتکل‌ها (Reality spiderX/XHTTP + builderهای ShadowTLS/AnyTLS/SSH/ECH)، اپِ موبایلِ خوداتصال + split-tunnel، **صفحهٔ ۱۰۰٪ دوزبانه (هر تب)**، CI/CD + پایش، اعلان‌ها.
 - ⏳ **نیازِ سرورِ زنده** — تستِ واقعیِ end-to-end اتصالِ Hysteria2/TUIC/TLS روی VPS.
 - 🙋 **نیازِ تو** — حساب‌های مارکت (گوگل‌پلی/کافه‌بازار/مایکت/F-Droid)، Keystore، انتشار.
+
+### 📚 مستندات
+
+| موضوع | فایل |
+|---|---|
+| 🔌 روشِ اتصالِ فعلی | [`docs/connect-now.md`](docs/connect-now.md) |
+| 🔄 مهاجرت از Marzban/3X-UI | [`docs/MIGRATION.md`](docs/MIGRATION.md) |
+| 🗺️ نقشهٔ راه | [`ROADMAP.md`](ROADMAP.md) |
+| 📋 سندِ محصول | [`docs/PRD.md`](docs/PRD.md) · [`PRD-V2.md`](PRD-V2.md) |
+| 🔐 امنیت | [`SECURITY.md`](SECURITY.md) · [حریم خصوصی](privacy.html) · [شرایط](terms.html) |
+| 🌍 ترجمه | [`docs/TRANSLATIONS.md`](docs/TRANSLATIONS.md) |
+| 🏷️ نسخه‌بندی | [`docs/VERSIONING.md`](docs/VERSIONING.md) · [`CHANGELOG.md`](CHANGELOG.md) |
+| 🤝 مشارکت | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) |
+| 📊 پایش | [`monitoring/`](monitoring/) |
 
 ### امنیت و حریم خصوصی
 

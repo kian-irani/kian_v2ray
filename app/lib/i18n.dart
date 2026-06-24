@@ -151,6 +151,8 @@ class Strings {
     'settings.routing.both': ['عبور از LAN+ایران', 'Bypass LAN+Iran'],
     'settings.proxyonly': ['فقط پراکسی (بدونِ VPN سراسری)', 'Proxy-only (no system VPN)'],
     'settings.proxyonly.d': ['به‌جای TUNِ سراسری، فقط پورتِ پراکسیِ محلی.', 'Local proxy port instead of a system-wide TUN.'],
+    'settings.antidpi': ['ضدِ DPI (Fragment)', 'Anti-DPI (Fragment)'],
+    'settings.antidpi.d': ['تکه‌تکه‌کردنِ TLS ClientHello برای عبور از فیلترینگِ ISP. اگر اتصال ناپایدار شد خاموشش کن.', 'Splits the TLS ClientHello to slip past ISP DPI. Turn off if it makes the connection unstable.'],
     'settings.dns': ['DNS', 'DNS'],
     'settings.dns.remote': ['DNS برای ترافیکِ پراکسی', 'DNS for proxied traffic'],
     'settings.dns.direct': ['DNS برای ترافیکِ مستقیم', 'DNS for direct traffic'],
