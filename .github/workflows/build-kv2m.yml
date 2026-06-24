@@ -2,7 +2,7 @@ name: Build Kv2m Desktop (Windows / macOS / Linux)
 
 on:
   push:
-    tags: ['kv2m-v*']
+    tags: ['v*', 'kv2m-v*']
   workflow_dispatch:
 
 permissions:
@@ -60,7 +60,7 @@ jobs:
       - name: Get version
         shell: pwsh
         run: |
-          $ver = "${{ github.ref_name }}" -replace "kv2m-v",""
+          $ver = "${{ github.ref_name }}" -replace "kv2m-v","" -replace "^v",""
           echo "VER=$ver" >> $env:GITHUB_ENV
 
       - name: Create Release
@@ -105,7 +105,7 @@ jobs:
           cd dist && zip -r -q "Kv2m-macOS.zip" "Kv2m.app" && cd ..
           echo "✅ $(ls -lh dist/Kv2m-macOS.zip)"
       - name: Get version
-        run: echo "VER=${GITHUB_REF_NAME#kv2m-v}" >> "$GITHUB_ENV"
+        run: VER="${GITHUB_REF_NAME#kv2m-v}"; echo "VER=${VER#v}" >> "$GITHUB_ENV"
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
@@ -149,7 +149,7 @@ jobs:
             kv2m/kv2m.py
           echo "✅ $(ls -lh dist/Kv2m-Linux-x86_64)"
       - name: Get version
-        run: echo "VER=${GITHUB_REF_NAME#kv2m-v}" >> "$GITHUB_ENV"
+        run: VER="${GITHUB_REF_NAME#kv2m-v}"; echo "VER=${VER#v}" >> "$GITHUB_ENV"
       - name: Release
         uses: softprops/action-gh-release@v2
         with:

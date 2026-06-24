@@ -67,7 +67,7 @@ All builds are on the **[latest release](https://github.com/kian-irani/kian_v2ra
 2. Open the [web generator](https://kian-irani.github.io/kian_v2ray/) or the **Kv2m** app.
 3. Enter your server IP (+ a username).
 4. Paste the install command into your server's SSH (or hit "run on server" in Kv2m).
-5. Import the **Subscription** link into v2rayNG (Android) or v2rayN (Windows).
+5. Import the **Subscription** link into a client. **Recommended: Kv2m (this project) or [Hiddify](https://github.com/hiddify/hiddify-app)** — they support **every** protocol we generate on one link (Reality, Hysteria2, TUIC, AnyTLS, ShadowTLS). v2rayNG / v2rayN read the same link too (they just skip the UDP-based ones). One link works everywhere.
 
 ### Server commands
 
