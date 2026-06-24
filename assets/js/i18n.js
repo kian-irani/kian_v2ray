@@ -151,10 +151,10 @@
     "mg.callout": { fa: "🔭 در فازهای بعدی، این کارها مستقیم از <b>ربات تلگرام</b> بدون ترمینال انجام می‌شود (نقشهٔ راه را در تب «درباره» ببین).", en: "🔭 In future phases these will be done straight from a <b>Telegram bot</b> without a terminal (see the roadmap in the “About” tab)." },
 
     /* ---------- TIPS tab (deep prose) ---------- */
-    "tp.h.diff":      { fa: "فرق «سریع» و «WARP» چیه؟", en: "What's the difference between “Fast” and “WARP”?" },
-    "tp.diff.1":      { fa: "<b>سریع (Direct):</b> ترافیک مستقیم از سرورت می‌ره بیرون. سریع‌ترینه، ولی بعضی سایت‌ها رو ممکنه پروایدرِ سرور بسته باشه.", en: "<b>Fast (Direct):</b> traffic leaves directly from your server. Fastest, but the server's provider may have blocked some sites." },
-    "tp.diff.2":      { fa: "<b>WARP:</b> ترافیک از WARP کلودفلر رد می‌شه و تقریباً همه‌چیز باز می‌شه، فقط کمی کندتره.", en: "<b>WARP:</b> traffic goes through Cloudflare WARP and almost everything opens, just a bit slower." },
-    "tp.diff.3":      { fa: "پیشنهاد: حالت <b>«هر دو»</b> رو بساز و هرکدوم بهتر جواب داد استفاده کن.", en: "Tip: build the <b>“Both”</b> mode and use whichever works better." },
+    "tp.h.diff":      { fa: "چرا همه‌چیز از WARP می‌رود؟", en: "Why does everything go through WARP?" },
+    "tp.diff.1":      { fa: "<b>همهٔ کانفیگ‌ها از WARP کلودفلر خارج می‌شوند</b> — تقریباً همه‌چیز باز می‌شود (سایت‌هایی که پروایدرِ سرور بسته، یا تحریم‌های جغرافیایی) و IP واقعیِ خروجیِ سرورت کمتر دیده می‌شود.", en: "<b>Every config egresses through Cloudflare WARP</b> — almost everything opens (sites the server's provider blocks, or geo-restrictions) and your server's real exit IP is less exposed." },
+    "tp.diff.2":      { fa: "اگر WARP موقتاً قطع شود، سرور خودکار به خروجیِ مستقیم سوییچ می‌کند تا بی‌نت نمانی و بعد دوباره به WARP برمی‌گردد — این کاملاً خودکار است و انتخابی نداری.", en: "If WARP drops momentarily, the server auto-switches to a direct exit so you stay online, then returns to WARP — fully automatic, no choice to make." },
+    "tp.diff.3":      { fa: "حالتِ «سریع/مستقیم» حذف شده است؛ دیگر لازم نیست بینِ کانفیگ‌ها انتخاب کنی.", en: "The old “Fast/Direct” mode is gone; you no longer pick between configs." },
     "tp.h.filter":    { fa: "🚨 آی‌پی سرورت کِی فیلتر می‌شه؟ (مهم‌ترین نکته)", en: "🚨 When does your server IP get blocked? (the key point)" },
     "tp.filter.lead": { fa: "سامانه فیلترینگ ایران الگوی ترافیک رو تحلیل می‌کنه. هر چی <b>الگوی ترافیک یک IP \"مشکوک‌تر\"</b> باشه، احتمال فیلتر شدنش بیشتره. عوامل اصلی:", en: "Iran's filtering system analyzes traffic patterns. The <b>more \"suspicious\" an IP's pattern</b>, the more likely it gets blocked. Main factors:" },
     "tp.filter.1":    { fa: "<b>تعداد کاربران روی یک IP:</b> ۱-۳ نفر معمولاً امن. <b>بیشتر از ۵ نفر</b> ⟵ ریسک بالا. ۲۰+ نفر ⟵ تقریباً قطعاً فیلتر می‌شه.", en: "<b>Users per IP:</b> 1–3 is usually safe. <b>More than 5</b> ⟵ high risk. 20+ ⟵ almost certainly blocked." },
@@ -357,7 +357,7 @@
     "an.s3t": { fa: "وصل شو", en: "Connect" },
     "an.s3d": { fa: "روی کانفیگ بزن تا انتخاب بشه، بعد دکمهٔ گرد پایین (▶) رو بزن. اولین بار اجازهٔ VPN می‌خواد — تأیید کن.", en: "Tap the config to select it, then press the round button at the bottom (▶). The first time it asks for VPN permission — approve it." },
     "an.s4t": { fa: "اگه «هر دو» رو ساخته بودی", en: "If you built “Both”" },
-    "an.s4d": { fa: "دو کانفیگ داری: یکی <b>سریع (Direct)</b> و یکی <b>WARP</b>. اول سریع رو امتحان کن؛ اگه سایتی باز نشد، به WARP سوییچ کن.", en: "You have two configs: one <b>Fast (Direct)</b> and one <b>WARP</b>. Try Fast first; if a site won't open, switch to WARP." },
+    "an.s4d": { fa: "همهٔ کانفیگ‌های تو از <b>WARP</b> عبور می‌کنند (تقریباً همه‌چیز باز). فقط لینکِ Subscription را در v2rayNG/Kv2m وارد کن و وصل شو — انتخابِ حالت لازم نیست.", en: "All your configs egress through <b>WARP</b> (almost everything open). Just import the subscription link into v2rayNG/Kv2m and connect — no mode to choose." },
     "an.share": { fa: "📤 می‌خوای کانفیگ رو به دوستت بدی؟ همون لینک یا QR رو بفرست — همه‌چیز خودکار وارد می‌شه.", en: "📤 Want to share the config with a friend? Just send the same link or QR — everything imports automatically." },
 
     /* ---------- PC tab (steps) ---------- */
