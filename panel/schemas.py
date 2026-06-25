@@ -68,6 +68,7 @@ class UserOut(BaseModel):
     created_at: int
     routing: Optional[str] = None
     dns: Optional[str] = None
+    sub_token: Optional[str] = None
 
 
 class BulkAction(BaseModel):

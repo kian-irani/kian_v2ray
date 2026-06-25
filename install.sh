@@ -569,7 +569,7 @@ if [ "$(printf '%s' "$SUB_TOKENS" | jq 'length')" -gt 0 ]; then
   printf '%s' "$SUB_TOKENS" | jq -r 'to_entries[]|.key+"\t"+.value' | while IFS=$'\t' read -r email token; do
     local_name="${email%@*}"
     # لینک‌های این کاربر = خطوطی از links.txt که با KIAN-<name>- برچسب خورده‌اند یا SS مشترک
-    user_links="$(grep -E "#KIAN-${local_name}-" "$ETC_DIR/links.txt" 2>/dev/null || true)"
+    user_links="$(grep -F "#KIAN-${local_name}-" "$ETC_DIR/links.txt" 2>/dev/null || true)"
     ss_link="$(grep -iE 'KIAN-Shadowsocks|KIAN-SS' "$ETC_DIR/links.txt" 2>/dev/null || true)"
     all_links="$(printf '%s\n%s\n' "$user_links" "$ss_link" | sed '/^$/d')"
     [ -z "$all_links" ] && all_links="$(cat "$ETC_DIR/links.txt")"   # fallback: همه
@@ -697,7 +697,7 @@ if [ "$COLLISION" = 1 ] && [ -n "$PBK" ]; then
     if [ -d "$ETC_DIR/sub" ] && [ -f "$ETC_DIR/sub_tokens.json" ]; then
       jq -r 'to_entries[]|.key+"\t"+.value' "$ETC_DIR/sub_tokens.json" | while IFS=$'\t' read -r email token; do
         ln="${email%@*}"
-        ul="$( { grep -E "#KIAN-${ln}-" "$ETC_DIR/links.txt"; grep -iE 'KIAN-Shadowsocks' "$ETC_DIR/links.txt"; } 2>/dev/null )"
+        ul="$( { grep -F "#KIAN-${ln}-" "$ETC_DIR/links.txt"; grep -iE 'KIAN-Shadowsocks' "$ETC_DIR/links.txt"; } 2>/dev/null )"
         [ -z "$ul" ] && ul="$(cat "$ETC_DIR/links.txt")"
         printf '%s' "$ul" | sed '/^$/d' | base64 -w0 > "$ETC_DIR/sub/${token}.txt"
       done
@@ -706,7 +706,8 @@ if [ "$COLLISION" = 1 ] && [ -n "$PBK" ]; then
   fi
 fi
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
-chmod 644 "$XRAY_DIR/config.json"   # تضمین خواندنی بودن برای کاربر غیر-root کانتینر (بعد از تخصیص پورت)
+# keep config.json root-only (640) — the container runs as --user 0:0 so root can read it
+chmod 640 "$XRAY_DIR/config.json"
 docker run -d --name "$CONTAINER" --restart unless-stopped \
   --network host --memory="512m" \
   --user 0:0 \
@@ -934,7 +935,7 @@ if { [ -n "$EXTRA_PROTOCOLS" ] || [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ]; } \
               f="$ETC_DIR/sub/${token}.txt"
               [ -f "$f" ] || continue
               # فقط لینک‌های همان کاربر (#KIAN-<name>-Hysteria2/-TUIC)
-              user_extra="$(printf '%s\n' "$EXTRA_LINKS" | grep -E "#KIAN-${local_name}-" || true)"
+              user_extra="$(printf '%s\n' "$EXTRA_LINKS" | grep -F "#KIAN-${local_name}-" || true)"
               [ -z "$user_extra" ] && continue
               { base64 -d "$f" 2>/dev/null; printf '%s\n' "$user_extra"; } \
                 | sed '/^$/d' | base64 -w0 > "${f}.new" && mv "${f}.new" "$f"

@@ -204,7 +204,7 @@
     "dm.proto.note":  { fa: "می‌توانی همه را تیک بزنی — هیچ ضرری ندارد. هر کاربر برای هر پروتکل یک لینک می‌گیرد و در v2rayNG کدام بهتر کار کرد، همان را نگه می‌دارد.", en: "You can tick all of them — no harm. Each user gets a link per protocol, and in v2rayNG you keep whichever works best." },
 
     /* ---------- protocol descriptions + extra protocols ---------- */
-    "gen.tlsproto.label": { fa: "پروتکل‌ها (هرکدام را می‌خواهی تیک بزن)", en: "Protocols (tick whichever you want)" },
+    "gen.tlsproto.label": { fa: "پروتکل‌ها (با وارد کردن دامنه همه فعال می‌شوند)", en: "Protocols (auto-enabled when domain is entered)" },
     "proto.vless-ws":          { fa: "پایدارترین، عبور خوب از DPI و CDN", en: "Most stable, good over DPI and CDN" },
     "proto.vmess-ws":          { fa: "سازگاری بالا با کلاینت‌های قدیمی", en: "High compatibility with older clients" },
     "proto.vless-grpc":        { fa: "مالتی‌پلکس، خوب روی شبکهٔ پرتاخیر", en: "Multiplexed, good on high-latency networks" },

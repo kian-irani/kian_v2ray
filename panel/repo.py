@@ -40,12 +40,15 @@ def create_user(conn: sqlite3.Connection, *, actor: str, name: str,
                 ip_limit: int = 0, speed_kbps: int = 0,
                 hwid: Optional[str] = None, routing: Optional[str] = None,
                 dns: Optional[str] = None) -> dict[str, Any]:
+    import secrets as _sec
     user_uuid = str(_uuid.uuid4())
+    sub_token = _sec.token_urlsafe(16)
     conn.execute(
         "INSERT INTO users (name, uuid, quota_bytes, expires_at, ip_limit, "
-        "speed_kbps, hwid, routing, dns) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "speed_kbps, hwid, routing, dns, sub_token) VALUES "
+        "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (name, user_uuid, quota_bytes, expires_at, ip_limit, speed_kbps, hwid,
-         routing, dns),
+         routing, dns, sub_token),
     )
     audit.record(conn, actor=actor, action="user.add", target=name,
                  detail=f"quota={quota_bytes} ip_limit={ip_limit}")

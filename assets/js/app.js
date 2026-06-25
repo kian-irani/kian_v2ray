@@ -575,7 +575,10 @@ function linkRow(title, link) {
   wrap.className = 'linkrow';
   const head = document.createElement('div');
   head.className = 'linkrow-head';
-  head.innerHTML = `<span class="linkrow-title">${title}</span>`;
+  const titleSpan = document.createElement('span');
+  titleSpan.className = 'linkrow-title';
+  titleSpan.textContent = title;
+  head.appendChild(titleSpan);
   head.appendChild(copyBtn('کپی لینک', () => link));
   const code = document.createElement('div');
   code.className = 'linkrow-code mono';

@@ -2,11 +2,11 @@ name: Build Kv2m Desktop (Windows / macOS / Linux)
 
 on:
   push:
-    tags: ['v*', 'kv2m-v*']
+    tags: ['kv2m-v*']
   workflow_dispatch:
     inputs:
       version:
-        description: 'شماره نسخه Desktop (e.g. 3.7.0 — no prefix). Leave empty when triggered by tag.'
+        description: 'شماره نسخه Desktop (e.g. 3.7.0 — no prefix). Creates tag kv2m-v{version}.'
         required: false
         type: string
 
@@ -14,8 +14,39 @@ permissions:
   contents: write
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    env:
+      INPUT_VERSION: ${{ inputs.version }}
+    outputs:
+      ver: ${{ steps.v.outputs.ver }}
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve version and tag
+        id: v
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            VER="$INPUT_VERSION"
+            TAG="kv2m-v${VER}"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+              git tag "$TAG"; git push origin "$TAG"
+            fi
+          else
+            TAG="${GITHUB_REF_NAME}"
+            VER="${TAG#kv2m-v}"; VER="${VER#v}"
+          fi
+          echo "ver=$VER" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
   build:
     runs-on: windows-latest
+    needs: resolve
 
     steps:
       - name: Checkout
@@ -62,23 +93,13 @@ jobs:
           cd ..
           echo "✅ Setup: $(Get-Item dist\Kv2m-Setup-x64.exe | Select -Expand Length) bytes"
 
-      - name: Get version
-        shell: pwsh
-        run: |
-          if ("${{ inputs.version }}" -ne "") {
-            $ver = "${{ inputs.version }}"
-          } else {
-            $ver = "${{ github.ref_name }}" -replace "kv2m-v","" -replace "^v",""
-          }
-          echo "VER=$ver" >> $env:GITHUB_ENV
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Kv2m v${{ env.VER }} — Windows x64"
-          tag_name: ${{ inputs.version && format('kv2m-v{0}', inputs.version) || github.ref_name }}
+          name: "Kv2m v${{ needs.resolve.outputs.ver }} — Windows x64"
+          tag_name: ${{ needs.resolve.outputs.tag }}
           body: |
-            ## Kv2m v${{ env.VER }}
+            ## Kv2m v${{ needs.resolve.outputs.ver }}
 
             | فایل | توضیح |
             |------|-------|
@@ -93,6 +114,7 @@ jobs:
   # macOS build — a self-contained .app folder zipped for distribution.
   build-macos:
     runs-on: macos-latest
+    needs: resolve
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -113,18 +135,13 @@ jobs:
             kv2m/kv2m.py
           cd dist && zip -r -q "Kv2m-macOS.zip" "Kv2m.app" && cd ..
           echo "✅ $(ls -lh dist/Kv2m-macOS.zip)"
-      - name: Get version
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then VER="${{ inputs.version }}"
-          else VER="${GITHUB_REF_NAME#kv2m-v}"; VER="${VER#v}"; fi
-          echo "VER=$VER" >> "$GITHUB_ENV"
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Kv2m v${{ env.VER }} — Windows / macOS / Linux"
-          tag_name: ${{ inputs.version && format('kv2m-v{0}', inputs.version) || github.ref_name }}
+          name: "Kv2m v${{ needs.resolve.outputs.ver }} — Windows / macOS / Linux"
+          tag_name: ${{ needs.resolve.outputs.tag }}
           body: |
-            ## Kv2m v${{ env.VER }} — desktop (cross-platform)
+            ## Kv2m v${{ needs.resolve.outputs.ver }} — desktop (cross-platform)
 
             | فایل | پلتفرم |
             |------|--------|
@@ -139,6 +156,7 @@ jobs:
   # Linux build — a single self-contained executable.
   build-linux:
     runs-on: ubuntu-latest
+    needs: resolve
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -160,13 +178,8 @@ jobs:
             --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy \
             kv2m/kv2m.py
           echo "✅ $(ls -lh dist/Kv2m-Linux-x86_64)"
-      - name: Get version
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then VER="${{ inputs.version }}"
-          else VER="${GITHUB_REF_NAME#kv2m-v}"; VER="${VER#v}"; fi
-          echo "VER=$VER" >> "$GITHUB_ENV"
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.version && format('kv2m-v{0}', inputs.version) || github.ref_name }}
+          tag_name: ${{ needs.resolve.outputs.tag }}
           files: dist/Kv2m-Linux-x86_64

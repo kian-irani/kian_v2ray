@@ -5,6 +5,32 @@
 
 ---
 
+## [v4.1.0] — 2026-06-25  (امنیت + رفعِ باگ‌های حیاتی — Security Hardening Release)
+
+### رفعِ امنیتی
+- **تزریقِ expression در GitHub Actions** — `${{ inputs.version }}` از `run:` بیرون رفت و از طریق `env:` در `$INPUT_VERSION` در دسترس است (سه workflow).
+- **race condition در release** — تگ `v*` از `build-app.yml` و `build-kv2m.yml` حذف شد تا دو workflow با هم release body را overwrite نکنند؛ job جدید `resolve` در kv2m اضافه شد.
+- **XSS در linkRow()** (`assets/js/app.js`) — `innerHTML` با `textContent` جایگزین شد (SNI تایپ‌شدهٔ کاربر).
+- **regex injection در grep** (`install.sh`) — سه `grep -E` که username/link را match می‌کردند با `grep -F` (fixed string) جایگزین شدند.
+- **credential injection در systemd** (`scripts/kian-panel.sh`) — credentials ادمین به `EnvironmentFile` با `chmod 600` منتقل شدند (دیگر درون heredoc unit file قرار نمی‌گیرند).
+- **UUID substring leakage** (`panel/bridge.py`) — بجای `uuid in line` از `re.compile(r'\b' + re.escape(uuid) + r'\b')` استفاده می‌شود.
+
+### رفعِ عملکردی
+- **sub_token ستون گمشده** — migration 0007 اضافه شد؛ `create_user` و `import_users` حالا توکن می‌سازند و کاربران قدیمی را backfill می‌کنند.
+- **صفحهٔ subscription همیشه 404** (`panel/web/sub.html`) — `?token=` از URL خوانده و به API پاس می‌شود؛ endpoint جدید `/api/users/{name}/sub-url` برای ادمین اضافه شد.
+- **KIAN_LANG حذف‌شده** (`kv2m/app.py`) — دستور نصب از `g['install_cmd']` گرفته می‌شود (نه بازساخته از صفر).
+- **SSH stderr blocking** (`app/lib/services/ssh_installer.dart`) — `.timeout(timeout)` به stream استدر اضافه شد.
+- **نشتِ حافظه در _workers** (`kv2m/app.py`) — helper `_launch()` قبل از افزودن worker جدید، workerهای تمام‌شده را پاک می‌کند.
+- **stale cache بعد از bulk delete** (`app/lib/screens/home_screen.dart`) — وقتی همهٔ سرورها حذف می‌شوند، cache.saveSelected با رشته‌ٔ خالی صدا می‌شود.
+- **نوشتنِ غیراتمی users.json** (`scripts/kian-protocols.sh`) — `printf > file` با `printf > file.tmp && mv` جایگزین شد.
+
+### بهبود
+- **README.md** — بازنویسیِ کامل: ساختار تمیزتر، بخشِ امنیت، جدولِ ساختار مخزن، محتوای دوزبانه.
+- **i18n.js** — برچسبِ `gen.tlsproto.label` به‌روز شد.
+- **installer.nsi** (`kv2m`) — نسخه از `3.0.2` (قدیمی) به `4.1.0` اصلاح شد.
+
+---
+
 ## [v4.0.0 — نسخهٔ یکپارچه (اسکریپت/اپ/دسکتاپ همه ۴.۰.۰)] — 2026-06-24  (همیشه‌WARP + AnyTLS + ShadowTLS + آپدیتِ درجا + سینکِ خودکارِ سابسکرایب)
 
 > از این نسخه، **همهٔ اجزا (نصب‌کننده، اپ موبایل، دسکتاپ) یک شمارهٔ نسخهٔ واحد** دارند: **4.0.0**.

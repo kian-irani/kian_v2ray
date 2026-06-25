@@ -84,6 +84,10 @@ class MainWindow(QWidget):
         self._outer = QVBoxLayout(self); self._outer.setContentsMargins(0,0,0,0); self._outer.setSpacing(0)
         self._build()
 
+    def _launch(self, w):
+        self._workers = [x for x in self._workers if x.isRunning()]
+        self._workers.append(w); w.start()
+
     # ---- (re)build entire UI (used on language switch) ----
     def _build(self):
         while self._outer.count():
@@ -278,7 +282,7 @@ class MainWindow(QWidget):
                 g["_gist"] = urls
                 if self._last is g: self._render_gen(g)
         w.ok.connect(on_ok); w.fail.connect(lambda e: None)
-        self._workers.append(w); w.start()
+        self._launch(w)
 
     def _render_gen(self, g):
         self._clear_layout(self.gen_result)
@@ -344,11 +348,11 @@ class MainWindow(QWidget):
     def _run_install(self, g):
         if not self.connected: return self._toast(tr("conn.disconnected"), True)
         self.stack.setCurrentIndex(1); self.inst_log.clear()
-        cmd = f"export KIAN_PAYLOAD='{g['payload_b64']}'\ncurl -fsSL {core.RAW_BASE}/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh"
+        cmd = g['install_cmd']  # includes KIAN_PAYLOAD + KIAN_LANG
         w = StreamWorker(self.ssh, cmd)
         w.line.connect(lambda l: self.inst_log.append(l))
         w.fail.connect(lambda e: self.inst_log.append(f"\n{tr('toast.err')}: {e}"))
-        self._workers.append(w); w.start()
+        self._launch(w)
 
     # ---- manage page ----
     def _page_manage(self):
@@ -409,7 +413,7 @@ class MainWindow(QWidget):
         def job(): return self.ssh.run(cmd)
         w = Worker(job); w.ok.connect(lambda r: self._toast((r[1] or r[2])[:80] or tr("toast.copied")))
         w.fail.connect(lambda e: self._toast(f"{tr('toast.err')}: {e}", True))
-        self._workers.append(w); w.start()
+        self._launch(w)
 
     # ---- settings page ----
     def _page_settings(self):
@@ -517,7 +521,7 @@ class MainWindow(QWidget):
         def job(): return self.ssh.connect(host, port, user, pw or None)
         w = Worker(job)
         w.ok.connect(self._on_conn); w.fail.connect(self._on_conn_fail)
-        self._workers.append(w); w.start()
+        self._launch(w)
 
     def _on_conn(self, _):
         self.connected=True; self.b_conn.setText(tr("conn.disconnect")); self.b_conn.setEnabled(True)
