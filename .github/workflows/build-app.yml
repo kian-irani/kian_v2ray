@@ -1,20 +1,21 @@
-name: Build Kv2m Android
+name: Build Kv2m Android (manual re-run)
+
+# Use this workflow to re-run the Android build for an existing release.
+# Normal releases are triggered via the "Release" workflow (release.yml).
 on:
-  push:
-    tags: ['app-v*']
   workflow_dispatch:
     inputs:
       version:
-        description: 'شماره نسخه APK (e.g. 0.6.0 — no prefix). Creates tag app-v{version}.'
-        required: false
+        description: 'Version to re-build (e.g. 4.2.0). Tag v{version} must already exist.'
+        required: true
         type: string
+
 permissions:
   contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      INPUT_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -28,84 +29,42 @@ jobs:
           channel: stable
           flutter-version: '3.24.5'
 
-      - name: Build a clean Android project + overlay our VPN sources
+      - name: Prepare clean Android project
         working-directory: app
         run: |
           set -e
-          # 1) stash our VPN-specific sources (manifest + Kotlin channel/service)
           mkdir -p /tmp/vpn
           cp android/app/src/main/AndroidManifest.xml /tmp/vpn/
           cp -r android/app/src/main/kotlin /tmp/vpn/kotlin
-          # 2) regenerate a clean, internally-consistent android/ project
           rm -rf android
           flutter create --org com.kianirani --project-name kv2m --platforms=android .
-          # 3) overlay our manifest (VpnService) + Kotlin (kv2m/vpn channel)
           cp /tmp/vpn/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           cp -r /tmp/vpn/kotlin/com android/app/src/main/kotlin/
-          # 4) ensure Gradle satisfies the AGP plugin (flutter's wrapper can lag)
           props=android/gradle/wrapper/gradle-wrapper.properties
           sed -i -E 's#gradle-[0-9.]+-(all|bin)\.zip#gradle-8.7-all.zip#' "$props"
-          echo "--- gradle wrapper ---"; cat "$props"
-          echo "--- kotlin sources ---"; ls -R android/app/src/main/kotlin
 
-      - name: Build APKs — universal + per-ABI (arm64 for new phones)
+      - name: Build APKs (universal + per-ABI splits)
         working-directory: app
         run: |
           flutter pub get
-          # Universal APK (works on every phone) + split-per-abi (smaller, arm64 etc.)
           flutter build apk --debug
           flutter build apk --debug --split-per-abi
           ls -lh build/app/outputs/flutter-apk/
 
-      - name: Resolve version and tag
-        id: ver
-        run: |
-          if [ -n "$INPUT_VERSION" ]; then
-            VER="$INPUT_VERSION"
-            TAG="app-v${VER}"
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            if ! git rev-parse "$TAG" >/dev/null 2>&1; then
-              git tag "$TAG"; git push origin "$TAG"
-            fi
-          else
-            TAG="${GITHUB_REF_NAME}"
-            VER="${TAG#app-v}"; VER="${VER#v}"
-          fi
-          echo "ver=$VER" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Rename APKs (universal + arm64 + armv7)
+      - name: Rename APKs
         working-directory: app
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          ver="${{ steps.ver.outputs.ver }}"
+          ver="$INPUT_VERSION"
           out=build/app/outputs/flutter-apk
           cp "$out/app-debug.apk"             "Kv2m-${ver}-universal.apk"
           [ -f "$out/app-arm64-v8a-debug.apk" ]   && cp "$out/app-arm64-v8a-debug.apk"   "Kv2m-${ver}-arm64.apk"
           [ -f "$out/app-armeabi-v7a-debug.apk" ] && cp "$out/app-armeabi-v7a-debug.apk" "Kv2m-${ver}-arm32.apk"
           ls -lh Kv2m-*.apk
 
-      - name: Publish release
+      - name: Upload APKs to existing release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Kv2m Android ${{ steps.ver.outputs.tag }}"
-          tag_name: ${{ steps.ver.outputs.tag }}
-          body: |
-            ## Kv2m for Android
-
-            | فایل | برای چه کسی |
-            |------|-------------|
-            | `Kv2m-*-universal.apk` | **همه‌کاره** — روی هر گوشی نصب می‌شود (مطمئن‌ترین انتخاب) |
-            | `Kv2m-*-arm64.apk` | گوشی‌های جدید (۶۴ بیتی، arm64-v8a) — حجمِ کمتر |
-            | `Kv2m-*-arm32.apk` | گوشی‌های خیلی قدیمی (۳۲ بیتی، armeabi-v7a) |
-
-            **اتصالِ روی‌دستگاه (جدید):** هستهٔ native (Xray از طریقِ `flutter_v2ray`)
-            حالا داخلِ اپ است — خودِ اپ وصل می‌شود و دیگر به v2rayNG نیاز نیست.
-            همهٔ امکانات کار می‌کنند: نصبِ سرور از داخلِ اپ، ساختِ کانفیگ، QR،
-            تاریخچهٔ نصب، Hysteria2/TUIC، پنلِ وب.
-
-            **On-device tunnel (new):** the native core (Xray via `flutter_v2ray`)
-            is now bundled — the app connects on its own, no v2rayNG needed. Full UI
-            works: in-app server install, config generation, QR, install history,
-            Hysteria2/TUIC, web panel.
+          tag_name: v${{ inputs.version }}
           files: app/Kv2m-*.apk

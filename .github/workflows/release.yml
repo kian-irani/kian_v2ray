@@ -1,20 +1,25 @@
 name: Release
+
 on:
-  push:
-    tags: [ "v*" ]
   workflow_dispatch:
     inputs:
       version:
-        description: 'شماره نسخه — version number (e.g. 3.0.0, no v prefix)'
+        description: 'شماره نسخه — version number (e.g. 4.2.0, no v prefix)'
         required: true
         type: string
+  push:
+    tags: ['v*']
+
 permissions:
   contents: write
+
 jobs:
-  release:
+  # ── 1. Create tag + GitHub Release (changelog notes) ─────────────────────────
+  create-release:
     runs-on: ubuntu-latest
-    env:
-      INPUT_VERSION: ${{ inputs.version }}
+    outputs:
+      ver: ${{ steps.tag.outputs.ver }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,9 +28,10 @@ jobs:
 
       - name: Resolve tag
         id: tag
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # Use env var — never interpolate user input directly into shell
             VER="$INPUT_VERSION"
             TAG="v${VER}"
             git config user.name "github-actions[bot]"
@@ -54,3 +60,193 @@ jobs:
           name: "kian_v2ray ${{ steps.tag.outputs.tag }}"
           body_path: RELEASE_NOTES.md
           generate_release_notes: true
+
+  # ── 2. Android APKs: universal + arm64 + arm32 ───────────────────────────────
+  build-android:
+    runs-on: ubuntu-latest
+    needs: create-release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.24.5'
+
+      - name: Prepare clean Android project
+        working-directory: app
+        run: |
+          set -e
+          mkdir -p /tmp/vpn
+          cp android/app/src/main/AndroidManifest.xml /tmp/vpn/
+          cp -r android/app/src/main/kotlin /tmp/vpn/kotlin
+          rm -rf android
+          flutter create --org com.kianirani --project-name kv2m --platforms=android .
+          cp /tmp/vpn/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          cp -r /tmp/vpn/kotlin/com android/app/src/main/kotlin/
+          props=android/gradle/wrapper/gradle-wrapper.properties
+          sed -i -E 's#gradle-[0-9.]+-(all|bin)\.zip#gradle-8.7-all.zip#' "$props"
+          echo "--- gradle wrapper ---"; cat "$props"
+
+      - name: Build APKs (universal + per-ABI splits)
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter build apk --debug
+          flutter build apk --debug --split-per-abi
+          ls -lh build/app/outputs/flutter-apk/
+
+      - name: Rename APKs
+        working-directory: app
+        run: |
+          ver="${{ needs.create-release.outputs.ver }}"
+          out=build/app/outputs/flutter-apk
+          cp "$out/app-debug.apk"             "Kv2m-${ver}-universal.apk"
+          [ -f "$out/app-arm64-v8a-debug.apk" ]   && cp "$out/app-arm64-v8a-debug.apk"   "Kv2m-${ver}-arm64.apk"
+          [ -f "$out/app-armeabi-v7a-debug.apk" ] && cp "$out/app-armeabi-v7a-debug.apk" "Kv2m-${ver}-arm32.apk"
+          ls -lh Kv2m-*.apk
+
+      - name: Upload APKs to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create-release.outputs.tag }}
+          files: app/Kv2m-*.apk
+
+  # ── 3. Windows x64 — Setup installer + Portable ──────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    needs: create-release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: 'x64'
+
+      - name: Install Python deps
+        run: pip install PySide6-Essentials paramiko cryptography "qrcode[pil]" Pillow pyinstaller
+
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
+
+      - name: Build Portable .exe
+        shell: pwsh
+        run: |
+          pyinstaller --onefile --noconsole `
+            --name "Kv2m-Portable-x64" `
+            --paths kv2m `
+            --hidden-import app --hidden-import core --hidden-import theme `
+            --hidden-import i18n --hidden-import cli `
+            --hidden-import servers --hidden-import settings `
+            --hidden-import updater --hidden-import panel_client `
+            --hidden-import paramiko --hidden-import cryptography `
+            --hidden-import qrcode --hidden-import PIL `
+            --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy `
+            kv2m/kv2m.py
+          echo "✅ Portable: $(Get-Item dist\Kv2m-Portable-x64.exe | Select -Expand Length) bytes"
+
+      - name: Build Setup .exe (NSIS)
+        shell: pwsh
+        run: |
+          Copy-Item dist\Kv2m-Portable-x64.exe kv2m\Kv2m.exe
+          $nsis = "C:\Program Files (x86)\NSIS\makensis.exe"
+          if (-not (Test-Path $nsis)) { $nsis = (Get-Command makensis -ErrorAction SilentlyContinue).Source }
+          echo "NSIS: $nsis"
+          cd kv2m
+          & $nsis installer.nsi
+          Move-Item Kv2m-Setup-x64.exe ..\dist\
+          cd ..
+          echo "✅ Setup: $(Get-Item dist\Kv2m-Setup-x64.exe | Select -Expand Length) bytes"
+
+      - name: Upload Windows EXEs to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create-release.outputs.tag }}
+          files: |
+            dist/Kv2m-Setup-x64.exe
+            dist/Kv2m-Portable-x64.exe
+
+  # ── 4. macOS — universal2 binary (Intel + Apple Silicon) ─────────────────────
+  build-macos:
+    runs-on: macos-13
+    needs: create-release
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install universal2 Python 3.11
+        run: |
+          # Python.org universal2 pkg installs a Python that runs natively on
+          # both x86_64 (Intel) and arm64 (Apple Silicon).
+          curl -fsSL -o /tmp/python311.pkg \
+            "https://www.python.org/ftp/python/3.11.9/python-3.11.9-macos11.pkg"
+          sudo installer -pkg /tmp/python311.pkg -target /
+          echo "/Library/Frameworks/Python.framework/Versions/3.11/bin" >> "$GITHUB_PATH"
+
+      - name: Install Python deps (universal2 wheels)
+        run: |
+          python3.11 -m pip install --upgrade pip
+          python3.11 -m pip install PySide6-Essentials paramiko cryptography "qrcode[pil]" Pillow pyinstaller
+
+      - name: Build universal2 .app
+        run: |
+          python3.11 -m PyInstaller --windowed --name "Kv2m" \
+            --target-arch universal2 \
+            --paths kv2m \
+            --hidden-import app --hidden-import core --hidden-import theme \
+            --hidden-import i18n --hidden-import cli --hidden-import servers \
+            --hidden-import settings --hidden-import updater --hidden-import panel_client \
+            --hidden-import paramiko --hidden-import cryptography \
+            --hidden-import qrcode --hidden-import PIL \
+            --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy \
+            kv2m/kv2m.py
+          file dist/Kv2m.app/Contents/MacOS/Kv2m
+          cd dist && zip -r -q "Kv2m-macOS.zip" "Kv2m.app" && cd ..
+          ls -lh dist/Kv2m-macOS.zip
+
+      - name: Upload macOS app to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create-release.outputs.tag }}
+          files: dist/Kv2m-macOS.zip
+
+  # ── 5. Linux x86_64 — broad glibc compatibility (Ubuntu 22.04 / glibc 2.35) ──
+  build-linux:
+    runs-on: ubuntu-22.04
+    needs: create-release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system libs for Qt
+        run: sudo apt-get update -y && sudo apt-get install -y libegl1 libxkbcommon0 libgl1
+
+      - name: Install Python deps
+        run: pip install PySide6-Essentials paramiko cryptography "qrcode[pil]" Pillow pyinstaller
+
+      - name: Build Linux executable
+        run: |
+          pyinstaller --onefile --name "Kv2m-Linux-x86_64" \
+            --paths kv2m \
+            --hidden-import app --hidden-import core --hidden-import theme \
+            --hidden-import i18n --hidden-import cli --hidden-import servers \
+            --hidden-import settings --hidden-import updater --hidden-import panel_client \
+            --hidden-import paramiko --hidden-import cryptography \
+            --hidden-import qrcode --hidden-import PIL \
+            --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy \
+            kv2m/kv2m.py
+          ls -lh dist/Kv2m-Linux-x86_64
+
+      - name: Upload Linux binary to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create-release.outputs.tag }}
+          files: dist/Kv2m-Linux-x86_64
