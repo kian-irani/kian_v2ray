@@ -218,6 +218,13 @@ class MainWindow(QWidget):
         self.a_hy2 = QCheckBox("Hysteria2"); self.a_tuic = QCheckBox("TUIC v5")
         ex.addWidget(self.a_hy2,1,0); ex.addWidget(self.a_tuic,1,1)
         ab.addWidget(exrow,7,0,1,4)
+        # Panel credentials — always installed; user sets their own admin login.
+        ab.addWidget(mut(tr("gen.panel")),8,0,1,4)
+        self.a_panel_user = QLineEdit("admin"); self.a_panel_user.setPlaceholderText(tr("gen.paneluser"))
+        self.a_panel_pass = QLineEdit(); self.a_panel_pass.setEchoMode(QLineEdit.EchoMode.Password)
+        self.a_panel_pass.setPlaceholderText(tr("gen.panelpass"))
+        ab.addWidget(mut(tr("gen.paneluser")),9,0); ab.addWidget(self.a_panel_user,9,1)
+        ab.addWidget(mut(tr("gen.panelpass")),9,2); ab.addWidget(self.a_panel_pass,9,3)
         av.addWidget(self.adv_btn); av.addWidget(self.adv_body)
         self.adv_btn.clicked.connect(self._toggle_adv)
         v.addWidget(adv)
@@ -264,6 +271,8 @@ class MainWindow(QWidget):
             "tls_protos": [k for k,cb in self.a_protos.items() if cb.isChecked()],
             "extra_protocols": ([ "hysteria2" ] if self.a_hy2.isChecked() else []) +
                                ([ "tuic" ] if self.a_tuic.isChecked() else []),
+            "panel_user": self.a_panel_user.text().strip() or "admin",
+            "panel_pass": self.a_panel_pass.text(),
             "lang": get_lang(),   # install console follows the desktop UI language
         }
         try: g = core.generate(opts)
@@ -317,6 +326,18 @@ class MainWindow(QWidget):
                 cpy = QPushButton("📋"); cpy.setObjectName("mini"); cpy.clicked.connect(lambda _,u=sub_url: self._copy(u))
                 sub.addWidget(sl); sub.addWidget(su); sub.addStretch(1); sub.addWidget(cpy); ul.addLayout(sub)
             self.gen_result.addWidget(uc)
+
+        # panel URL card (always installed)
+        ip = g.get("per_user", [{}])[0].get("serverIp","") or self.g_ip.text().strip() or self.e_host.text().strip()
+        panel_url = f"http://{ip}:8443/app" if ip else "http://SERVER_IP:8443/app"
+        pc = card(); pl = QVBoxLayout(pc); pl.setContentsMargins(16,12,16,12); pl.setSpacing(6)
+        ph = QHBoxLayout(); ph.addWidget(self._h2("🔐 " + tr("gen.panel"))); ph.addStretch(1)
+        pcp = QPushButton("📋 "+tr("gen.copy")); pcp.setObjectName("info"); pcp.clicked.connect(lambda: self._copy(panel_url))
+        ph.addWidget(pcp); pl.addLayout(ph)
+        pu_text = self.a_panel_user.text().strip() or "admin"
+        pl.addWidget(QLabel(panel_url))
+        pl.addWidget(QLabel(f"user: {pu_text}   pass: {'(random — check terminal)' if not self.a_panel_pass.text() else '(as set)'}"))
+        self.gen_result.addWidget(pc)
 
     def _link_row(self, link, title):
         f = QFrame(); f.setObjectName("mono"); l = QHBoxLayout(f); l.setContentsMargins(10,6,8,6)

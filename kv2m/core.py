@@ -286,7 +286,9 @@ def generate(opts):
              "ss_password":ss["password"] if ss["enabled"] else "",
              "tls_domain":tls_domain if tls_profiles else "",
              "caddyfile_b64":_b64(build_caddyfile(tls_domain,tls_profiles)) if tls_profiles else "",
-             "extra_protocols":extra_protocols}
+             "extra_protocols":extra_protocols,
+             "panel_admin_user":opts.get("panel_user","admin") or "admin",
+             "panel_admin_pass":opts.get("panel_pass","") or ""}
     payload_b64=_b64(json.dumps(payload))
     return {"reality":reality,"users":users,"per_user":per_user,"ss_link":ss_out_link,
             "ports":ports,"profiles":profiles,"sni_list":sni_list,"config":config,

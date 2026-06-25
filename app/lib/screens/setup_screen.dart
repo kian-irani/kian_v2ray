@@ -46,7 +46,6 @@ class _SetupScreenState extends State<SetupScreen> {
   bool _tls = false;
   bool _hy2 = false;
   bool _tuic = false;
-  bool _panel = false;
   bool _busy = false;
   final _panelUser = TextEditingController(text: 'admin');
   final _panelPass = TextEditingController();
@@ -163,7 +162,7 @@ class _SetupScreenState extends State<SetupScreen> {
         // Optionally deploy the web panel over the same SSH session and show
         // the URL + credentials (the user's "no panel / no web UI" complaint).
         String? panelUrl, panelUser, panelPass;
-        if (_panel) {
+        {
           _say('• راه‌اندازیِ پنلِ وب…');
           final pass = _panelPass.text.trim().isEmpty
               ? _randPass() : _panelPass.text.trim();
@@ -325,17 +324,11 @@ class _SetupScreenState extends State<SetupScreen> {
             contentPadding: EdgeInsets.zero,
           ),
           const Divider(height: 24),
-          SwitchListTile(
-            value: _panel, onChanged: (v) => setState(() => _panel = v),
-            title: Text(s.t('setup.panel')), subtitle: Text(s.t('setup.panel.d')),
-            contentPadding: EdgeInsets.zero,
-          ),
-          if (_panel)
-            Row(children: [
-              Expanded(child: _field(_panelUser, s.t('setup.paneluser'))),
-              const SizedBox(width: 10),
-              Expanded(child: _field(_panelPass, s.t('setup.panelpass'), obscure: true)),
-            ]),
+          Row(children: [
+            Expanded(child: _field(_panelUser, s.t('setup.paneluser'))),
+            const SizedBox(width: 10),
+            Expanded(child: _field(_panelPass, s.t('setup.panelpass'), obscure: true)),
+          ]),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: _busy ? null : _run,
