@@ -471,7 +471,7 @@ EOF
     fi
     # لینک‌های Hysteria2/TUIC این کاربر (اگر کامپنیون sing-box فعال است) — per-user
     if [ -f "$ETC_DIR/extra_links.txt" ]; then
-      local ex; ex="$(grep -E "#KIAN-${local_name}-" "$ETC_DIR/extra_links.txt" 2>/dev/null || true)"
+      local ex; ex="$(grep -F "#KIAN-${local_name}-" "$ETC_DIR/extra_links.txt" 2>/dev/null || true)"
       [ -n "$ex" ] && all="${all}${ex}"$'\n'
     fi
     # فایل subscription = base64 از مجموعهٔ لینک‌ها (فرمت v2rayNG)
@@ -530,7 +530,7 @@ cmd_add(){
   if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
     if bash /usr/local/bin/kian-protocols.sh adduser "$name" >/dev/null 2>&1; then
       local new_extra; new_extra="$(bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
-        | grep -E "#KIAN-${name}-" || true)"
+        | grep -F "#KIAN-${name}-" || true)"
       if [ -n "$new_extra" ]; then
         printf '%s\n' "$new_extra" >> "$ETC_DIR/links.txt"
         printf '%s\n' "$new_extra" >> "$ETC_DIR/extra_links.txt"
@@ -557,7 +557,7 @@ cmd_remove(){
     bash /usr/local/bin/kian-protocols.sh deluser "$rm_name" >/dev/null 2>&1 || true
   fi
   if [ -f "$ETC_DIR/extra_links.txt" ]; then
-    grep -vE "#KIAN-${rm_name}-" "$ETC_DIR/extra_links.txt" > "$tmp" 2>/dev/null && mv "$tmp" "$ETC_DIR/extra_links.txt" || rm -f "$tmp"
+    grep -vF "#KIAN-${rm_name}-" "$ETC_DIR/extra_links.txt" > "$tmp" 2>/dev/null && mv "$tmp" "$ETC_DIR/extra_links.txt" || rm -f "$tmp"
   fi
   # توکن Subscription کاربر را پاک کن و فایل sub او را حذف کن
   if [ -f "$ETC_DIR/sub_tokens.json" ]; then

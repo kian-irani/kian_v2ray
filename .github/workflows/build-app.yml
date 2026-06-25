@@ -3,6 +3,11 @@ on:
   push:
     tags: ['v*', 'app-v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'شماره نسخه APK (e.g. 0.6.0 — no prefix). Leave empty when triggered by tag.'
+        required: false
+        type: string
 permissions:
   contents: write
 jobs:
@@ -53,7 +58,11 @@ jobs:
       - name: Rename APKs (universal + arm64 + armv7)
         working-directory: app
         run: |
-          ver="${GITHUB_REF_NAME#app-v}"; ver="${ver#v}"
+          if [ -n "${{ inputs.version }}" ]; then
+            ver="${{ inputs.version }}"
+          else
+            ver="${GITHUB_REF_NAME#app-v}"; ver="${ver#v}"
+          fi
           out=build/app/outputs/flutter-apk
           cp "$out/app-debug.apk"             "Kv2m-${ver}-universal.apk"
           # arm64 is what virtually all phones from the last ~8 years use
@@ -64,8 +73,8 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Kv2m Android ${{ github.ref_name }}"
-          tag_name: ${{ github.ref_name }}
+          name: "Kv2m Android ${{ inputs.version && format('app-v{0}', inputs.version) || github.ref_name }}"
+          tag_name: ${{ inputs.version && format('app-v{0}', inputs.version) || github.ref_name }}
           body: |
             ## Kv2m for Android
 

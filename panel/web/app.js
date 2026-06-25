@@ -451,12 +451,30 @@
         };
         return;
       }
-      body.innerHTML = headHtml + data.links.map(function (l) {
-        return '<div style="margin:6px 0;padding:8px;background:#0b1426;border-radius:8px;display:flex;gap:8px;align-items:flex-start">' +
-          '<span style="flex:1;font-family:ui-monospace,monospace;font-size:11px">' + esc(l) + '</span>' +
-          '<button class="btn sm ghost" onclick="(function(el,link){var b=el;if(navigator.clipboard){navigator.clipboard.writeText(link).then(function(){b.textContent=\'✓\';setTimeout(function(){b.textContent=\'⎘\'},1500)})}else{var t=document.createElement(\'textarea\');t.value=link;document.body.appendChild(t);t.select();document.execCommand(\'copy\');document.body.removeChild(t);b.textContent=\'✓\';setTimeout(function(){b.textContent=\'⎘\'},1500)}})(this,' + JSON.stringify(l) + ')" title="copy">⎘</button>' +
-        '</div>';
-      }).join('');
+      body.innerHTML = headHtml;
+      data.links.forEach(function (l) {
+        var row = document.createElement('div');
+        row.style.cssText = 'margin:6px 0;padding:8px;background:#0b1426;border-radius:8px;display:flex;gap:8px;align-items:flex-start';
+        var span = document.createElement('span');
+        span.style.cssText = 'flex:1;font-family:ui-monospace,monospace;font-size:11px';
+        span.textContent = l;
+        var btn = document.createElement('button');
+        btn.className = 'btn sm ghost';
+        btn.title = 'copy';
+        btn.textContent = '⎘';
+        btn.addEventListener('click', function () {
+          var b = btn;
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(l).then(function () { b.textContent = '✓'; setTimeout(function () { b.textContent = '⎘'; }, 1500); });
+          } else {
+            var ta = document.createElement('textarea'); ta.value = l; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+            b.textContent = '✓'; setTimeout(function () { b.textContent = '⎘'; }, 1500);
+          }
+        });
+        row.appendChild(span);
+        row.appendChild(btn);
+        body.appendChild(row);
+      });
       /* QR برای اولین لینک */
       if (data.links[0] && window.QRCode) {
         qrdiv.innerHTML = '<canvas id="_kqr"></canvas>';
@@ -478,7 +496,7 @@
   /* lazy-load qrcode.js برای QR در مدال */
   (function () {
     var s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js";
+    s.src = "/app/vendor/qrcode.min.js";
     document.head.appendChild(s);
   })();
 
@@ -565,9 +583,15 @@
   });
 
   $("#nd-add").addEventListener("click", async function () {
+    var tokenVal = $("#nd-token").value.trim();
+    if (!tokenVal) {
+      alert(t("nd.token.required") || "Node token is required — generate a random one and save it.");
+      $("#nd-token").focus();
+      return;
+    }
     var body = {
       name: $("#nd-name").value.trim(), address: $("#nd-addr").value.trim(),
-      token: $("#nd-token").value.trim() || "changeme",
+      token: tokenVal,
       geo: $("#nd-geo").value.trim() || null
     };
     if (!body.name || !body.address) return;

@@ -95,13 +95,17 @@ def _bootstrap() -> None:
         if repo.get_setting(conn, "jwt_secret") is None:
             repo.set_setting(conn, "jwt_secret", secrets.token_urlsafe(48))
         if repo.get_setting(conn, "admin_pw_hash") is None:
-            initial = os.environ.get("KIAN_ADMIN_PASSWORD", "admin")
-            if initial == "admin":
-                # Loud warning: never leave the default password in production.
-                import logging
-                logging.getLogger("kian.panel").warning(
-                    "⚠️  KIAN_ADMIN_PASSWORD not set — admin password defaults to "
-                    "'admin'. Set KIAN_ADMIN_PASSWORD or change it in Settings now.")
+            import logging
+            _log = logging.getLogger("kian.panel")
+            env_pw = os.environ.get("KIAN_ADMIN_PASSWORD", "")
+            if not env_pw or env_pw == "admin":
+                # Auto-generate a secure password on first boot if none provided
+                initial = secrets.token_urlsafe(16)
+                _log.warning(
+                    "⚠️  KIAN_ADMIN_PASSWORD not set — auto-generated admin "
+                    "password: %s  (save this; it won't be shown again)", initial)
+            else:
+                initial = env_pw
             repo.set_setting(conn, "admin_user",
                              os.environ.get("KIAN_ADMIN_USER", "admin"))
             repo.set_setting(conn, "admin_pw_hash",
@@ -124,7 +128,7 @@ async def security_headers(request: Request, call_next):
         "default-src 'self'; "
         "style-src 'self' 'unsafe-inline'; "
         "font-src 'self' data:; "
-        "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+        "script-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: blob:; "
         "connect-src 'self' ws: wss:; "
         "worker-src blob:;"
@@ -467,11 +471,18 @@ def api_del_node(name: str, admin: str = Depends(require_admin),
 
 
 @app.post("/api/nodes/{name}/heartbeat")
-def api_node_heartbeat(name: str, body: NodeHeartbeat, conn=Depends(get_db)):
-    """Called by node-agents. Auth is the node's own token via header."""
+def api_node_heartbeat(name: str, body: NodeHeartbeat,
+                       request: Request, conn=Depends(get_db)):
+    """Called by node-agents. Authenticated by the node's own token."""
     node = next((n for n in repo.list_nodes(conn) if n["name"] == name), None)
     if not node:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "no such node")
+    # Verify the node's own token from Authorization header
+    auth_header = request.headers.get("Authorization", "")
+    provided = auth_header.removeprefix("Bearer ").strip()
+    if not provided or not secrets.compare_digest(
+            provided.encode(), (node.get("token") or "").encode()):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid node token")
     repo.node_heartbeat(conn, name=name, load=body.load,
                         bandwidth_gb=body.bandwidth_gb, healthy=body.healthy)
     return {"ok": True}
@@ -490,14 +501,18 @@ def api_route(country: str = "", admin: str = Depends(require_admin),
 
 
 @app.get("/sub/{name}/info")
-def sub_info(name: str, conn=Depends(get_db)):
+def sub_info(name: str, token: str = "", conn=Depends(get_db)):
     """Public self-hosted subscription info (usage/expiry) for the sub page.
 
-    Returns only non-secret usage data. In production gate this with a per-user
-    token (?token=) so user existence isn't enumerable."""
+    Requires the per-user subscription token (?token=) to prevent
+    unauthenticated user enumeration."""
     user = repo.get_user(conn, name)
-    if not user:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
+    # Reject with same 404 whether user not found or token wrong, to prevent
+    # enumeration — don't reveal which case applied.
+    stored_token = (user or {}).get("sub_token", "") or ""
+    if not user or not token or not secrets.compare_digest(
+            token.encode(), stored_token.encode()):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "not found")
     base = repo.get_setting(conn, "sub_base")
     return {
         "name": user["name"],

@@ -43,8 +43,7 @@
   <nav class="tabs" id="tabs">
     <button class="tab active" data-tab="gen" data-i18n="tab.gen">⚙️ ساخت کانفیگ</button>
     <button class="tab" data-tab="server" data-i18n="tab.server">🖥️ نصب روی سرور</button>
-    <button class="tab" data-tab="android" data-i18n="tab.android">📱 اندروید</button>
-    <button class="tab" data-tab="pc" data-i18n="tab.pc">💻 ویندوز / PC</button>
+    <button class="tab" data-tab="clients" data-i18n="tab.clients">📱💻 کلاینت‌ها</button>
     <button class="tab" data-tab="tips" data-i18n="tab.tips">💡 نکات و عیب‌یابی</button>
     <button class="tab" data-tab="domain" data-i18n="tab.domain">🌐 دامنه و TLS</button>
     <button class="tab" data-tab="manage" data-i18n="tab.manage">👥 مدیریت کاربر</button>
@@ -298,7 +297,8 @@
             </div>
 
             <div class="field">
-              <label data-i18n="gen.tlsproto.label">پروتکل‌ها (هرکدام را می‌خواهی تیک بزن)</label>
+              <label data-i18n="gen.tlsproto.label">پروتکل‌ها (با وارد کردن دامنه همه فعال می‌شوند)</label>
+              <div id="tls-auto-note" class="callout tls-auto-note" hidden data-i18n-html="g.tls.auto.note">✅ <b>دامنه شناسایی شد — همهٔ پروتکل‌ها خودکار فعال شدند.</b> هر کاربر برای هر پروتکل یک لینک می‌گیرد. می‌توانی هر کدام را دلخواه غیرفعال کنی.</div>
               <div class="tls-protos">
                 <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vless-ws" checked> <b>VLESS-WS</b><small data-i18n="proto.vless-ws">پایدارترین، عبور خوب از DPI و CDN</small></label>
                 <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vmess-ws"> <b>VMess-WS</b><small data-i18n="proto.vmess-ws">سازگاری بالا با کلاینت‌های قدیمی</small></label>
@@ -388,72 +388,57 @@
   </div>
 </section>
 
-<!-- ===================== TAB: ANDROID ===================== -->
-<section class="panel-tab" data-panel="android">
+<!-- ===================== TAB: CLIENTS ===================== -->
+<section class="panel-tab" data-panel="clients">
   <div class="card prose">
-    <h2 data-i18n="s.android.h">📱 راه‌اندازی روی اندروید</h2>
+    <h2 data-i18n="s.clients.h">📱💻 راه‌اندازی روی گوشی و کامپیوتر</h2>
 
     <div class="step-list">
       <div class="stp"><span class="stp-n">۱</span><div>
-        <b data-i18n="an.s1t">اپ Kv2m یا Hiddify رو نصب کن (پیشنهادی)</b>
-        <p data-i18n-html="an.s1d"><b>Kv2m</b> (همین پروژه) و <b>Hiddify</b> همهٔ پروتکل‌های ما را روی یک لینک پشتیبانی می‌کنند: Reality، Hysteria2، TUIC، AnyTLS و ShadowTLS. اگر فقط Reality می‌خواهی، v2rayNG هم همان لینک را می‌خواند.</p>
-        <a class="btn-link" href="https://github.com/kian-irani/kian_v2ray/releases/latest" target="_blank" rel="noopener">دانلود Kv2m ↗</a>
-        <a class="btn-link" href="https://github.com/hiddify/hiddify-app/releases/latest" target="_blank" rel="noopener">Hiddify ↗</a>
-        <a class="btn-link" href="https://github.com/2dust/v2rayNG/releases/latest" target="_blank" rel="noopener">v2rayNG ↗</a>
-        <p class="muted small" data-i18n="an.alt">هر کلاینتی که لینکِ Subscription می‌پذیرد کار می‌کند (NekoBox/husi، sing-box، Streisand…).</p>
+        <b data-i18n="cl.s1t">اپ پیشنهادی رو نصب کن</b>
+        <p data-i18n-html="cl.s1d"><b>Kv2m</b> و <b>Hiddify</b> همهٔ پروتکل‌های ما را روی یک لینک Subscription پشتیبانی می‌کنند: Reality، Hysteria2، TUIC، AnyTLS و ShadowTLS.</p>
+
+        <div class="platform-row">
+          <div class="platform-block">
+            <div class="platform-badge" data-i18n="cl.plat.android">📱 اندروید</div>
+            <a class="btn-link" href="https://github.com/kian-irani/kian_v2ray/releases/latest" target="_blank" rel="noopener">Kv2m ↗</a>
+            <a class="btn-link" href="https://github.com/hiddify/hiddify-app/releases/latest" target="_blank" rel="noopener">Hiddify ↗</a>
+            <a class="btn-link" href="https://github.com/2dust/v2rayNG/releases/latest" target="_blank" rel="noopener">v2rayNG ↗</a>
+          </div>
+          <div class="platform-block">
+            <div class="platform-badge" data-i18n="cl.plat.pc">💻 ویندوز / مک / لینوکس</div>
+            <a class="btn-link" href="https://github.com/kian-irani/kian_v2ray/releases/latest" target="_blank" rel="noopener">Kv2m ↗</a>
+            <a class="btn-link" href="https://github.com/hiddify/hiddify-app/releases/latest" target="_blank" rel="noopener">Hiddify ↗</a>
+            <a class="btn-link" href="https://github.com/2dust/v2rayN/releases/latest" target="_blank" rel="noopener">v2rayN ↗</a>
+          </div>
+          <div class="platform-block">
+            <div class="platform-badge" data-i18n="cl.plat.ios">🍎 آیفون / iOS</div>
+            <a class="btn-link" href="https://apps.apple.com/app/streisand/id6450534064" target="_blank" rel="noopener">Streisand ↗</a>
+            <a class="btn-link" href="https://apps.apple.com/app/v2box-v2ray-client/id6446814690" target="_blank" rel="noopener">V2Box ↗</a>
+            <a class="btn-link" href="https://apps.apple.com/app/shadowrocket/id932747118" target="_blank" rel="noopener">Shadowrocket ↗</a>
+          </div>
+        </div>
+        <p class="muted small" data-i18n="cl.alt">هر کلاینتی که لینکِ Subscription می‌پذیرد کار می‌کند (NekoBox/husi، sing-box، NekoRay…).</p>
       </div></div>
 
       <div class="stp"><span class="stp-n">۲</span><div>
-        <b data-i18n="gd.enterlink">لینک کانفیگ رو وارد کن</b>
-        <p data-i18n="an.two">دو راه داری:</p>
-        <p data-i18n-html="an.copy">• <b>کپی-پیست:</b> توی تب «ساخت کانفیگ» روی «کپی لینک» بزن، بعد توی v2rayNG: دکمهٔ <b>+</b> بالا ← <b>«Import config from Clipboard»</b>.</p>
-        <p data-i18n-html="an.qr">• <b>QR:</b> توی v2rayNG: دکمهٔ <b>+</b> ← <b>«Scan QR code»</b> ← QR روی صفحه رو اسکن کن.</p>
+        <b data-i18n="cl.s2t">لینک Subscription را وارد کن</b>
+        <p data-i18n-html="cl.s2d">در تب «ساخت کانفیگ» لینک Subscription کاربر را کپی کن. در اپ: «افزودن از Subscription» یا «Import from clipboard» را بزن و لینک را paste کن. همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.</p>
+        <p data-i18n-html="cl.s2qr">• <b>QR:</b> در اپ دکمهٔ افزودن ← Scan QR ← کد روی صفحه را اسکن کن.</p>
       </div></div>
 
       <div class="stp"><span class="stp-n">۳</span><div>
-        <b data-i18n="an.s3t">وصل شو</b>
-        <p data-i18n="an.s3d">روی کانفیگ بزن تا انتخاب بشه، بعد دکمهٔ گرد پایین (▶) رو بزن. اولین بار اجازهٔ VPN می‌خواد — تأیید کن.</p>
+        <b data-i18n="cl.s3t">وصل شو</b>
+        <p data-i18n="cl.s3d">روی کانفیگ بزن، بعد VPN را روشن کن. اولین بار مجوز VPN می‌خواد — تأیید کن.</p>
       </div></div>
 
       <div class="stp"><span class="stp-n">۴</span><div>
-        <b data-i18n="an.s4t">اگه «هر دو» رو ساخته بودی</b>
-        <p data-i18n-html="an.s4d">همهٔ کانفیگ‌های تو از <b>WARP</b> عبور می‌کنند (تقریباً همه‌چیز باز). فقط لینکِ Subscription را در v2rayNG/Kv2m وارد کن و وصل شو — انتخابِ حالت لازم نیست.</p>
+        <b data-i18n="cl.s4t">همه‌چیز از WARP می‌رود</b>
+        <p data-i18n-html="cl.s4d">همهٔ کانفیگ‌ها از <b>WARP</b> عبور می‌کنند — نیازی به انتخاب حالت نیست. اگر WARP موقتاً قطع شود، سرور خودکار به مستقیم سوییچ می‌کند.</p>
       </div></div>
     </div>
 
-    <div class="callout" data-i18n="an.share">📤 می‌خوای کانفیگ رو به دوستت بدی؟ همون لینک یا QR رو بفرست — همه‌چیز خودکار وارد می‌شه.</div>
-  </div>
-</section>
-
-<!-- ===================== TAB: PC ===================== -->
-<section class="panel-tab" data-panel="pc">
-  <div class="card prose">
-    <h2 data-i18n="s.pc.h">💻 راه‌اندازی روی ویندوز / کامپیوتر</h2>
-
-    <div class="step-list">
-      <div class="stp"><span class="stp-n">۱</span><div>
-        <b data-i18n="pc.s1t">اپ Kv2m یا Hiddify رو دانلود کن (پیشنهادی)</b>
-        <p data-i18n-html="pc.s1d"><b>Kv2m</b> (ویندوز/مک/لینوکس) و <b>Hiddify</b> همهٔ پروتکل‌ها را روی یک لینک پشتیبانی می‌کنند. v2rayN هم همان لینک را برای Reality/TLS می‌خواند.</p>
-        <a class="btn-link" href="https://github.com/kian-irani/kian_v2ray/releases/latest" target="_blank" rel="noopener">دانلود Kv2m ↗</a>
-        <a class="btn-link" href="https://github.com/hiddify/hiddify-app/releases/latest" target="_blank" rel="noopener">Hiddify ↗</a>
-        <a class="btn-link" href="https://github.com/2dust/v2rayN/releases/latest" target="_blank" rel="noopener">v2rayN ↗</a>
-        <p class="muted small" data-i18n="pc.alt">هر کلاینتی که لینکِ Subscription می‌پذیرد کار می‌کند (NekoRay، sing-box…).</p>
-      </div></div>
-
-      <div class="stp"><span class="stp-n">۲</span><div>
-        <b data-i18n="gd.enterlink">لینک کانفیگ رو وارد کن</b>
-        <p data-i18n-html="pc.s2d">توی تب «ساخت کانفیگ» روی «کپی لینک» بزن. بعد توی v2rayN از منوی بالا:
-        <b>Servers ← Import bulk URL from clipboard</b> (یا Ctrl+V داخل لیست سرورها).</p>
-      </div></div>
-
-      <div class="stp"><span class="stp-n">۳</span><div>
-        <b data-i18n="pc.s3t">روشن کن</b>
-        <p data-i18n-html="pc.s3d">روی کانفیگ دابل‌کلیک کن تا فعال بشه. بعد پایین‌راست ویندوز روی آیکن v2rayN راست‌کلیک ←
-        <b>System Proxy ← Set system proxy</b>.</p>
-      </div></div>
-    </div>
-
-    <div class="callout" data-i18n-html="pc.ios">🍎 <b>آیفون/iOS:</b> از اپ‌های <b>Streisand</b> یا <b>V2Box</b> (رایگان) یا <b>Shadowrocket</b> (پولی) استفاده کن — لینک یا QR رو همون‌طوری Import کن.</div>
+    <div class="callout" data-i18n="cl.share">📤 می‌خوای کانفیگ رو به دوستت بدی؟ همون لینک Subscription یا QR رو بفرست — همه‌چیز خودکار وارد می‌شه.</div>
   </div>
 </section>
 
