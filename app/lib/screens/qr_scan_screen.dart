@@ -21,6 +21,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
     facing: CameraFacing.back,
   );
   bool _popped = false;
+  bool _torchOn = false;
 
   @override
   void dispose() {
@@ -44,13 +45,11 @@ class _QrScanScreenState extends State<QrScanScreen> {
         title: Text(s.t('import.qr')),
         actions: [
           IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: _ctrl.torchState,
-              builder: (_, state, __) => Icon(
-                state == TorchState.on ? Icons.flash_on : Icons.flash_off,
-              ),
-            ),
-            onPressed: _ctrl.toggleTorch,
+            icon: Icon(_torchOn ? Icons.flash_on : Icons.flash_off),
+            onPressed: () {
+              _ctrl.toggleTorch();
+              setState(() => _torchOn = !_torchOn);
+            },
           ),
         ],
       ),
