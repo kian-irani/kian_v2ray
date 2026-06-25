@@ -1,0 +1,55 @@
+name: Cleanup Old Releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run only — list what would be deleted without deleting'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old releases (keep v4.1.0 and v4.2.0)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          KEEP_TAGS="v4.1.0 v4.2.0"
+          DRY_RUN="${{ inputs.dry_run }}"
+
+          echo "=== Releases that will be KEPT ==="
+          for tag in $KEEP_TAGS; do
+            echo "  ✅ $tag"
+          done
+          echo ""
+
+          echo "=== Scanning all releases ==="
+          gh release list --repo kian-irani/kian_v2ray --limit 100 --json tagName,name | \
+            jq -r '.[] | .tagName' | while read tag; do
+            keep=false
+            for k in $KEEP_TAGS; do
+              [ "$tag" = "$k" ] && keep=true && break
+            done
+            if [ "$keep" = "true" ]; then
+              echo "  ✅ KEEPING: $tag"
+            else
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "  🗑️  WOULD DELETE: $tag"
+              else
+                echo "  🗑️  DELETING: $tag"
+                gh release delete "$tag" --repo kian-irani/kian_v2ray --yes --cleanup-tag || \
+                  echo "     ⚠️  Failed to delete $tag (may not exist)"
+              fi
+            fi
+          done
+
+          echo ""
+          echo "=== Done ==="
