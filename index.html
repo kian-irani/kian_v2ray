@@ -151,6 +151,22 @@
         <small class="hint" data-i18n="g.num.h">برای هر نفر یک کانفیگ جدا ساخته می‌شه. اگه فقط خودتی، روی ۱ بذار.</small>
       </div>
 
+      <!-- پنل مدیریت وب — همیشه نصب می‌شود -->
+      <div class="panel-creds-section">
+        <div class="panel-creds-head">🔐 ورود به پنل مدیریت</div>
+        <div class="grid2">
+          <div class="field">
+            <label for="panel-user" data-i18n="g.panel.user.l">نام کاربری پنل</label>
+            <input id="panel-user" type="text" value="admin" placeholder="admin" autocomplete="off" spellcheck="false" maxlength="32">
+          </div>
+          <div class="field">
+            <label for="panel-pass" data-i18n="g.panel.pass.l">رمز عبور پنل</label>
+            <input id="panel-pass" type="password" placeholder="خالی = تصادفی قوی (پیشنهادی)" autocomplete="new-password" data-i18n-ph="g.panel.pass.ph">
+          </div>
+        </div>
+        <small class="hint" data-i18n="g.panel.hint">پنل مدیریت وب روی سرور نصب می‌شود. بعد از نصب از آدرس <code>http://IP:8443/app</code> با این اطلاعات وارد شو. اگر رمز خالی بگذاری، یک رمز تصادفی ساخته می‌شود که در ترمینال نمایش داده خواهد شد.</small>
+      </div>
+
       <!-- تنظیمات پیشرفته (مخفی، اختیاری) -->
       <button type="button" class="adv-toggle" id="adv-toggle" aria-expanded="false">
         <span class="adv-caret">▸</span> <span data-i18n="g.adv.toggle">تنظیمات پیشرفته (اختیاری — اگه نمی‌دونی دست نزن)</span>

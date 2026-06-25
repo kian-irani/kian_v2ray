@@ -332,6 +332,8 @@ function readForm() {
     prefix:   ($('#user-prefix').value.trim()).replace(/[^a-zA-Z0-9_-]/g, ''),
     quotaGb:  parseInt($('#quota').value, 10),        // 0 = نامحدود
     days:     parseInt($('#days').value, 10),         // 0 = دائمی
+    panelUser: (($('#panel-user') && $('#panel-user').value.trim()) || 'admin').replace(/[^a-zA-Z0-9_-]/g, '') || 'admin',
+    panelPass: ($('#panel-pass') && $('#panel-pass').value) || '',
     ss: {
       enabled: ssEnabled,
       port: parseInt(($('#ss-port') && $('#ss-port').value) || '8388', 10) || 8388,
@@ -509,6 +511,8 @@ async function generate(f) {
     tls_domain: tlsProfiles.length ? f.tls.domain : '',
     caddyfile_b64: tlsProfiles.length ? utf8ToB64(buildCaddyfile(f.tls.domain, tlsProfiles)) : '',
     extra_protocols: f.extraProtocols || [],   // Hysteria2/TUIC روی sing-box (انتخابِ کاربر)
+    panel_admin_user: f.panelUser || 'admin',  // نام کاربری پنل مدیریت
+    panel_admin_pass: f.panelPass || '',        // رمز پنل (خالی = تصادفی روی سرور)
     lang: _installLang(),                       // install console language = page language
   };
   const payloadB64 = utf8ToB64(JSON.stringify(payload));
@@ -712,6 +716,23 @@ function render(out) {
     step3.appendChild(card);
   }
   box.appendChild(step3);
+
+  // ---- مرحله ۴: پنل مدیریت وب ----
+  const panelUrl = `http://${out.f.serverIp}:8443/app`;
+  const step4 = document.createElement('div');
+  step4.className = 'panel reveal';
+  step4.innerHTML = `<div class="panel-title">۴) پنل مدیریت وب</div>
+    <p class="muted">بعد از اتمام نصب، داشبورد مدیریت از این آدرس در دسترس است (ممکن است ۳-۵ دقیقه طول بکشد):</p>`;
+  step4.appendChild(linkRow('آدرس پنل مدیریت', panelUrl));
+  const credNote = document.createElement('div');
+  credNote.className = 'callout';
+  const pUser = out.f.panelUser || 'admin';
+  const pPass = out.f.panelPass;
+  credNote.innerHTML = pPass
+    ? `🔑 <b>اطلاعات ورود:</b> نام کاربری <code class="mono">${pUser}</code> · رمز عبور: همانی که وارد کردید`
+    : `🔑 <b>نام کاربری:</b> <code class="mono">${pUser}</code> · <b>رمز عبور:</b> تصادفی — بعد از نصب در ترمینال نمایش داده می‌شود، یا دستور <code class="mono">kian-panel.sh url</code> بزن`;
+  step4.appendChild(credNote);
+  box.appendChild(step4);
 
   $$('.reveal', box).forEach((el, i) => { el.style.animationDelay = `${i * 90}ms`; });
   box.classList.remove('hidden');
