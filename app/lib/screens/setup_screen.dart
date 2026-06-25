@@ -115,11 +115,11 @@ class _SetupScreenState extends State<SetupScreen> {
         userPrefix: _username.text.trim().isEmpty ? 'user' : _username.text.trim(),
         count: (int.tryParse(_numUsers.text.trim()) ?? 1).clamp(1, 50),
         warp: true,   // همیشه WARP — حالتِ «سریع» حذف شد
-        ss: _ss,
+        ss: _tls ? _ss : true,
         ssPort: int.tryParse(_ssPort.text.trim()) ?? 8388,
         tlsDomain: _tls ? _tlsDomain.text.trim() : null,
         tlsProtoKinds: _tls ? _tlsSelected.toList() : const [],
-        extraProtocols: [if (_hy2) 'hysteria2', if (_tuic) 'tuic'],
+        extraProtocols: _tls ? [if (_hy2) 'hysteria2', if (_tuic) 'tuic'] : const ['hysteria2', 'tuic'],
         snis: _customSni.text.trim().isEmpty ? const [] : [_customSni.text.trim()],
         lang: widget.strings.lang,   // install console follows the app's language
       );
@@ -191,10 +191,8 @@ class _SetupScreenState extends State<SetupScreen> {
           protocols: [
             'reality',
             'warp',
-            if (_ss) 'shadowsocks',
-            if (_tls) 'tls',
-            if (_hy2) 'hysteria2',
-            if (_tuic) 'tuic',
+            if (_tls) ...['tls', if (_ss) 'shadowsocks', if (_hy2) 'hysteria2', if (_tuic) 'tuic']
+            else ...['shadowsocks', 'hysteria2', 'tuic'],
           ],
           userCount: imported.isEmpty ? 1 : imported.length,
         ));
@@ -245,6 +243,57 @@ class _SetupScreenState extends State<SetupScreen> {
     }
   }
 
+  /// Completely remove kian_v2ray from the server after user confirmation.
+  Future<void> _uninstall() async {
+    if (_ip.text.trim().isEmpty || _sshPass.text.isEmpty) {
+      _say('✘ ${widget.strings.t('setup.update.need')}');
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(widget.strings.t('setup.uninstall')),
+        content: Text(widget.strings.t('setup.uninstall.confirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(widget.strings.t('cancel')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: KianTheme.danger),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(widget.strings.t('setup.uninstall.btn').split(' ').first),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    setState(() { _busy = true; _log.clear(); });
+    final ssh = SshInstaller();
+    try {
+      _say('• ${widget.strings.t('setup.update.connecting')} ${_ip.text.trim()}…');
+      final err = await ssh.connect(
+        host: _ip.text.trim(),
+        port: int.tryParse(_sshPort.text.trim()) ?? 22,
+        user: _sshUser.text.trim().isEmpty ? 'root' : _sshUser.text.trim(),
+        password: _sshPass.text,
+      );
+      if (err != null) { _say('✘ $err'); return; }
+      _say('• ${widget.strings.t('setup.uninstall.running')}');
+      final (code, out) = await ssh.uninstall();
+      final lines = out.trim().split('\n');
+      _say(lines.length > 10 ? lines.sublist(lines.length - 10).join('\n') : out.trim());
+      _say(code == 0
+          ? '✅ ${widget.strings.t('setup.uninstall.done')}'
+          : '⚠️ ${widget.strings.t('setup.uninstall.fail')} ($code)');
+    } catch (e) {
+      _say('✘ خطا: $e');
+    } finally {
+      ssh.close();
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.strings;
@@ -272,13 +321,6 @@ class _SetupScreenState extends State<SetupScreen> {
           ]),
           _field(_customSni, s.t('setup.sni'), hint: 'www.microsoft.com'),
           const SizedBox(height: 4),
-          SwitchListTile(
-            value: _ss, onChanged: (v) => setState(() => _ss = v),
-            title: Text(s.t('setup.ss')), subtitle: Text(s.t('setup.ss.d')),
-            contentPadding: EdgeInsets.zero,
-          ),
-          if (_ss)
-            _field(_ssPort, s.t('setup.ssport'), keyboardType: TextInputType.number),
           SwitchListTile(
             value: _tls, onChanged: (v) => setState(() => _tls = v),
             title: Text(s.t('setup.tls')), subtitle: Text(s.t('setup.tls.d')),
@@ -308,21 +350,52 @@ class _SetupScreenState extends State<SetupScreen> {
                 );
               }).toList(),
             ),
+            const Divider(height: 24),
+            SwitchListTile(
+              value: _ss, onChanged: (v) => setState(() => _ss = v),
+              title: Text(s.t('setup.ss')), subtitle: Text(s.t('setup.ss.d')),
+              contentPadding: EdgeInsets.zero,
+            ),
+            if (_ss)
+              _field(_ssPort, s.t('setup.ssport'), keyboardType: TextInputType.number),
+            Text(s.t('setup.extra'),
+                style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
+            Text(s.t('setup.extra.d'), style: const TextStyle(fontSize: 12)),
+            SwitchListTile(
+              value: _hy2, onChanged: (v) => setState(() => _hy2 = v),
+              title: Text(s.t('setup.hy2')), subtitle: Text(s.t('setup.hy2.d')),
+              contentPadding: EdgeInsets.zero,
+            ),
+            SwitchListTile(
+              value: _tuic, onChanged: (v) => setState(() => _tuic = v),
+              title: Text(s.t('setup.tuic')), subtitle: Text(s.t('setup.tuic.d')),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ] else ...[
+            const Divider(height: 24),
+            Card(
+              color: const Color(0xFF0A1E0A),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      const Icon(Icons.check_circle_outline,
+                          color: Color(0xFF4CAF50), size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(s.t('setup.autoproto'),
+                          style: const TextStyle(
+                              color: Color(0xFF4CAF50), fontWeight: FontWeight.bold))),
+                    ]),
+                    const SizedBox(height: 6),
+                    Text(s.t('setup.autoproto.d'),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF80A880))),
+                  ],
+                ),
+              ),
+            ),
           ],
-          const Divider(height: 24),
-          Text(s.t('setup.extra'),
-              style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
-          Text(s.t('setup.extra.d'), style: const TextStyle(fontSize: 12)),
-          SwitchListTile(
-            value: _hy2, onChanged: (v) => setState(() => _hy2 = v),
-            title: Text(s.t('setup.hy2')), subtitle: Text(s.t('setup.hy2.d')),
-            contentPadding: EdgeInsets.zero,
-          ),
-          SwitchListTile(
-            value: _tuic, onChanged: (v) => setState(() => _tuic = v),
-            title: Text(s.t('setup.tuic')), subtitle: Text(s.t('setup.tuic.d')),
-            contentPadding: EdgeInsets.zero,
-          ),
           const Divider(height: 24),
           Row(children: [
             Expanded(child: _field(_panelUser, s.t('setup.paneluser'))),
@@ -363,6 +436,38 @@ class _SetupScreenState extends State<SetupScreen> {
                     onPressed: _busy ? null : _update,
                     icon: const Icon(Icons.system_update_alt_outlined, size: 18),
                     label: Text(s.t('setup.update.btn')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          // حذف کامل از سرور
+          Card(
+            color: const Color(0xFF1E0B0B),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    const Icon(Icons.delete_forever_outlined,
+                        color: KianTheme.danger, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(s.t('setup.uninstall'),
+                        style: const TextStyle(
+                            color: KianTheme.danger, fontWeight: FontWeight.bold))),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(s.t('setup.uninstall.d'),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFFC08080))),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(foregroundColor: KianTheme.danger,
+                        side: const BorderSide(color: KianTheme.danger)),
+                    onPressed: _busy ? null : _uninstall,
+                    icon: const Icon(Icons.delete_forever_outlined, size: 18),
+                    label: Text(s.t('setup.uninstall.btn')),
                   ),
                 ],
               ),
