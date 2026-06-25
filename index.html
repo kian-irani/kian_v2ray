@@ -33,7 +33,7 @@
     <div class="hero-meta">
       <span class="chip" data-i18n="hero.chip1">🟢 فقط کپی-پیست</span>
       <span class="chip" data-i18n="hero.chip2">🔐 کلیدها توی مرورگر خودت</span>
-      <span class="chip" data-i18n="hero.chip3">📱 اندروید + 💻 ویندوز</span>
+      <span class="chip" data-i18n="hero.chip3">📱 اندروید · 💻 ویندوز / مک / لینوکس</span>
     </div>
   </div>
 </header>
@@ -289,7 +289,7 @@
             </select>
           </div>
         </div>
-        <p class="muted small" data-i18n="g.adv.portnote">پورت‌ها خودکار انتخاب می‌شن (از ۸۴۴۳ به بعد) — لازم نیست کاری بکنی.</p>
+        <p class="muted small" data-i18n="g.adv.portnote">پورت‌ها خودکار از پورت‌های وب معروف (۴۴۳، ۲۰۸۳، ۸۰۸۰، ...) انتخاب می‌شن — لازم نیست کاری بکنی.</p>
       </div>
 
       <!-- فاز ۳: کانفیگ‌های دامنه‌دار (TLS) -->
@@ -697,14 +697,14 @@
 
     <div class="callout" data-i18n-html="mg.callout">🔭 در فازهای بعدی، این کارها مستقیم از <b>ربات تلگرام</b> بدون ترمینال انجام می‌شود (نقشهٔ راه را در تب «درباره» ببین).</div>
 
-    <!-- پنلِ وب: مدیریتِ گرافیکی روی سرور -->
+    <!-- پنلِ وب: بازنشانی / راه‌اندازی مجدد -->
     <div class="server-tips" id="panel-setup" style="margin-top:18px">
-      <div class="server-tips-head" data-i18n="pn.head">🖥️ پنلِ وبِ مدیریت (اختیاری)</div>
+      <div class="server-tips-head" data-i18n="pn.head">🖥️ پنلِ وبِ مدیریت — بازنشانی اطلاعات ورود</div>
       <div class="server-tips-body">
-        <p data-i18n="pn.desc">به‌جای ترمینال، یک پنلِ گرافیکی (داشبورد) روی سرورت راه بینداز: مدیریتِ کاربر، آمار، محدودیتِ IP/سرعت، ۲FA و مدیریتِ چندسرور. نام کاربری و رمزِ ادمین را بزن تا دستورِ آماده بگیری.</p>
+        <p data-i18n="pn.desc">پنل به‌طور خودکار هنگام نصب راه‌اندازی می‌شود. اگر می‌خواهی رمز عبور را عوض کنی یا پنل را مجدداً نصب کنی، نام کاربری و رمز جدید را وارد کن.</p>
         <div class="grid2">
-          <div class="field"><label for="panel-user" data-i18n="pn.user">نام کاربری ادمین</label><input id="panel-user" type="text" value="admin" autocomplete="off" spellcheck="false"></div>
-          <div class="field"><label for="panel-pass" data-i18n="pn.pass">رمز عبور ادمین</label><input id="panel-pass" type="text" placeholder="یک رمز قوی" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label for="pn-user" data-i18n="pn.user">نام کاربری ادمین</label><input id="pn-user" type="text" value="admin" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label for="pn-pass" data-i18n="pn.pass">رمز عبور ادمین</label><input id="pn-pass" type="text" placeholder="یک رمز قوی" autocomplete="off" spellcheck="false"></div>
         </div>
         <button type="button" class="btn-link" id="panel-gen" data-i18n="pn.gen">ساخت دستورِ راه‌اندازی</button>
         <div id="panel-out" hidden>
@@ -731,14 +731,15 @@
     <ul class="tips" data-i18n-html="ab.roadmap.f">
       <li>✅ <b>فاز ۱:</b> Reality سریع + WARP، نصب تک‌دستوری، مدیریت کاربر/حجم.</li>
       <li>✅ <b>پایداری و سرعت:</b> WARP با WireGuard/MASQUE + بازگشت خودکار به مستقیم، خودتشخیصی در <span class="mono">status</span>، رفع تداخل پورت، نصب مجدد امن، بهینه‌سازی BBR.</li>
-      <li>✅ <b>فاز ۲ (الان):</b> لینک Subscription — برای هر کاربر یک لینک واحد که در v2rayNG واردش می‌کنی و همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.</li>
-      <li>🔜 <b>فاز ۳:</b> دامنه + TLS واقعی (WS/gRPC پشت Caddy) برای سرورهای سخت‌گیر.</li>
-      <li>🔜 <b>فاز ۴:</b> فرانت CDN برای سرورهایی که آی‌پی‌شون از ایران بسته‌ست.</li>
-      <li>🔜 <b>فاز ۵:</b> اتصال مستقیم به ربات تلگرام + هشدار حجم.</li>
+      <li>✅ <b>فاز ۲:</b> لینک Subscription — برای هر کاربر یک لینک واحد که همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.</li>
+      <li>✅ <b>فاز ۳:</b> دامنه + TLS واقعی (WS/gRPC/Trojan/HTTPUpgrade/XHTTP پشت Caddy) + Hysteria2 و TUIC برای سرورهای سخت‌گیر.</li>
+      <li>✅ <b>فاز ۴:</b> نرم‌افزار Kv2m (اندروید + ویندوز/مک/لینوکس) + پنل وب مدیریت — نصب و مدیریت بدون ترمینال.</li>
+      <li>🔜 <b>فاز ۵:</b> فرانت CDN برای سرورهایی که آی‌پی‌شون از ایران بسته‌ست.</li>
+      <li>🔜 <b>فاز ۶:</b> اتصال مستقیم به ربات تلگرام + هشدار حجم.</li>
     </ul>
 
     <h3 data-i18n="ab.kv2m">🛠️ نرم‌افزار Kv2m (جدید)</h3>
-    <p class="muted" data-i18n-html="ab.kv2m.d">برای مدیریت حرفه‌ای‌تر، نرم‌افزار <b>Kv2m</b> خودش به سرورت SSH می‌زند و همه‌چیز را مدیریت/نصب می‌کند — برای ویندوز/مک/لینوکس و اندروید (Termux).</p>
+    <p class="muted" data-i18n-html="ab.kv2m.d">برای مدیریت حرفه‌ای‌تر، نرم‌افزار <b>Kv2m</b> خودش به سرورت SSH می‌زند و همه‌چیز را نصب/مدیریت می‌کند — اپ اندروید (Flutter) + دسکتاپ ویندوز/مک/لینوکس (Qt).</p>
     <div class="callout" data-i18n-html="ab.kv2m.dl">💻 دانلود و راهنما: <a href="https://github.com/kian-irani/kian_v2ray/tree/main/kv2m" target="_blank" rel="noopener">پوشهٔ kv2m در گیت‌هاب</a></div>
 
     <h3 data-i18n="ab.channels">👤 کانال‌ها و ارتباط</h3>

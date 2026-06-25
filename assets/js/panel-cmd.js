@@ -13,8 +13,8 @@
   btn.addEventListener("click", function () {
     var ipEl = $("#server-ip");
     var ip = (ipEl && ipEl.value.trim()) || "<server-ip>";
-    var user = ($("#panel-user").value.trim()) || "admin";
-    var pass = $("#panel-pass").value.trim() || "CHANGE-ME-strong";
+    var user = ($("#pn-user").value.trim()) || "admin";
+    var pass = $("#pn-pass").value.trim() || "CHANGE-ME-strong";
     // The CLI is installed by the installer; this enables the panel with the
     // chosen admin credentials and prints the URL on the server too.
     var cmd = 'KIAN_ADMIN_USER=' + user + ' KIAN_ADMIN_PASSWORD="' + esc(pass) +
