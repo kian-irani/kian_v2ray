@@ -955,9 +955,13 @@ if { [ -n "$EXTRA_PROTOCOLS" ] || [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ]; } \
   fi
 fi
 
-# پنلِ وب (اختیاری — فقط با KIAN_PANEL=1). additive؛ Xray دست‌نخورده.
-if [ "${KIAN_PANEL:-0}" = "1" ] && [ -x /usr/local/bin/kian-panel.sh ]; then
+# پنلِ وب — همیشه نصب می‌شود (KIAN_PANEL=0 برای غیرفعال‌کردن).
+if [ "${KIAN_PANEL:-1}" != "0" ] && [ -x /usr/local/bin/kian-panel.sh ]; then
   inf "راه‌اندازیِ پنلِ وب"
+  _PANEL_USER="$(_grab panel_admin_user || true)"
+  _PANEL_PASS="$(_grab panel_admin_pass || true)"
+  KIAN_ADMIN_USER="${_PANEL_USER:-admin}" \
+  KIAN_ADMIN_PASSWORD="${_PANEL_PASS:-}" \
   bash /usr/local/bin/kian-panel.sh enable || warn "راه‌اندازی پنل ناموفق بود — Xray دست‌نخورده است"
 fi
 
