@@ -344,7 +344,7 @@ class MainWindow(QWidget):
     def _run_install(self, g):
         if not self.connected: return self._toast(tr("conn.disconnected"), True)
         self.stack.setCurrentIndex(1); self.inst_log.clear()
-        cmd = f"export KIAN_PAYLOAD='{g['payload_b64']}'\ncurl -fsSL {core.RAW_BASE}/install.sh -o /tmp/kian-v2ray.sh && bash /tmp/kian-v2ray.sh"
+        cmd = g['install_cmd']  # includes KIAN_PAYLOAD + KIAN_LANG
         w = StreamWorker(self.ssh, cmd)
         w.line.connect(lambda l: self.inst_log.append(l))
         w.fail.connect(lambda e: self.inst_log.append(f"\n{tr('toast.err')}: {e}"))

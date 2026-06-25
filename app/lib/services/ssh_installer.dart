@@ -51,7 +51,8 @@ class SshInstaller {
       await session.stderr
           .cast<List<int>>()
           .transform(utf8.decoder)
-          .forEach(out.write);
+          .forEach(out.write)
+          .timeout(timeout);
       await session.done;
       return (session.exitCode ?? 0, out.toString());
     } catch (e) {

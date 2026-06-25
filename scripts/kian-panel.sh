@@ -82,15 +82,20 @@ ask_admin(){
 }
 
 install_service(){
+  # Write credentials to a separate env file (chmod 600) so systemd reads them
+  # verbatim — avoids quoting/injection issues in unit-file Environment= lines.
+  local env_file="/etc/systemd/system/${SVC}.env"
+  printf 'KIAN_DB_PATH=%s\nKIAN_ADMIN_USER=%s\nKIAN_ADMIN_PASSWORD=%s\n' \
+    "$DB_PATH" "$ADMIN_USER" "$ADMIN_PASS" > "$env_file"
+  chmod 600 "$env_file"
+
   cat > "/etc/systemd/system/${SVC}.service" <<EOF
 [Unit]
 Description=KIAN Web Panel
 After=network.target
 
 [Service]
-Environment=KIAN_DB_PATH=${DB_PATH}
-Environment=KIAN_ADMIN_USER=${ADMIN_USER}
-Environment=KIAN_ADMIN_PASSWORD=${ADMIN_PASS}
+EnvironmentFile=${env_file}
 WorkingDirectory=${APP_DIR}
 ExecStart=${APP_DIR}/venv/bin/uvicorn panel.main:app --host 0.0.0.0 --port ${PORT}
 Restart=on-failure
@@ -130,7 +135,7 @@ print_url(){
   say  "پنلِ وب آماده است — Web panel is ready"
   echo "  URL:       http://${ip}:${PORT}/app"
   echo "  Swagger:   http://${ip}:${PORT}/docs"
-  echo "  Username:  ${ADMIN_USER:-$(grep -oP 'KIAN_ADMIN_USER=\K.*' /etc/systemd/system/${SVC}.service 2>/dev/null)}"
+  echo "  Username:  ${ADMIN_USER:-$(grep -oP 'KIAN_ADMIN_USER=\K.*' /etc/systemd/system/${SVC}.env 2>/dev/null)}"
   [ -n "${ADMIN_PASS:-}" ] && echo "  Password:  ${ADMIN_PASS}"
   echo "==================================================================="
   echo "  ⚠️ پشتِ TLS بگذار (Caddy) و 2FA را در تبِ تنظیمات فعال کن."
@@ -153,7 +158,8 @@ case "${1:-enable}" in
   url)     ADMIN_PASS=""; print_url ;;
   disable)
     need_root; systemctl disable --now "$SVC" 2>/dev/null || true
-    rm -f "/etc/systemd/system/${SVC}.service"; systemctl daemon-reload
+    rm -f "/etc/systemd/system/${SVC}.service" "/etc/systemd/system/${SVC}.env"
+    systemctl daemon-reload
     say "panel service removed (code kept in ${APP_DIR})" ;;
   status)  systemctl status "$SVC" --no-pager 2>/dev/null || echo "not installed" ;;
   *) err "usage: kian-panel.sh {enable|update|url|disable|status}"; exit 2 ;;

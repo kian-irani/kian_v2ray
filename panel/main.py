@@ -307,6 +307,26 @@ def api_delete_user(name: str, admin: str = Depends(require_admin),
     return {"ok": True}
 
 
+@app.get("/api/users/{name}/sub-url")
+def api_sub_url(name: str, admin: str = Depends(require_admin),
+                conn=Depends(get_db)):
+    """Return the full self-hosted subscription info URL for sharing with the user.
+
+    The URL includes the per-user token so unauthenticated users can view their
+    own usage/expiry page without the admin exposing other accounts."""
+    user = repo.get_user(conn, name)
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
+    import secrets as _sec
+    token = user.get("sub_token") or ""
+    if not token:
+        token = _sec.token_urlsafe(16)
+        conn.execute("UPDATE users SET sub_token=? WHERE name=?", (token, name))
+    base = os.environ.get("KIAN_PUBLIC_URL", "").rstrip("/")
+    url = f"{base}/app/sub.html?name={name}&token={token}" if base else None
+    return {"name": name, "token": token, "url": url}
+
+
 @app.get("/api/users/{name}/links")
 def api_user_links(name: str, admin: str = Depends(require_admin),
                    conn=Depends(get_db)):

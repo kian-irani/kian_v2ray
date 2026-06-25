@@ -1,11 +1,11 @@
 name: Build Kv2m Android
 on:
   push:
-    tags: ['v*', 'app-v*']
+    tags: ['app-v*']
   workflow_dispatch:
     inputs:
       version:
-        description: 'شماره نسخه APK (e.g. 0.6.0 — no prefix). Leave empty when triggered by tag.'
+        description: 'شماره نسخه APK (e.g. 0.6.0 — no prefix). Creates tag app-v{version}.'
         required: false
         type: string
 permissions:
@@ -13,6 +13,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      INPUT_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -55,17 +57,30 @@ jobs:
           flutter build apk --debug --split-per-abi
           ls -lh build/app/outputs/flutter-apk/
 
+      - name: Resolve version and tag
+        id: ver
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            VER="$INPUT_VERSION"
+            TAG="app-v${VER}"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+              git tag "$TAG"; git push origin "$TAG"
+            fi
+          else
+            TAG="${GITHUB_REF_NAME}"
+            VER="${TAG#app-v}"; VER="${VER#v}"
+          fi
+          echo "ver=$VER" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
       - name: Rename APKs (universal + arm64 + armv7)
         working-directory: app
         run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            ver="${{ inputs.version }}"
-          else
-            ver="${GITHUB_REF_NAME#app-v}"; ver="${ver#v}"
-          fi
+          ver="${{ steps.ver.outputs.ver }}"
           out=build/app/outputs/flutter-apk
           cp "$out/app-debug.apk"             "Kv2m-${ver}-universal.apk"
-          # arm64 is what virtually all phones from the last ~8 years use
           [ -f "$out/app-arm64-v8a-debug.apk" ]   && cp "$out/app-arm64-v8a-debug.apk"   "Kv2m-${ver}-arm64.apk"
           [ -f "$out/app-armeabi-v7a-debug.apk" ] && cp "$out/app-armeabi-v7a-debug.apk" "Kv2m-${ver}-arm32.apk"
           ls -lh Kv2m-*.apk
@@ -73,8 +88,8 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Kv2m Android ${{ inputs.version && format('app-v{0}', inputs.version) || github.ref_name }}"
-          tag_name: ${{ inputs.version && format('app-v{0}', inputs.version) || github.ref_name }}
+          name: "Kv2m Android ${{ steps.ver.outputs.tag }}"
+          tag_name: ${{ steps.ver.outputs.tag }}
           body: |
             ## Kv2m for Android
 

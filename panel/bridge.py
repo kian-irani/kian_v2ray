@@ -53,24 +53,30 @@ def read_installer_users(path: str = USERS_JSON) -> list[dict[str, Any]]:
 
 def import_users(conn: sqlite3.Connection, path: str = USERS_JSON) -> dict:
     """Sync installer users -> panel db (upsert). Returns counts."""
+    import secrets as _sec
     rows = read_installer_users(path)
     added = updated = 0
     for r in rows:
         existing = conn.execute(
-            "SELECT id FROM users WHERE name=?", (r["name"],)).fetchone()
+            "SELECT id, sub_token FROM users WHERE name=?",
+            (r["name"],)).fetchone()
         if existing:
             conn.execute(
                 "UPDATE users SET uuid=?, enabled=?, quota_bytes=?, "
                 "used_bytes=?, expires_at=? WHERE name=?",
                 (r["uuid"], r["enabled"], r["quota_bytes"], r["used_bytes"],
                  r["expires_at"], r["name"]))
+            # Backfill sub_token for users that were imported before migration 0007
+            if not existing[1]:
+                conn.execute("UPDATE users SET sub_token=? WHERE name=?",
+                             (_sec.token_urlsafe(16), r["name"]))
             updated += 1
         else:
             conn.execute(
                 "INSERT INTO users (name, uuid, enabled, quota_bytes, "
-                "used_bytes, expires_at) VALUES (?, ?, ?, ?, ?, ?)",
+                "used_bytes, expires_at, sub_token) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (r["name"], r["uuid"], r["enabled"], r["quota_bytes"],
-                 r["used_bytes"], r["expires_at"]))
+                 r["used_bytes"], r["expires_at"], _sec.token_urlsafe(16)))
             added += 1
     return {"added": added, "updated": updated, "total": len(rows)}
 
@@ -142,7 +148,12 @@ def read_user_links(name: str) -> list[str]:
 
     try:
         with open(LINKS_FILE, "r", encoding="utf-8") as fh:
-            return [l.strip() for l in fh if uuid in l and l.strip()]
+            # Match whole-word UUID to avoid leaking links whose URI contains
+            # a different user's UUID as a substring of a longer path segment.
+            import re as _re
+            pattern = _re.compile(r'\b' + _re.escape(uuid) + r'\b')
+            return [l.strip() for l in fh
+                    if l.strip() and pattern.search(l)]
     except OSError:
         return []
 

@@ -85,6 +85,12 @@ MIGRATIONS: list[str] = [
     ALTER TABLE users ADD COLUMN routing TEXT;
     ALTER TABLE users ADD COLUMN dns TEXT;
     """,
+    # 0007 — per-user subscription token (prevents unauthenticated enumeration
+    # via /sub/{name}/info). Generated once on user create; never changes unless
+    # the admin explicitly rotates it.
+    """
+    ALTER TABLE users ADD COLUMN sub_token TEXT;
+    """,
 ]
 
 
