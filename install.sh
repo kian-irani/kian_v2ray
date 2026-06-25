@@ -317,7 +317,9 @@ if ! done_step deps; then
   apt-get update -y -q
   # ufw را عمداً نصب نمی‌کنیم — اگر کاربر فایروال می‌خواهد، خودش نصب کند.
   # نصب ufw روی سرور خام ممکن است rules پیش‌فرض اضافه کند و دسترسی را محدود کند.
-  apt-get install -y -q curl jq ca-certificates gnupg lsb-release iproute2 coreutils qrencode python3
+  # python3-venv و python3-pip روی اوبونتو package جداگانه‌اند (بدون آنها panel کار نمی‌کند).
+  apt-get install -y -q curl jq ca-certificates gnupg lsb-release iproute2 coreutils qrencode \
+    python3 python3-venv python3-pip
   mark_step deps; say "پیش‌نیازها نصب شد"
 else inf "پیش‌نیازها از قبل نصب — رد شد"; fi
 

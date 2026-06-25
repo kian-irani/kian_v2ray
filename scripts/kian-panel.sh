@@ -48,21 +48,23 @@ fetch_code(){
 
 setup_venv(){
   inf "installing python venv + dependencies"
-  # `python3` existing does NOT mean the venv module is present — on Ubuntu the
-  # `python3-venv` package is separate and often missing, which made `venv` fail
-  # and the panel never came up. Ensure venv + pip are actually available.
-  if ! python3 -m venv --help >/dev/null 2>&1; then
-    inf "installing python3-venv (missing)"
+  # `python3` does NOT imply venv or pip — on Ubuntu these are separate packages.
+  # Ensure both are present before trying to create the venv.
+  local need_install=0
+  python3 -m venv --help >/dev/null 2>&1 || need_install=1
+  python3 -m pip --version >/dev/null 2>&1 || need_install=1
+  if [ "$need_install" = "1" ]; then
+    inf "installing python3-venv + python3-pip (missing)"
     apt-get update -y >/dev/null 2>&1 || true
     apt-get install -y python3-venv python3-pip >/dev/null 2>&1 \
-      || { err "could not install python3-venv — run: apt-get install -y python3-venv"; exit 1; }
+      || { err "could not install python3-venv/pip — run: apt-get install -y python3-venv python3-pip"; exit 1; }
   fi
   rm -rf "$APP_DIR/venv"
-  python3 -m venv "$APP_DIR/venv" || { err "venv creation failed"; exit 1; }
-  "$APP_DIR/venv/bin/pip" install --quiet --upgrade pip
-  "$APP_DIR/venv/bin/pip" install --quiet -r "$APP_DIR/panel/requirements.txt" \
-    || { err "pip install failed (no internet?)"; exit 1; }
-  mkdir -p "$APP_DIR"; printf '%s' "$PORT" > "$APP_DIR/port"   # remember the chosen port
+  python3 -m venv "$APP_DIR/venv" || { err "python3 -m venv failed — check python3-venv is installed"; exit 1; }
+  "$APP_DIR/venv/bin/pip" install --quiet --no-cache-dir --upgrade pip
+  "$APP_DIR/venv/bin/pip" install --quiet --no-cache-dir -r "$APP_DIR/panel/requirements.txt" \
+    || { err "pip install failed — check internet connection and requirements.txt"; exit 1; }
+  mkdir -p "$APP_DIR"; printf '%s' "$PORT" > "$APP_DIR/port"
 }
 
 ask_admin(){
