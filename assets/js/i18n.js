@@ -22,7 +22,7 @@
     },
     "hero.chip1":   { fa: "🟢 فقط کپی-پیست", en: "🟢 Copy-paste only" },
     "hero.chip2":   { fa: "🔐 کلیدها توی مرورگر خودت", en: "🔐 Keys stay in your browser" },
-    "hero.chip3":   { fa: "📱 اندروید + 💻 ویندوز", en: "📱 Android + 💻 Windows" },
+    "hero.chip3":   { fa: "📱 اندروید · 💻 ویندوز / مک / لینوکس", en: "📱 Android · 💻 Windows / Mac / Linux" },
 
     "tab.gen":      { fa: "⚙️ ساخت کانفیگ", en: "⚙️ Build config" },
     "tab.server":   { fa: "🖥️ نصب روی سرور", en: "🖥️ Install on server" },
@@ -116,8 +116,8 @@
     "m.run.l":      { fa: "👇 این دستور را در ترمینال سرور بزن:", en: "👇 Run this command in the server terminal:" },
 
     /* ---------- web panel setup (manage tab) ---------- */
-    "pn.head":      { fa: "🖥️ پنلِ وبِ مدیریت (اختیاری)", en: "🖥️ Web management panel (optional)" },
-    "pn.desc":      { fa: "به‌جای ترمینال، یک پنلِ گرافیکی (داشبورد) روی سرورت راه بینداز: مدیریتِ کاربر، آمار، محدودیتِ IP/سرعت، ۲FA و مدیریتِ چندسرور. نام کاربری و رمزِ ادمین را بزن تا دستورِ آماده بگیری.", en: "Instead of the terminal, run a graphical dashboard on your server: user management, stats, IP/speed limits, 2FA and multi-server. Enter an admin username & password to get a ready command." },
+    "pn.head":      { fa: "🖥️ پنلِ وبِ مدیریت — بازنشانی اطلاعات ورود", en: "🖥️ Web management panel — reset credentials" },
+    "pn.desc":      { fa: "پنل به‌طور خودکار هنگام نصب راه‌اندازی می‌شود. اگر می‌خواهی رمز عبور را عوض کنی یا پنل را مجدداً نصب کنی، نام کاربری و رمز جدید را وارد کن.", en: "The panel is installed automatically during setup. If you want to change the password or reinstall the panel, enter a new username & password." },
     "pn.user":      { fa: "نام کاربری ادمین", en: "Admin username" },
     "pn.pass":      { fa: "رمز عبور ادمین", en: "Admin password" },
     "pn.gen":       { fa: "ساخت دستورِ راه‌اندازی", en: "Generate setup command" },
@@ -132,10 +132,10 @@
     "ab.builtwith": { fa: "🙏 ساخته‌شده با استفاده از", en: "🙏 Built with" },
     "ab.desc": { fa: "KIAN V2Ray یک ابزار رایگان و متن‌بازه که روی <b>سرورِ خودت</b> کانفیگ V2Ray (VLESS Reality + WARP) می‌سازه. کلیدها توی مرورگر خودت ساخته می‌شن و هیچ‌جا ذخیره نمی‌شن. هدف اینه که حتی بدون دانش فنی، فقط با کپی-پیست کار کنه.", en: "KIAN V2Ray is a free, open-source tool that builds V2Ray configs (VLESS Reality + WARP) on <b>your own server</b>. Keys are generated in your browser and stored nowhere. The goal: it works with copy-paste only, even without technical knowledge." },
     "ab.roadmap.f": {
-      fa: "<li>✅ <b>فاز ۱:</b> Reality سریع + WARP، نصب تک‌دستوری، مدیریت کاربر/حجم.</li><li>✅ <b>پایداری و سرعت:</b> WARP با WireGuard/MASQUE + بازگشت خودکار به مستقیم، خودتشخیصی در <span class=\"mono\">status</span>، رفع تداخل پورت، نصب مجدد امن، بهینه‌سازی BBR.</li><li>✅ <b>فاز ۲ (الان):</b> لینک Subscription — برای هر کاربر یک لینک واحد که در v2rayNG واردش می‌کنی و همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.</li><li>🔜 <b>فاز ۳:</b> دامنه + TLS واقعی (WS/gRPC پشت Caddy) برای سرورهای سخت‌گیر.</li><li>🔜 <b>فاز ۴:</b> فرانت CDN برای سرورهایی که آی‌پی‌شون از ایران بسته‌ست.</li><li>🔜 <b>فاز ۵:</b> اتصال مستقیم به ربات تلگرام + هشدار حجم.</li>",
-      en: "<li>✅ <b>Phase 1:</b> Fast Reality + WARP, one-command install, user/quota management.</li><li>✅ <b>Stability & speed:</b> WARP over WireGuard/MASQUE + auto-fallback to direct, self-diagnosis in <span class=\"mono\">status</span>, port-conflict fixing, safe reinstall, BBR tuning.</li><li>✅ <b>Phase 2 (now):</b> Subscription link — one link per user that you import into v2rayNG; all configs arrive automatically and stay up to date.</li><li>🔜 <b>Phase 3:</b> Domain + real TLS (WS/gRPC behind Caddy) for strict servers.</li><li>🔜 <b>Phase 4:</b> CDN fronting for servers whose IP is blocked from Iran.</li><li>🔜 <b>Phase 5:</b> Direct Telegram-bot control + quota alerts.</li>"
+      fa: "<li>✅ <b>فاز ۱:</b> Reality سریع + WARP، نصب تک‌دستوری، مدیریت کاربر/حجم.</li><li>✅ <b>پایداری و سرعت:</b> WARP با WireGuard/MASQUE + بازگشت خودکار به مستقیم، خودتشخیصی در <span class=\"mono\">status</span>، رفع تداخل پورت، نصب مجدد امن، بهینه‌سازی BBR.</li><li>✅ <b>فاز ۲:</b> لینک Subscription — برای هر کاربر یک لینک واحد که همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.</li><li>✅ <b>فاز ۳:</b> دامنه + TLS واقعی (WS/gRPC/Trojan/HTTPUpgrade/XHTTP پشت Caddy) + Hysteria2 و TUIC برای سرورهای سخت‌گیر.</li><li>✅ <b>فاز ۴:</b> نرم‌افزار Kv2m (اندروید + ویندوز/مک/لینوکس) + پنل وب مدیریت — نصب و مدیریت بدون ترمینال.</li><li>🔜 <b>فاز ۵:</b> فرانت CDN برای سرورهایی که آی‌پی‌شون از ایران بسته‌ست.</li><li>🔜 <b>فاز ۶:</b> اتصال مستقیم به ربات تلگرام + هشدار حجم.</li>",
+      en: "<li>✅ <b>Phase 1:</b> Fast Reality + WARP, one-command install, user/quota management.</li><li>✅ <b>Stability & speed:</b> WARP over WireGuard/MASQUE + auto-fallback to direct, self-diagnosis in <span class=\"mono\">status</span>, port-conflict fixing, safe reinstall, BBR tuning.</li><li>✅ <b>Phase 2:</b> Subscription link — one link per user; all configs arrive automatically and stay up to date.</li><li>✅ <b>Phase 3:</b> Domain + real TLS (WS/gRPC/Trojan/HTTPUpgrade/XHTTP behind Caddy) + Hysteria2 and TUIC for strict servers.</li><li>✅ <b>Phase 4:</b> Kv2m app (Android + Windows/Mac/Linux) + web management panel — install and manage without a terminal.</li><li>🔜 <b>Phase 5:</b> CDN fronting for servers whose IP is blocked from Iran.</li><li>🔜 <b>Phase 6:</b> Direct Telegram-bot control + quota alerts.</li>"
     },
-    "ab.kv2m.d": { fa: "برای مدیریت حرفه‌ای‌تر، نرم‌افزار <b>Kv2m</b> خودش به سرورت SSH می‌زند و همه‌چیز را مدیریت/نصب می‌کند — برای ویندوز/مک/لینوکس و اندروید (Termux).", en: "For more pro management, the <b>Kv2m</b> app SSHes into your server itself and manages/installs everything — for Windows/macOS/Linux and Android (Termux)." },
+    "ab.kv2m.d": { fa: "برای مدیریت حرفه‌ای‌تر، نرم‌افزار <b>Kv2m</b> خودش به سرورت SSH می‌زند و همه‌چیز را نصب/مدیریت می‌کند — اپ اندروید (Flutter) + دسکتاپ ویندوز/مک/لینوکس (Qt).", en: "For more pro management, the <b>Kv2m</b> app SSHes into your server itself and installs/manages everything — Android app (Flutter) + desktop Windows/macOS/Linux (Qt)." },
     "ab.kv2m.dl": { fa: "💻 دانلود و راهنما: <a href=\"https://github.com/kian-irani/kian_v2ray/tree/main/kv2m\" target=\"_blank\" rel=\"noopener\">پوشهٔ kv2m در گیت‌هاب</a>", en: "💻 Download & guide: <a href=\"https://github.com/kian-irani/kian_v2ray/tree/main/kv2m\" target=\"_blank\" rel=\"noopener\">the kv2m folder on GitHub</a>" },
     "ab.ch.learn": { fa: "🎓 آموزش و کانال<br><span>@kian_irani_cdn_f</span>", en: "🎓 Tutorials & channel<br><span>@kian_irani_cdn_f</span>" },
     "ab.ch.support": { fa: "🆘 پشتیبانی<br><span>@Kian_irani_t</span>", en: "🆘 Support<br><span>@Kian_irani_t</span>" },
@@ -259,7 +259,7 @@
     "g.adv.days.60": { fa: "۶۰ روز", en: "60 days" },
     "g.adv.days.90": { fa: "۹۰ روز", en: "90 days" },
     "g.adv.days.0": { fa: "دائمی", en: "Forever" },
-    "g.adv.portnote": { fa: "پورت‌ها خودکار انتخاب می‌شن (از ۸۴۴۳ به بعد) — لازم نیست کاری بکنی.", en: "Ports are picked automatically (from 8443 up) — you don't need to do anything." },
+    "g.adv.portnote": { fa: "پورت‌ها خودکار از پورت‌های وب معروف (۴۴۳، ۲۰۸۳، ۸۰۸۰، ...) انتخاب می‌شن — لازم نیست کاری بکنی.", en: "Ports are picked automatically from standard web ports (443, 2083, 8080, ...) — you don't need to do anything." },
 
     /* ---------- GEN: TLS domain block (was Persian-only) ---------- */
     "g.tls.summary": { fa: "🌐 کانفیگ‌های دامنه‌دار (WS / gRPC / HTTPUpgrade + TLS) — پیشرفته", en: "🌐 Domain-based configs (WS / gRPC / HTTPUpgrade + TLS) — advanced" },
