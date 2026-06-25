@@ -14,7 +14,7 @@ permissions:
   contents: write
 
 jobs:
-  # ── Windows x64 ──────────────────────────────────────────────────────────────
+  # ── Windows x64 ────────────────────────────────────────────────────────────────────────────
   build-windows:
     runs-on: windows-latest
     steps:
@@ -68,28 +68,24 @@ jobs:
             dist/Kv2m-Setup-x64.exe
             dist/Kv2m-Portable-x64.exe
 
-  # ── macOS universal2 (Intel + Apple Silicon) ──────────────────────────────────
+  # ── macOS (Intel + Apple Silicon via universal2) ──────────────────────────────────────────
   build-macos:
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install universal2 Python 3.11
-        run: |
-          curl -fsSL -o /tmp/python311.pkg \
-            "https://www.python.org/ftp/python/3.11.9/python-3.11.9-macos11.pkg"
-          sudo installer -pkg /tmp/python311.pkg -target /
-          echo "/Library/Frameworks/Python.framework/Versions/3.11/bin" >> "$GITHUB_PATH"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      - name: Install Python deps (universal2 wheels)
+      - name: Install Python deps
         run: |
           python3.11 -m pip install --upgrade pip
           python3.11 -m pip install PySide6-Essentials paramiko cryptography "qrcode[pil]" Pillow pyinstaller
 
-      - name: Build universal2 .app
+      - name: Build macOS .app
         run: |
           python3.11 -m PyInstaller --windowed --name "Kv2m" \
-            --target-arch universal2 \
             --paths kv2m \
             --hidden-import app --hidden-import core --hidden-import theme \
             --hidden-import i18n --hidden-import cli --hidden-import servers \
@@ -98,7 +94,6 @@ jobs:
             --hidden-import qrcode --hidden-import PIL \
             --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy \
             kv2m/kv2m.py
-          file dist/Kv2m.app/Contents/MacOS/Kv2m
           cd dist && zip -r -q "Kv2m-macOS.zip" "Kv2m.app" && cd ..
           ls -lh dist/Kv2m-macOS.zip
 
@@ -108,7 +103,7 @@ jobs:
           tag_name: v${{ inputs.version }}
           files: dist/Kv2m-macOS.zip
 
-  # ── Linux x86_64 (Ubuntu 22.04 / glibc 2.35) ─────────────────────────────────
+  # ── Linux x86_64 (Ubuntu 22.04 / glibc 2.35) ─────────────────────────────────────────────
   build-linux:
     runs-on: ubuntu-22.04
     steps:
