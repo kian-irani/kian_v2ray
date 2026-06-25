@@ -49,9 +49,26 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "ver=${TAG#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Extract changelog for this version
+      - name: Build release notes with artifact table
         run: |
+          VER="${{ steps.tag.outputs.ver }}"
           awk '/^## /{n++} n==1{print} n==2{exit}' CHANGELOG.md > RELEASE_NOTES.md || true
+          cat >> RELEASE_NOTES.md << EOF
+
+---
+
+## دانلود / Download
+
+| فایل / File | پلتفرم / Platform |
+|-------------|-------------------|
+| \`Kv2m-${VER}-universal.apk\` | 📱 Android — همه گوشی‌ها |
+| \`Kv2m-${VER}-arm64.apk\` | 📱 Android — ۶۴ بیتی (گوشی‌های جدید) |
+| \`Kv2m-${VER}-arm32.apk\` | 📱 Android — ۳۲ بیتی (گوشی‌های قدیمی) |
+| \`Kv2m-Setup-x64.exe\` | 💻 **Windows** 10/11 x64 — نصب کامل |
+| \`Kv2m-Portable-x64.exe\` | 💻 **Windows** 10/11 x64 — بدون نصب (Portable) |
+| \`Kv2m-macOS.zip\` | 🍎 **macOS** — universal (Intel + Apple Silicon) |
+| \`Kv2m-Linux-x86_64\` | 🐧 **Linux** x86_64 — \`chmod +x\` سپس اجرا (glibc ≥ 2.35) |
+EOF
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
