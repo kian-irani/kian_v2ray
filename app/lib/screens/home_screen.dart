@@ -453,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectionMode = false;
     });
     await _cache.saveServers(_servers);
-    if (_selected != null) await _cache.saveSelected(_selected!.name);
+    await _cache.saveSelected(_selected?.name ?? '');
   }
 
   /// Copy every server's share URI (newline-separated) to the clipboard.

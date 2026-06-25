@@ -151,7 +151,7 @@ build_user_creds(){
     arr="$(printf '%s' "$arr" | jq -c --arg n "$name" --arg pw "$pw" --arg u "$uuid" --arg apw "$apw" --arg spw "$spw" \
       '. += [{name:$n, hy2_pw:$pw, tuic_uuid:$u, tuic_pw:$pw, anytls_pw:$apw, stls_pw:$spw}]')"
   done <<< "$emails"
-  printf '%s' "$arr" > "$map"
+  printf '%s' "$arr" > "${map}.tmp" && mv "${map}.tmp" "$map"
   # Server-wide Shadowsocks PSK behind ShadowTLS (16 bytes b64 for aes-128-gcm).
   [ -f "$SB_DIR/ss_psk.txt" ] || openssl rand -base64 16 > "$SB_DIR/ss_psk.txt"
 }
