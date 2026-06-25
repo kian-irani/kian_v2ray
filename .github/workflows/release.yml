@@ -2,6 +2,12 @@ name: Release
 on:
   push:
     tags: [ "v*" ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'شماره نسخه — version number (e.g. 3.0.0, no v prefix)'
+        required: true
+        type: string
 permissions:
   contents: write
 jobs:
@@ -11,16 +17,37 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Extract changelog for this tag
-        id: notes
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve tag
+        id: tag
         run: |
-          ver="${GITHUB_REF_NAME#v}"
-          # pull the first CHANGELOG section as release notes (best-effort)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VER="${{ inputs.version }}"
+            TAG="v${VER}"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            if git rev-parse "$TAG" >/dev/null 2>&1; then
+              echo "⚠️  Tag $TAG already exists — skipping tag creation"
+            else
+              git tag "$TAG"
+              git push origin "$TAG"
+              echo "✅ Created and pushed tag $TAG"
+            fi
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "ver=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog for this version
+        run: |
           awk '/^## /{n++} n==1{print} n==2{exit}' CHANGELOG.md > RELEASE_NOTES.md || true
-          echo "version=$ver" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "kian_v2ray ${{ github.ref_name }}"
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "kian_v2ray ${{ steps.tag.outputs.tag }}"
           body_path: RELEASE_NOTES.md
           generate_release_notes: true
