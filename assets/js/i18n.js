@@ -26,8 +26,7 @@
 
     "tab.gen":      { fa: "⚙️ ساخت کانفیگ", en: "⚙️ Build config" },
     "tab.server":   { fa: "🖥️ نصب روی سرور", en: "🖥️ Install on server" },
-    "tab.android":  { fa: "📱 اندروید", en: "📱 Android" },
-    "tab.pc":       { fa: "💻 ویندوز / PC", en: "💻 Windows / PC" },
+    "tab.clients":  { fa: "📱💻 کلاینت‌ها", en: "📱💻 Clients" },
     "tab.tips":     { fa: "💡 نکات و عیب‌یابی", en: "💡 Tips & troubleshooting" },
     "tab.domain":   { fa: "🌐 دامنه و TLS", en: "🌐 Domain & TLS" },
     "tab.manage":   { fa: "👥 مدیریت کاربر", en: "👥 User management" },
@@ -345,6 +344,26 @@
     "sv.buy.any": { fa: "🌍 هر VPS خارج از ایران", en: "🌍 Any VPS outside Iran" },
     "sv.buy.any.f": { fa: "<li>✓ ترجیحاً پرداخت کریپتو / بدون KYC</li><li>✓ لوکیشن نزدیک (ترکیه/آلمان/امارات)</li><li>✓ آی‌پی تمیز و در-دسترس از ایران</li>", en: "<li>✓ Prefer crypto payment / no KYC</li><li>✓ Nearby location (Turkey/Germany/UAE)</li><li>✓ Clean IP reachable from Iran</li>" },
     "sv.buy.any.n": { fa: "هر ارائه‌دهنده‌ای که این شرایط رو داشته باشه مناسبه.", en: "Any provider that meets these criteria works." },
+
+    /* ---------- CLIENTS tab (merged Android + PC) ---------- */
+    "s.clients.h":   { fa: "📱💻 راه‌اندازی روی گوشی و کامپیوتر", en: "📱💻 Set up on mobile & desktop" },
+    "cl.s1t":        { fa: "اپ پیشنهادی رو نصب کن", en: "Install the recommended app" },
+    "cl.s1d":        { fa: "<b>Kv2m</b> و <b>Hiddify</b> همهٔ پروتکل‌های ما را روی یک لینک Subscription پشتیبانی می‌کنند: Reality، Hysteria2، TUIC، AnyTLS و ShadowTLS.", en: "<b>Kv2m</b> and <b>Hiddify</b> support every protocol on one subscription link: Reality, Hysteria2, TUIC, AnyTLS and ShadowTLS." },
+    "cl.plat.android": { fa: "📱 اندروید", en: "📱 Android" },
+    "cl.plat.pc":    { fa: "💻 ویندوز / مک / لینوکس", en: "💻 Windows / macOS / Linux" },
+    "cl.plat.ios":   { fa: "🍎 آیفون / iOS", en: "🍎 iPhone / iOS" },
+    "cl.alt":        { fa: "هر کلاینتی که لینکِ Subscription می‌پذیرد کار می‌کند (NekoBox/husi، sing-box، NekoRay…).", en: "Any client that accepts a subscription link works (NekoBox/husi, sing-box, NekoRay…)." },
+    "cl.s2t":        { fa: "لینک Subscription را وارد کن", en: "Import the subscription link" },
+    "cl.s2d":        { fa: "در تب «ساخت کانفیگ» لینک Subscription کاربر را کپی کن. در اپ: «افزودن از Subscription» یا «Import from clipboard» را بزن و لینک را paste کن. همهٔ کانفیگ‌ها خودکار می‌آیند و به‌روز می‌مانند.", en: "In the 'Build config' tab copy the user's subscription link. In the app tap 'Add via Subscription' or 'Import from clipboard' and paste. All configs arrive automatically and stay up to date." },
+    "cl.s2qr":       { fa: "• <b>QR:</b> در اپ دکمهٔ افزودن ← Scan QR ← کد روی صفحه را اسکن کن.", en: "• <b>QR:</b> in the app tap add ← Scan QR ← scan the code on screen." },
+    "cl.s3t":        { fa: "وصل شو", en: "Connect" },
+    "cl.s3d":        { fa: "روی کانفیگ بزن، بعد VPN را روشن کن. اولین بار مجوز VPN می‌خواد — تأیید کن.", en: "Tap a config, then turn on VPN. The first time it asks for VPN permission — approve it." },
+    "cl.s4t":        { fa: "همه‌چیز از WARP می‌رود", en: "Everything goes through WARP" },
+    "cl.s4d":        { fa: "همهٔ کانفیگ‌ها از <b>WARP</b> عبور می‌کنند — نیازی به انتخاب حالت نیست. اگر WARP موقتاً قطع شود، سرور خودکار به مستقیم سوییچ می‌کند.", en: "All configs egress through <b>WARP</b> — no mode to select. If WARP temporarily drops, the server auto-switches to direct and reconnects." },
+    "cl.share":      { fa: "📤 می‌خوای کانفیگ رو به دوستت بدی؟ همون لینک Subscription یا QR رو بفرست — همه‌چیز خودکار وارد می‌شه.", en: "📤 Want to share with a friend? Send the same subscription link or QR — everything imports automatically." },
+
+    /* ---------- TLS auto-select note ---------- */
+    "g.tls.auto.note": { fa: "✅ <b>دامنه شناسایی شد — همهٔ پروتکل‌ها خودکار فعال شدند.</b> هر کاربر برای هر پروتکل یک لینک می‌گیرد. می‌توانی هر کدام را دلخواه غیرفعال کنی.", en: "✅ <b>Domain detected — all protocols enabled automatically.</b> Each user gets one link per protocol. You can uncheck any you don't want." },
 
     /* ---------- ANDROID tab (steps) ---------- */
     "an.s1t": { fa: "اپ Kv2m یا Hiddify رو نصب کن (پیشنهادی)", en: "Install Kv2m or Hiddify (recommended)" },

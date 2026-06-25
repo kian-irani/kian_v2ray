@@ -888,6 +888,22 @@ function init() {
   if (tlsEn2) tlsEn2.addEventListener('change', syncVisibility);
   $('#sni-mode') && $('#sni-mode').addEventListener('change', syncVisibility);
   $('#sni') && $('#sni').addEventListener('change', syncVisibility);
+
+  // وقتی دامنهٔ TLS معتبر وارد شد، همهٔ پروتکل‌ها خودکار فعال می‌شوند
+  const tlsDomainEl = $('#tls-domain');
+  if (tlsDomainEl) {
+    tlsDomainEl.addEventListener('input', () => {
+      const v = tlsDomainEl.value.trim().toLowerCase();
+      const note = $('#tls-auto-note');
+      if (isDomain(v)) {
+        $$('input[name="tls-proto"]').forEach(cb => { cb.checked = true; });
+        if (note) note.hidden = false;
+      } else {
+        if (note) note.hidden = true;
+      }
+    });
+  }
+
   syncVisibility();
 
   $('#gen-form').addEventListener('submit', e => {
@@ -900,7 +916,11 @@ function init() {
     if (!f.prefix) { err.textContent = 'یک نام کاربر (انگلیسی) وارد کن — این نام لینک‌های هر کاربر را از هم جدا می‌کند.'; $('#user-prefix').focus(); return; }
     if (f.tls && f.tls.enabled) {
       if (!isDomain(f.tls.domain)) { err.textContent = 'دامنهٔ TLS معتبر نیست (نمونه: vpn.example.com). یک رکورد A این دامنه باید به IP سرورت اشاره کند.'; $('#tls-domain').focus(); return; }
-      if (!f.tls.protos.length) { err.textContent = 'حداقل یک پروتکل TLS را تیک بزن (پیشنهاد: VLESS-WS).'; return; }
+      // اگر دامنه وارد شده ولی هیچ پروتکلی انتخاب نشده، همه را خودکار فعال کن
+      if (!f.tls.protos.length) {
+        $$('input[name="tls-proto"]').forEach(cb => { cb.checked = true; });
+        f.tls.protos = $$('input[name="tls-proto"]:checked').map(el => el.value);
+      }
     }
     if (f.sniMode === 'manual' && !f.manualSni) { err.textContent = 'یک دامنهٔ استتار (SNI) انتخاب یا وارد کن.'; return; }
     if (f.basePort < 0 || f.basePort > 65500) { err.textContent = 'پورت پایه نامعتبر است؛ خالی بگذار یا عددی بین 1 تا 65500 بده.'; return; }

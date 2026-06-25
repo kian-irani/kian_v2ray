@@ -507,3 +507,16 @@ html[dir=rtl] .adv-toggle[aria-expanded="true"] .adv-caret{transform:scaleX(-1) 
   .rm-card{padding:16px}
   .roadmap-head h2{font-size:23px}
 }
+
+/* =========================================================
+   Clients tab — platform grid
+   ========================================================= */
+.platform-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px}
+.platform-block{flex:1;min-width:160px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.platform-badge{font-weight:700;font-size:13px;color:var(--acc);margin-bottom:4px}
+.platform-block .btn-link{margin-top:0}
+
+/* TLS auto-select callout */
+.tls-auto-note{margin:10px 0 0;background:rgba(118,185,0,.08);border:1px solid rgba(118,185,0,.3);border-radius:10px;padding:10px 13px;font-size:13.5px;color:#cfeede}
+
+@media(max-width:600px){.platform-row{flex-direction:column}}

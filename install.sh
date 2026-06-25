@@ -248,6 +248,7 @@ esac
 #  payload را بخوان (env یا فایل ذخیره‌شده)
 # ===========================================================================
 mkdir -p "$ETC_DIR"
+chmod 700 "$ETC_DIR"
 [ -n "${KIAN_PAYLOAD:-}" ] && printf '%s' "$KIAN_PAYLOAD" > "$ETC_DIR/payload.b64"
 if [ ! -s "$ETC_DIR/payload.b64" ]; then
   err "هیچ payload ای پیدا نشد."
@@ -493,7 +494,8 @@ else
   rm -f "$_tmpdest"
 fi
 
-chmod 644 "$XRAY_DIR/config.json"   # کانتینر Xray با کاربر غیر-root → باید config را بخواند
+chmod 640 "$XRAY_DIR/config.json"   # root:docker r+w, Xray container reads via docker gid
+chown root:root "$XRAY_DIR/config.json" 2>/dev/null || true
 
 # --- مشکل ۰.۱: پورت API (آمار) نباید با 3x-ui/Marzban روی همین سرور تداخل کند ---
 # پورت API از config خوانده می‌شود؛ اگر اشغال بود، خودکار اولین پورت آزاد بعدی انتخاب
@@ -955,6 +957,9 @@ if [ "${KIAN_PANEL:-0}" = "1" ] && [ -x /usr/local/bin/kian-panel.sh ]; then
   inf "راه‌اندازیِ پنلِ وب"
   bash /usr/local/bin/kian-panel.sh enable || warn "راه‌اندازی پنل ناموفق بود — Xray دست‌نخورده است"
 fi
+
+# پس از اتمام نصب، payload.b64 حذف می‌شود (حاوی کلید خصوصی و رمزها است)
+rm -f "$ETC_DIR/payload.b64"
 
 # --- پایان -----------------------------------------------------------------
 mark_step done
