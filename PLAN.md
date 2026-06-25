@@ -1,157 +1,149 @@
----
-title: PLAN — kian-v2ray
-tags: [v2ray, plan]
-date: 2026-06-20
-status: active
-priority: medium
-project: kian-v2ray
----
+# PLAN — kian_v2ray
 
-# 🗺️ PLAN — `01-kian-v2ray` (rev v3.0 — full task breakdown)
-
-> هدف: از نصب‌کنندهٔ V2Ray تک‌دستوری → **پلتفرم VPN چندسروره + اکوسیستم موبایل**.
-> سند محصول: `PRD.md` · رودمپ کامل: `repo/ROADMAP.md` (v2.4) · بایگانی: `repo/ROADMAP-legacy.md`.
-> مزیتِ اختصاصیِ غیرقابل‌کپی: **کلید خصوصی هرگز به سرور نمی‌رسد** (ساخت در مرورگر).
-> هر آیتم یک تسکِ مستقل با شناسه است. `[x]`=done · `[~]`=in-progress · `[ ]`=open · `(srv)`=نیازِ تستِ سرور.
->
-> 📌 **دستورِ کاربر برای `auto-rp` (2026-06-22):** فازهای **۹، ۱۰، ۱۱، ۱۲** (در `PRD-V2.md`) را **یک‌جا و پشت‌سرهم**
-> کامل کن، **بعد** فقط **یک نسخهٔ جدید** منتشر کن (نه ریلیز per-task). یعنی همهٔ تسک‌های ۹–۱۲ → سپس یک bump+tag.
-
-## ✅ Done
-- صفحهٔ تعاملی (کلید در مرورگر، چند SNI/پورت) · Subscription سه‌لایه (Gist HTTPS) · TLS دامنه‌دار پشت Caddy · هسته (Reality/WARP/SS/multi-user/CLI/Watchdog/BBR) · Kv2m دسکتاپ.
-- **[2026-06-20 auto-rp]** فاز ۰ کامل → نصب‌کننده **v2.1.0** (خودتشخیصیِ `status`/`health`/`doctor`). حقوقی (privacy/terms دوزبانه). صفحهٔ تعاملیِ دوزبانه + سکشنِ رودمپ. README/ROADMAP/CHANGELOG بازنویسی.
+> آخرین به‌روزرسانی: 2026-06-25 · نسخهٔ فعلی: **v4.1.0**
+> هر آیتم: `[x]` = تمام · `[ ]` = باز · `[~]` = در حال انجام
 
 ---
 
-## 🔴 فاز ۰ — رفع باگ‌های بحرانی
-- [x] ۰.۱ تداخل پورت API (10085) → auto-fix در `install.sh`.
-- [x] ۰.۲ پایدارسازی WARP → `warp_fallback()` + چکِ socks.
-- [x] ۰.۳ خودتشخیصیِ `status` (کرش‌لوپ/WARP/پورت/SS/Subscription) + alias `health`/`doctor`.
-- [x] ۰.۴ بهینه‌سازی سرعت BBR (BBR+fq، idempotent).
-- [x] ۰.۵ نصب مجدد امن (بکاپ + ادغامِ کاربرانِ قبلی).
-- [x] ۰.۶ بازطراحی Shadowsocks (code-side): `SS_METHOD` تک‌منبع (app.js)، لینکِ SS حالا IPv6-safe، و اعتبارسنجیِ cipher در `config-health.py` (لیستِ مجاز شاملِ SS-2022). `(srv)` مهاجرتِ نهاییِ cipher + تستِ روی سرور باقی است.
+## ✅ فازهای تکمیل‌شده
+
+### فاز ۰ — رفعِ باگ‌های بحرانی (v2.1.0)
+- [x] تداخلِ پورت API → auto-fix
+- [x] پایدارسازی WARP + warp_fallback
+- [x] خودتشخیصیِ `status`/`health`/`doctor`
+- [x] بهینه‌سازیِ BBR
+
+### فاز ۱ — ثبات + UI (v2.2.0)
+- [x] مسیریابیِ WARP در صفحهٔ تعاملی
+- [x] پنلِ واقعی (login/logout/JWTِ expire-aware)
+- [x] Gist proxy (Cloudflare Worker HTTPS sub)
+- [x] Subscription سه‌لایه
+
+### فاز ۲ — پنلِ کامل (v2.3–v2.4)
+- [x] Migration / Schema / Repo / Endpoint کامل
+- [x] System Monitor + Audit Log + CSV export
+- [x] Rate-Limit + Security Headers + CORS + 2FA TOTP + IP whitelist + Key Rotation
+
+### فاز ۳ — Kv2m Desktop چندسروره (v3.1–v3.6)
+- [x] مدیریتِ چندسرور (ServerStore)
+- [x] REST API پنل (login + CRUD)
+- [x] Auto-update (GitHub Releases)
+- [x] Dark/Light + persist settings
+
+### فاز ۴ — پروتکل‌ها و ضدسانسور
+- [x] Hysteria2 + TUIC v5 inbound (sing-box companion)
+- [x] WireGuard + Mux.cool
+- [x] Fragment + uTLS + TTL + Noise padding
+- [x] REALITY SNI Scanner + Tor Bridge Fallback
+- [x] بات تلگرام + Webhook + Email + Push انقضا
+
+### فاز ۵ — Multi-Server Management
+- [x] Node Agent سبک
+- [x] یک پنل → چند VPS
+- [x] Health Check + Auto Failover
+- [x] Load Balancing + GeoIP
+- [x] Migration از Marzban/3X-UI
+
+### فاز ۶ — اپ موبایل Flutter (v0.1–v0.5.1)
+- [x] پروژهٔ واقعیِ Flutter+Android
+- [x] صفحاتِ اصلی + اتصالِ واقعی (flutter_v2ray)
+- [x] Smart Server Selection + Offline Mode
+- [x] تاریخچهٔ نصب
+- [x] بدونِ GMS + Market metadata
+
+### فاز ۷ — CI/CD + Monitoring
+- [x] GitHub Actions: validate + release + build-app + build-kv2m
+- [x] Docker + GHCR + One-click Deploy
+- [x] SAST CodeQL (python+js) + Trivy scan
+- [x] Prometheus + Grafana Dashboard + Alert Rules
+
+### فاز ۸ — «واقعاً کار کند» (v2.5–v2.7)
+- [x] رفعِ REALITY dest → Xray 26.x start می‌شود
+- [x] پروتکل‌های جدید قابلِ‌انتخاب + قابلِ‌نصب
+- [x] افزودنِ خودکارِ کانفیگ به اپ بعد از نصب
+- [x] اپ کانفیگ‌ها/سابسکرایب را نشان می‌دهد
+- [x] پنل از داخلِ اپ + تاریخچهٔ نصب
+- [x] رفعِ باگِ پنل: `/api/audit` 500 + دکمهٔ کپیِ sub
+
+### فاز ۹ — تجربهٔ کاربری اپ (v4.0.0 bundle)
+- [x] نوارِ بالای اندروید مرتب شد (overflow menu، عنوانِ دیده‌شونده)
+- [x] حذفِ گروهیِ کانفیگ‌ها (bulk delete)
+- [x] کپیِ گروهیِ همهٔ کانفیگ‌ها (copy-all)
+- [x] per-app split-tunnel HelpCard دوزبانه
+- [x] QR scanner در افزودنِ سرور
+
+### فاز ۱۰ — پروتکل/Transport پیشرفته (v4.0.0 bundle)
+- [x] Reality spiderX (`spx=/`) در همهٔ سه نسخه
+- [x] ShadowTLS v3 per-user (پورت ۸۴۴۷/tcp)
+- [x] AnyTLS per-user (پورت ۸۴۴۶/tcp، sing-box 1.12.0)
+- [x] SSH outbound client-side
+- [x] ECH plumbing
+- [x] resolve_ports: پورتِ اشغال → پورتِ آزادِ خودکار
+
+### فاز ۱۱ — پنلِ کامل per-user (v4.0.0 bundle)
+- [x] Migration 0006: ستون‌های routing/dns
+- [x] per-user routing/DNS: schema + repo + endpoint + bridge
+- [x] فرمِ پنل دوزبانه (select routing + DNS سفارشی)
+
+### فاز ۱۲ — v4.0.0 یکپارچه (همیشه‌WARP + AnyTLS + آپدیتِ درجا + سینکِ خودکار)
+- [x] حذفِ انتخابگرِ حالتِ اتصال (همیشه WARP، fallbackِ مستقیم)
+- [x] `kian-v2ray update` کامل: script+Xray+panel+companion+resync
+- [x] `kian-v2ray resync` + auto-resync بعد از هر تغییر
+- [x] دکمهٔ «به‌روزرسانیِ سرور» در اپ موبایل + دسکتاپ
+- [x] Hysteria2/TUIC per-user (هر کاربر اعتبارِ جداگانه)
+- [x] صفحهٔ تعاملی ۱۰۰٪ دوزبانه (۳۲۰ کلید)
+- [x] python3-venv در پیش‌نیازهای نصب
+- [x] one-click release via workflow_dispatch
 
 ---
 
-## 🟠 فاز ۱ — پایه‌ریزی
-- [x] ۱.۱۰ **LANDING-i18n-FULL — ۱۰۰٪ کامل** — i18n.js: `data-i18n-ph`/`data-i18n-title` + دیکشنریِ **۲۲۵کلیدی** FA/EN. **هر ۸ تب کاملاً دوزبانه شد** تا عمیق‌ترین prose: فرمِ ساخت + مدیریت + about + hero/roadmap/footer + نکات (کامل) + **دامنه (کامل: رکوردِ A، Cloudflare، راهنمای پروتکل، ترتیبِ کار، و هر ۴ بلوکِ troubleshooting شاملِ توضیحِ geoblock)** + server/android/pc (همه‌ی stepها). اعتبارسنجی: `node --check` سبز، ۲۲۵/۲۲۵ کلید، HTML متوازن (p:66/66، b:132/132، details:5/5)، generator دست‌نخورده، toggle همه را به EN سوییچ می‌کند. **(دیگر باقی‌مانده‌ای ندارد.)**
-- [x] ۱.۱ ریفکتورِ ساختار: پکیجِ `core/` (stdlib-only، importable روی VPS) + `tests/` ساخته شد؛ مسیرهای CI نشکست.
-- [x] ۱.۲ SQLite schema (`core/db.py`: users/audit_log/nodes/settings + pragmaهای WAL/FK) + Migration سبکِ forward-only (`core/migrate.py` با `user_version`، idempotent).
-- [x] ۱.۳ لاگِ ساختاریافتهٔ JSON (`core/logging.py`: خروجیِ تک‌خطیِ JSON، فیلدهای ساختاریافته در `kian_fields`، بدونِ تداخل با LogRecord).
-- [x] ۱.۴ SemVer + Git Tagging (`scripts/release.sh` major/minor/patch + tag + `docs/VERSIONING.md`).
-- [x] ۱.۵ پشتیبانیِ IPv6 (client/link side): `isIPv6`/`isServerAddr`/`hostForUri` در app.js؛ آدرسِ IPv6 پذیرفته و در لینک‌ها bracket می‌شود (`[2001:db8::1]:port`)؛ اعتبارسنجیِ فرم IPv6 را قبول می‌کند. smoke سبز. `(srv)` بایندِ سروری روی `::` در install.sh باقی است.
-- [x] ۱.۶ بکاپِ خودکارِ رمزنگاری‌شده (`scripts/kian-backup.py`: tar.gz + openssl AES-256 + آپلودِ Telegram/S3/rclone، cron-ready).
-- [x] ۱.۷ Audit Log (`core/audit.py`: `record`/`tail`، نوشتن در DB + mirror در JSON log).
-- [x] ۱.۸ pytest (`tests/test_core.py` + `tests/test_scripts.py`، ۸ تست سبز) + اتصال به CI (`validate.yml`).
-- [x] ۱.۹ Config Health Check (`scripts/config-health.py`: اعتبارسنجیِ inbound/port/Reality/SS-cipher + `--probe`).
+## ✅ v4.1.0 — امنیت + رفعِ باگ (2026-06-25) — [PR #3](https://github.com/kian-irani/kian_v2ray/pull/3)
+
+### رفعِ امنیتی (۶ مورد)
+- [x] **GitHub Actions injection** — `${{ inputs.version }}` از `run:` بیرون، از `env:` خوانده می‌شود
+- [x] **workflow race condition** — `v*` از trigger build-app و build-kv2m حذف شد؛ job `resolve` در kv2m
+- [x] **XSS در linkRow()** — `innerHTML` → `textContent` برای SNI کاربر
+- [x] **grep -E injection** — ۳ جا `grep -E` → `grep -F` در install.sh
+- [x] **systemd credential injection** — credentials در `EnvironmentFile` با chmod 600
+- [x] **UUID substring leakage** — `uuid in line` → `re.compile(r'\b' + re.escape(uuid) + r'\b')`
+
+### رفعِ عملکردی (۷ مورد)
+- [x] **sub_token ستونِ گمشده** — migration 0007، create_user/import_users توکن می‌سازند
+- [x] **subscription page 404** — `?token=` در sub.html، endpoint جدید `/api/users/{name}/sub-url`
+- [x] **KIAN_LANG حذف‌شده در kv2m** — از `g['install_cmd']` مستقیم گرفته می‌شود
+- [x] **SSH stderr blocking** — `.timeout(timeout)` به stderr stream اضافه شد
+- [x] **_workers memory leak** — helper `_launch()` workerهای تمام را پاک می‌کند
+- [x] **stale cache بعد از bulk delete** — `saveSelected('')` وقتی selected=null
+- [x] **non-atomic write users.json** — `> .tmp && mv` به‌جای `>`
+
+### بهبود
+- [x] README.md بازنویسی کامل
+- [x] i18n.js: برچسبِ tlsproto به‌روز شد
+- [x] installer.nsi: نسخه 3.0.2 → 4.1.0 (mismatch رفع شد)
+- [x] CHANGELOG.md: entry v4.1.0
 
 ---
 
-## 🟠 فاز ۲ — وب پنل کامل
-- [x] ۲.۱ اسکلتِ FastAPI (`panel/main.py`) + مدل‌ها (`panel/schemas.py` Pydantic) روی `core.db` (به‌جای ORMِ دوم — تصمیمِ معماری برای تک‌منبعِ schema).
-- [x] ۲.۲ JWT Auth + Refresh Token (`panel/security.py` HS256 دست‌ساز + PBKDF2، stdlib؛ `/auth/login`/`/auth/refresh`).
-- [x] ۲.۳ REST API کاربر CRUD + OpenAPI خودکار (`/api/users` GET/POST/PATCH/DELETE، `/docs`).
-- [x] ۲.۴ WebSocket آمارِ زنده (`/ws/stats` با احرازِ توکن).
-- [x] ۲.۵ محدودیتِ IP/Speed/HWID + Auto-Disable + Bulk Actions (`panel/repo.py` + endpointها).
-- [x] ۲.۶ Export (JSON/CSV) + Session Management (`/auth/sessions`) + Password Recovery (`/auth/password`).
-- [x] ۲.۷ Frontend پنل (`panel/web/index.html` + `app.js`): UI Dark/Glass (OLED، اکسنتِ سبزِ #22C55E، طبق ui-ux-pro-max)، دوزبانه FA/EN + RTL/LTR، لاگین+refreshِ توکن، جدولِ CRUD + bulk + جستجو + toggle، مودالِ ساخت/ویرایش، نمودارِ canvas، **تبِ سرورها (Nodes): افزودن/حذف + مسیریابی/failover/هشدارِ پهنای‌باند**، آیکنِ SVG (نه ایموجی). در FastAPI روی `/app` mount شد.
-- [x] ۲.۸ System Monitor (CPU load + RAM از `/proc` → `/api/system` + pill) + Audit Log Viewer (`/api/audit` + تبِ گزارش) + Export CSV. (Backup/Restore از UI = follow-on؛ اسکریپتِ `kian-backup.py` موجود.)
-- [x] ۲.۹ امنیت: Rate-Limit + Security Headers + CORS + **2FA TOTP** (backend + **UIِ تبِ تنظیمات**: setup/enable/disable با نمایشِ secret) + **IP whitelist** + تغییرِ رمز + چرخشِ کلید از UI. (Fail2ban = لایهٔ سیستمی/ops.)
-- [x] ۲.۱۰ Key Rotation (`/api/keys/rotate` — چرخشِ secretِ JWT، ابطالِ همه توکن‌ها).
+## 🔲 باز — آینده
+
+### امنیت / کیفیت (اولویت متوسط)
+- [ ] CSS: رنگ‌های hex hard-coded در `.tls-auto-note` → CSS variables
+- [ ] `kian-panel.sh print_url`: پورت را از `.env` بخواند (نه parse از unit file)
+- [ ] `panel/web/sub.html`: اگر base URL تنظیم نشده، پیامِ راهنما نشان دهد
+
+### قابلیت‌های جدید (پیشنهاد)
+- [ ] اپ موبایل: تست on-device روی دستگاهِ واقعی (flutter_v2ray bundle)
+- [ ] macOS/Linux build برای kv2m desktop
+- [ ] Import از Marzban در UI پنل
+- [ ] صفحهٔ تعاملی: دکمهٔ «کپیِ دستور نصب» بدونِ نیاز به باز کردن developer tools
 
 ---
 
-## 🟡 فاز ۳ — Kv2m Desktop چندسروره
-- [x] ۳.۱ مدیریتِ چندسرور **وایر شد**: `kv2m/servers.py` (`ServerStore`) حالا در `kv2m/cli.py` استفاده می‌شود — منویِ انتخاب/افزودن/حذفِ سرور + persist. نسخهٔ دسکتاپ به **v3.1.0** bump شد و در `build-kv2m.yml` hidden-import شد.
-- [x] ۳.۲ اتصال به REST API پنل: `kv2m/panel_client.py` (login + refreshِ خودکار + CRUDِ کاربر + stats، stdlib urllib).
-- [x] ۳.۳ Auto-update (GitHub Releases): `kv2m/updater.py` (`parse_version`/`is_newer`/`check` با مقایسهٔ نسخهٔ مقاوم به نامِ محصول) — تست سبز.
-- [x] ۳.۴ Dark/Light ذخیره‌شده — `kv2m/settings.py` (persistِ theme/lang/last-server/tray با toggle، تست سبز). macOS/Linux + crash-reporter = follow-onِ بسته‌بندی.
+## نسخه‌های منتشرشده
 
----
-
-## 🟡 فاز ۴ — پروتکل‌ها و ضدسانسور
-- [x] ۴.۱ Hysteria2 inbound — منطق در `core/protocols.py` + **در install.sh وایر شد** (`scripts/kian-protocols.sh`: sing-box companion، opt-in با `KIAN_EXTRA_PROTOCOLS=1` یا `kian-v2ray protocols enable`؛ TLS از Caddy یا self-signed؛ systemd؛ لینکِ کلاینت).
-- [x] ۴.۲ TUIC v5 inbound — همان `kian-protocols.sh` (bbr، 0-RTT روی sing-box). `(srv)` تستِ نهایی روی سرور.
-- [x] ۴.۳ WireGuard inbound + Mux.cool — `wireguard_inbound` + `mux_settings` در core (WG inbound نیازِ کلیدِ کلاینت = تنظیمِ سرور).
-- [x] ۴.۴ خروجیِ Sing-box format — `core/protocols.to_singbox`.
-- [x] ۴.۵ خروجیِ Clash Meta + تشخیصِ خودکارِ کلاینت — `to_clash` + `detect_client` (singbox/clash/v2ray/base64).
-- [x] ۴.۶ Self-hosted Sub — موتورِ `scripts/sub-format.py` + **صفحهٔ `panel/web/sub.html`** (dark، usage bar/انقضا/کپی/**QR**) + endpointِ `/sub/{name}/info`.
-- [x] ۴.۷ ضدِDPI کامل — Fragment + uTLS (`fragment_settings`/`utls_settings`/`is_valid_fingerprint`) + **TTL** (`ttl_settings`) + **Noise padding** (`noise_settings`).
-- [x] ۴.۸ REALITY SNI Scanner (offline brain) — `core/censorship.score_sni`/`rank_sni_candidates`/`best_sni`.
-- [x] ۴.۹ Tor Bridge Fallback — `core/censorship.tor_bridge_outbound` (obfs4/snowflake) + `fallback_routing_rule`.
-- [x] ۴.۱۰ بات تلگرام + **Webhook + Email + Push انقضا** — `scripts/kian-bot.py` + `core/notify.py` (Telegram/SMTP/Webhook، fan-out، graceful) + `scripts/kian-notify-expiry.py` (اسکنِ انقضا/سهمیه → اعلانِ سمت‌سرور، بدون FCM؛ cron-ready). ۵ تستِ سبز.
-
----
-
-## 🔵 فاز ۵ — Multi-Server Management
-- [x] ۵.۱ Node Agent سبک — `node-agent/agent.py` (http.server، token-gated، `/health` + `/apply`، نوشتنِ اتمیکِ config).
-- [x] ۵.۲ یک پنل → چند VPS — جدولِ `nodes` + endpointهای `/api/nodes` (CRUD) + `/api/nodes/{name}/heartbeat` + migration 0005.
-- [x] ۵.۳ Health Check + Auto Failover — `core/cluster.is_alive`/`failover_order` + heartbeat.
-- [x] ۵.۴ Load Balancing + GeoIP — `pick_least_loaded` + `route_by_geo` (country→region) + `/api/route`.
-- [x] ۵.۵ Migration از Marzban/3X-UI — `scripts/migrate-import.py` (`normalize_marzban` + `normalize_xui` → `import_users`).
-- [x] ۵.۶ Bandwidth Alert + per-Node Override — `cluster.bandwidth_alerts` + هر node کانفیگِ مستقل از `/apply`.
-
----
-
-## 🔵 فاز ۶ — اپ موبایل Flutter
-- [x] ۶.۱ **پروژهٔ واقعیِ Flutter+Android** — `app/android/` کامل: Gradle (ABIهای 32/64، signing، minSdk23/targetSdk35)، `AndroidManifest.xml` (VpnService + permissions، بدونِ GMS)، `MainActivity.kt` (کانالِ `kv2m/vpn`)، `KianVpnService.kt` (راه‌اندازیِ tun + foreground notification + هوک هستهٔ native). `flutter create .` فقط boilerplate تولیدی را پر می‌کند.
-- [x] ۶.۲ صفحاتِ اصلی + **اتصالِ واقعی** — `home_screen.dart` (اتصال/قطعِ واقعی از طریقِ `VpnController`، busy state، restore از cache، دکمهٔ best-server) + import sheet + parseِ subscription + QR (`mobile_scanner`). `lib/services/vpn_service.dart` کانالِ native. **[تنها باقی‌مانده: bundleِ `.aar`ِ xray-core برای packet-forwarding واقعی — تک‌مرحلهٔ native.]**
-- [x] ۶.۳ Smart Server Selection + Offline Mode — `services/selection.dart` (TCP latency) + `services/cache.dart` (persistِ server list/stats/prefs با shared_preferences برای حالتِ آفلاین). Home Widget = follow-onِ پلتفرمی.
-- [x] ۶.۴ بدونِ GMS + Push بدونِ FCM — deps بدونِ firebase/admob؛ مستندِ SSE/Telegram در README.
-- [x] ۶.۵ Metadata + Privacy فارسی + Keystore — `PRIVACY-fa.md` + `KEYSTORE.md` (۳ backup) + دستورِ AAB/APK در README.
-- [x] ۶.۶ Market metadata — `fastlane/metadata/android/{fa-IR,en-US}` (title/short/full) برای Cafe Bazaar/Myket/F-Droid.
-- نامِ اپ: **Kv2m** (هم‌خانواده با دسکتاپِ Kv2m — طبقِ دستورِ کاربر 2026-06-20؛ package=`kv2m`، title=`Kv2m`).
-- توجه: Dart در CI کامپایل نمی‌شود (toolchain نیست)؛ ساختار صحیح و braces متوازن — تستِ Dart (`app/test/`) با Flutter اجرا می‌شود.
-
----
-
-## 🟢 فاز ۷ — CI/CD + Monitoring
-- [x] ۷.۱ GitHub Actions: lint+test (`validate.yml`) + **Auto Release** (`release.yml`، tag `v*` → ساختِ release از CHANGELOG).
-- [x] ۷.۲ Docker Image (`Dockerfile`، GHCR، non-root) + One-click Deploy (`docker-compose.yml`: panel+prometheus+node-exporter+grafana).
-- [x] ۷.۳ SAST CodeQL (python+javascript) + Trivy fs scan (`security.yml`، هفتگی + روی PR).
-- [x] ۷.۴ Prometheus + Node/Xray Exporter (`monitoring/prometheus.yml`) + **endpointِ `/metrics`** در پنل (`panel/metrics.py`، exposition format، تست‌شده).
-- [x] ۷.۵ Grafana Dashboard (`monitoring/grafana-dashboard.json` آمادهٔ import) + Alert Rules (`monitoring/alerts.yml`: CPU/RAM/NodeDown/Bandwidth).
-- [x] ۷.۶ مستندات + Plugin System: `core/plugins.py` (register/get/discover، ۴ تست) + `docs/MIGRATION.md` + `docs/CONTRIBUTING.md`.
-
----
-
-## 🟣 فاز ۸ — «واقعاً کار کند» (بستنِ شکافِ done-روی-کاغذ ↔ کارکردنِ واقعی)
-> بازخوردِ کاربر (2026-06-21): نصب از اپ موبایل خراب بود (Xray بالا نمی‌آمد، پورت‌ها گوش نمی‌دادند)،
-> اپ کانفیگ را خودکار اضافه نمی‌کرد، پروتکل‌های جدید قابلِ‌انتخاب نبودند، و اپ «چیزی نشان نمی‌داد».
-> این فاز این‌ها را واقعی می‌کند — با تستِ زنده روی سرور، نه فقط compile.
-
-- [x] ۸.۱ **رفعِ بحرانیِ نصبِ خراب (REALITY `dest`)** — `config_gen.dart` فیلدِ `dest` را جا انداخته بود
-  → Xray 26.x اصلاً start نمی‌شد. رفع: `dest:"<sni>:443"` در `config_gen.dart` + **اصلاح‌گرِ dest در
-  `install.sh`** (دفاعی برای همهٔ کلاینت‌ها). **تأییدِ زنده روی سرور با ایمیجِ واقعیِ xray-core:26.5.9.**
-- [x] ۸.۲ **پروتکل‌های جدید قابلِ‌انتخاب + قابلِ‌نصب** — صفحه (چک‌باکس) + اپ (سوییچ) → `extra_protocols`
-  در payload → `install.sh` پروتکل‌ها را enable می‌کند و **لینک‌ها را به Subscription می‌افزاید + Gist را sync**.
-- [x] ۸.۳ **افزودنِ خودکارِ کانفیگ به اپ بعد از نصب** — `setup_screen` کانفیگ‌ها را در `Cache` می‌ریزد،
-  خانه reload می‌شود، دکمهٔ «بازگشت به خانه و دیدنِ کانفیگ‌ها». (شکایتِ #۱ کاربر)
-- [x] ۸.۴ **اپ کانفیگ‌ها/سابسکرایب را نشان می‌دهد** — صفحهٔ `config_detail_screen.dart` (QR + URIِ کامل +
-  کپی + چیپِ پروتکل/هاست/پورت)، دکمهٔ QR روی هر سرور در خانه، و **کارتِ لینکِ Subscription** در خانه
-  (نمایش/کپی، persist در Cache). شکافِ «اپ چیزی نشان نمی‌دهد» بسته شد.
-- [x] ۸.۵ **پنل از داخلِ اپ** — سوییچِ «راه‌اندازیِ پنلِ وب» در ویزارد (user/pass) → SSH `kian-v2ray panel
-  enable` → **نمایشِ URL + user/pass** در اپ (parse از خروجی). (`manage_screen` از قبل به همین پنل وصل می‌شود.)
-- [x] ۸.۶ **پروتکل‌های جدید در همهٔ نسخه‌ها** — دسکتاپ (kv2m: چک‌باکسِ Hysteria2/TUIC در GUI + `extra_protocols`
-  در payload، **v3.2.0**)، اپ (سوییچ)، صفحه (چک‌باکس). کاربر گزارش داد ویندوز پشتیبانی نمی‌کرد → رفع شد.
-- [x] ۸.۷ **تاریخچهٔ نصب در اپ** — `InstallRecord` + persist در Cache؛ هر نصب (لینکِ sub، URL+یوزر/پسِ پنل،
-  پروتکل‌ها، تاریخ) ذخیره و در `history_screen` با کپی/نمایشِ رمز/حذف نشان داده می‌شود.
-- [x] ۸.۸ **کپیِ آسانِ کانفیگ‌ها/سابسکرایب** — صفحهٔ جزئیات (QR+کپی) + کارتِ sub + دکمهٔ «کپیِ همهٔ کانفیگ‌ها».
-- [x] ۸.۹ **نسخه‌های منتشرشده مرتب** — Android **universal + arm64 (+arm32)** در `build-app.yml`؛ Windows
-  Setup+Portable از قبل؛ README با جدولِ دانلود + رونماییِ قابلیت‌ها بازنویسی شد.
-- [x] ۸.۱۰ **رفعِ ۳ باگِ تستِ واقعیِ کاربر:** (الف) پنل بالا نمی‌آمد → `kian-panel.sh` venv را تضمین می‌کند +
-  پورتِ آزاد خودکار (رفعِ تداخلِ 8443 با hy2). (ب) «وصل ولی بی‌اینترنت» → `KianVpnService` دیگر بدونِ هستهٔ native
-  تونلِ بلک‌هول نمی‌سازد؛ دیالوگِ صادقانه + کپی برای v2rayNG. (ج) پاریتی: تعدادِ کاربر/SNI دلخواه/پورتِ SS/۷ پروتکلِ TLS در اپ.
-- [ ] ۸.۱۱ **(srv)** تستِ end-to-end روی سرورِ `37.221.79.91`: ویزاردِ موبایل + Hysteria2/TUIC + پنل پشتِ TLS.
-- [~] ۸.۱۲ **هستهٔ nativeِ تونل** — با پلاگینِ اثبات‌شدهٔ `flutter_v2ray` (Xray bundle‌شده) پیاده شد →
-  **اپ خودش وصل می‌شود، بدونِ v2rayNG** (app **v0.2.0**). نیازِ تأییدِ روی دستگاهِ واقعی (در این محیط تست نشد).
-- [x] ۸.۱۳ **رفعِ پنل + کپیِ sub:** `/api/audit` (نبودِ import → 500) رفع شد (تستِ زندهٔ هر ۹ endpoint) +
-  دکمهٔ کپیِ لینکِ Subscription در ویزاردِ نصب.
-
----
-
-## 🔴 بلاکر
-- (فعلاً نیست) · `(srv)`-ها نیازِ دسترسیِ سرورِ `37.221.79.91`.
-
----
-← [[kian-workspace/01-projects/01-kian-v2ray/kian-v2ray|kian-v2ray]]
+| نسخه | تاریخ | تگ | توضیح |
+|------|-------|-----|-------|
+| v4.1.0 | 2026-06-25 | `v4.1.0` / `app-v4.1.0` / `kv2m-v4.1.0` | امنیت + رفعِ باگ |
+| v4.0.0 | 2026-06-24 | `v4.0.0` / `app-v0.5.1` / `kv2m-v3.6.0` | یکپارچه + همیشه‌WARP |
+| v2.7.0 | 2026-06-22 | `v2.7.0` | فازهای ۹-۱۲ |
+| v2.5.0 | 2026-06-21 | `v2.5.0` | فاز ۸ |
