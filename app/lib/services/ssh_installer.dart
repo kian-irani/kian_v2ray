@@ -87,7 +87,7 @@ class SshInstaller {
   Future<(int, String)> uninstall() =>
       run('kian-v2ray uninstall', timeout: const Duration(minutes: 5));
 
-  String _q(String s) => "'${s.replaceAll("'", "'\\''")}'");
+  String _q(String s) => "'${s.replaceAll("'", "'\\''")}'";
 
   void close() {
     _client?.close();
