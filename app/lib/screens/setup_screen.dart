@@ -262,7 +262,7 @@ class _SetupScreenState extends State<SetupScreen> {
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: KianTheme.danger),
             onPressed: () => Navigator.pop(context, true),
-            child: Text(widget.strings.t('setup.uninstall.btn').split(' ').first),
+            child: Text(widget.strings.t('setup.uninstall.yes')),
           ),
         ],
       ),

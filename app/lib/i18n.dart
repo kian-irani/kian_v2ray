@@ -86,6 +86,7 @@ class Strings {
     'setup.uninstall.running': ['متصل شد. در حالِ حذف…', 'Connected. Uninstalling…'],
     'setup.uninstall.done': ['نصب از سرور پاک شد.', 'Successfully uninstalled from server.'],
     'setup.uninstall.fail': ['حذف با خطا تمام شد', 'Uninstall finished with an error'],
+    'setup.uninstall.yes': ['حذف کن', 'Delete'],
     'cfg.view': ['نمایشِ کانفیگ (QR)', 'View config (QR)'],
     'cfg.uri': ['لینکِ کانفیگ', 'Config link'],
     'cfg.copy': ['کپیِ لینک', 'Copy link'],
