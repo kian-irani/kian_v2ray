@@ -53,22 +53,16 @@ jobs:
         run: |
           VER="${{ steps.tag.outputs.ver }}"
           awk '/^## /{n++} n==1{print} n==2{exit}' CHANGELOG.md > RELEASE_NOTES.md || true
-          cat >> RELEASE_NOTES.md << EOF
-
----
-
-## دانلود / Download
-
-| فایل / File | پلتفرم / Platform |
-|-------------|-------------------|
-| \`Kv2m-${VER}-universal.apk\` | 📱 Android — همه گوشی‌ها |
-| \`Kv2m-${VER}-arm64.apk\` | 📱 Android — ۶۴ بیتی (گوشی‌های جدید) |
-| \`Kv2m-${VER}-arm32.apk\` | 📱 Android — ۳۲ بیتی (گوشی‌های قدیمی) |
-| \`Kv2m-Setup-x64.exe\` | 💻 **Windows** 10/11 x64 — نصب کامل |
-| \`Kv2m-Portable-x64.exe\` | 💻 **Windows** 10/11 x64 — بدون نصب (Portable) |
-| \`Kv2m-macOS.zip\` | 🍎 **macOS** — universal (Intel + Apple Silicon) |
-| \`Kv2m-Linux-x86_64\` | 🐧 **Linux** x86_64 — \`chmod +x\` سپس اجرا (glibc ≥ 2.35) |
-EOF
+          printf '\n---\n\n## دانلود / Download\n\n' >> RELEASE_NOTES.md
+          printf '| فایل / File | پلتفرم / Platform |\n' >> RELEASE_NOTES.md
+          printf '|-------------|-------------------|\n' >> RELEASE_NOTES.md
+          printf '| `Kv2m-%s-universal.apk` | 📱 Android — همه گوشی‌ها |\n' "$VER" >> RELEASE_NOTES.md
+          printf '| `Kv2m-%s-arm64.apk` | 📱 Android — ۶۴ بیتی (گوشی‌های جدید) |\n' "$VER" >> RELEASE_NOTES.md
+          printf '| `Kv2m-%s-arm32.apk` | 📱 Android — ۳۲ بیتی (گوشی‌های قدیمی) |\n' "$VER" >> RELEASE_NOTES.md
+          printf '| `Kv2m-Setup-x64.exe` | 💻 **Windows** 10/11 x64 — نصب کامل |\n' >> RELEASE_NOTES.md
+          printf '| `Kv2m-Portable-x64.exe` | 💻 **Windows** 10/11 x64 — بدون نصب (Portable) |\n' >> RELEASE_NOTES.md
+          printf '| `Kv2m-macOS.zip` | 🍎 **macOS** — universal (Intel + Apple Silicon) |\n' >> RELEASE_NOTES.md
+          printf '| `Kv2m-Linux-x86_64` | 🐧 **Linux** x86_64 — `chmod +x` سپس اجرا (glibc ≥ 2.35) |\n' >> RELEASE_NOTES.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -107,7 +101,7 @@ EOF
           cp /tmp/vpn/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           cp -r /tmp/vpn/kotlin/com android/app/src/main/kotlin/
           props=android/gradle/wrapper/gradle-wrapper.properties
-          sed -i -E 's#gradle-[0-9.]+-( all|bin)\.zip#gradle-8.7-all.zip#' "$props"
+          sed -i -E 's#gradle-[0-9.]+-(all|bin)\.zip#gradle-8.7-all.zip#' "$props"
           echo "--- gradle wrapper ---"; cat "$props"
 
       - name: Build APKs (universal + per-ABI splits)
