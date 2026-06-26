@@ -4,12 +4,23 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "4.3.1"  # 4.3.1: fix Android build (stray paren in ssh_installer), uninstall confirm button label
+APP_VERSION = "4.4.0"  # 4.4: speed — direct by default, WARP only for geo-blocked AI domains
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
 SUB_PORTS   = [80, 8888, 2086]
 SS_METHOD   = "chacha20-ietf-poly1305"
+# Only these geo-blocked services route through WARP (they reject Iranian /
+# datacenter IPs). Everything else goes DIRECT at full server speed. Plain
+# `domain:` rules — no geosite.dat dependency.
+WARP_DOMAINS = [
+    "domain:openai.com", "domain:chatgpt.com", "domain:oaistatic.com",
+    "domain:oaiusercontent.com", "domain:anthropic.com", "domain:claude.ai",
+    "domain:gemini.google.com", "domain:aistudio.google.com",
+    "domain:makersuite.google.com", "domain:ai.google.dev",
+    "domain:generativelanguage.googleapis.com", "domain:x.ai", "domain:grok.com",
+    "domain:perplexity.ai",
+]
 GIB         = 1_073_741_824
 BASE_PORT   = 8443
 WELL_KNOWN  = [443,2083,2087,2096,8080,2052,2086]
@@ -151,19 +162,16 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
     outbounds=[{"tag":"direct","protocol":"freedom","settings":{"domainStrategy":"UseIP"}}]
     if any_warp: outbounds.append({"tag":"warp","protocol":"socks","settings":{"servers":[{"address":"127.0.0.1","port":WARP_PORT}]}})
     outbounds.append({"tag":"block","protocol":"blackhole","settings":{}})
-    direct_tags=[p["tag"] for p in profiles if p["channel"]=="direct"]
-    warp_tags  =[p["tag"] for p in profiles if p["channel"]=="warp"]
-    ss_out="direct" if (direct_tags or not any_warp) else "warp"
+    # Speed: all proxy traffic goes DIRECT (full server line, like plain Xray /
+    # 3x-ui). Only the curated geo-blocked services route through WARP.
+    all_tags=[p["tag"] for p in profiles]
+    tls_tags=[t["tag"] for t in tls_items]
     rules=[{"type":"field","inboundTag":["api"],"outboundTag":"api"},
            {"type":"field","ip":["geoip:private"],"outboundTag":"block"}]
-    if warp_tags:   rules.append({"type":"field","inboundTag":warp_tags,  "outboundTag":"warp"})
-    if direct_tags: rules.append({"type":"field","inboundTag":direct_tags,"outboundTag":"direct"})
-    if ss.get("enabled"): rules.append({"type":"field","inboundTag":["shadowsocks"],"outboundTag":ss_out})
-    for _ch in ("direct","warp"):
-        _tags=[t["tag"] for t in tls_items if _tls_ch(t)==_ch]
-        if _tags:
-            _out="warp" if (_ch=="warp" and any_warp) else "direct"
-            rules.append({"type":"field","inboundTag":_tags,"outboundTag":_out})
+    if any_warp: rules.append({"type":"field","domain":WARP_DOMAINS,"outboundTag":"warp"})
+    if all_tags: rules.append({"type":"field","inboundTag":all_tags,"outboundTag":"direct"})
+    if ss.get("enabled"): rules.append({"type":"field","inboundTag":["shadowsocks"],"outboundTag":"direct"})
+    if tls_tags: rules.append({"type":"field","inboundTag":tls_tags,"outboundTag":"direct"})
     return {"log":{"loglevel":"warning","access":"/var/log/xray/access.log","error":"/var/log/xray/error.log"},
             "dns":{"servers":["1.1.1.1","8.8.8.8"]},"api":{"tag":"api","services":["HandlerService","StatsService"]},
             "stats":{},"policy":{"levels":{"0":{"statsUserUplink":True,"statsUserDownlink":True}},

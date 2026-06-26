@@ -8,6 +8,17 @@
 
 const RAW_BASE = 'https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main';
 const WARP_PORT = 40000;
+// Only these geo-blocked services route through WARP (they reject Iranian /
+// datacenter IPs). Everything else goes DIRECT at full server speed. Plain
+// `domain:` rules — no geosite.dat dependency.
+const WARP_DOMAINS = [
+  'domain:openai.com', 'domain:chatgpt.com', 'domain:oaistatic.com',
+  'domain:oaiusercontent.com', 'domain:anthropic.com', 'domain:claude.ai',
+  'domain:gemini.google.com', 'domain:aistudio.google.com',
+  'domain:makersuite.google.com', 'domain:ai.google.dev',
+  'domain:generativelanguage.googleapis.com', 'domain:x.ai', 'domain:grok.com',
+  'domain:perplexity.ai',
+];
 const SUB_PORTS = [80, 8888, 2086]; // سرویس Subscription روی چند پورت همزمان اجرا می‌شود — هر کدام از بیرون باز بود، همان کار می‌کند. کاربر کاری نمی‌کند.
 // واسطهٔ Gist (Cloudflare Worker): سرور کاربر به این endpoint POST می‌زند تا secret gist
 // ساخته/آپدیت شود. توکن گیت‌هاب فقط در env-var همان Worker (سمت ما) ذخیره است،
@@ -181,24 +192,20 @@ function buildConfig(o) {
   if (anyWarp) outbounds.push({ tag: 'warp', protocol: 'socks', settings: { servers: [{ address: '127.0.0.1', port: WARP_PORT }] } });
   outbounds.push({ tag: 'block', protocol: 'blackhole', settings: {} });
 
-  const directTags = o.profiles.filter(p => p.channel === 'direct').map(p => p.tag);
-  const warpTags   = o.profiles.filter(p => p.channel === 'warp').map(p => p.tag);
-  // اگر خروجی warp وجود نداشته باشد، Shadowsocks باید از direct برود
-  const ssOut = (directTags.length || !anyWarp) ? 'direct' : 'warp';
+  // سرعت: همهٔ ترافیک پروکسی مستقیم می‌رود (سرعتِ کاملِ خطِ سرور، مثل Xray معمولی
+  // و 3x-ui). فقط سرویس‌های مسدودِ منتخب (ابزارهای AI که IP ایران/دیتاسنتر را رد
+  // می‌کنند) از WARP عبور می‌کنند.
+  const allTags = o.profiles.map(p => p.tag);
+  const tlsTags = tlsItems.map(t => t.tag);
 
   const rules = [
     { type: 'field', inboundTag: ['api'], outboundTag: 'api' },
     { type: 'field', ip: ['geoip:private'], outboundTag: 'block' },
   ];
-  if (warpTags.length)   rules.push({ type: 'field', inboundTag: warpTags,   outboundTag: 'warp' });
-  if (directTags.length) rules.push({ type: 'field', inboundTag: directTags, outboundTag: 'direct' });
-  if (o.ss.enabled)      rules.push({ type: 'field', inboundTag: ['shadowsocks'], outboundTag: ssOut });
-  // TLS inboundها: طبق کانال انتخابی کاربر (مستقیم یا WARP)
-  const tlsTags = tlsItems.map(t => t.tag);
-  if (tlsTags.length) {
-    const tlsOut = (o.tls && o.tls.channel === 'warp' && anyWarp) ? 'warp' : 'direct';
-    rules.push({ type: 'field', inboundTag: tlsTags, outboundTag: tlsOut });
-  }
+  if (anyWarp)         rules.push({ type: 'field', domain: WARP_DOMAINS, outboundTag: 'warp' });
+  if (allTags.length)  rules.push({ type: 'field', inboundTag: allTags, outboundTag: 'direct' });
+  if (o.ss.enabled)    rules.push({ type: 'field', inboundTag: ['shadowsocks'], outboundTag: 'direct' });
+  if (tlsTags.length)  rules.push({ type: 'field', inboundTag: tlsTags, outboundTag: 'direct' });
 
   return {
     log: { loglevel: 'warning', access: '/var/log/xray/access.log', error: '/var/log/xray/error.log' },

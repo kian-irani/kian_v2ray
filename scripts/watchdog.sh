@@ -33,19 +33,19 @@ fi
 CONFIG="${CONFIG:-$XRAY_DIR/config.json}"
 FB_FLAG="$ETC_DIR/warp_fallback.txt"
 warp_up(){ curl -fsS --max-time 8 --socks5 "127.0.0.1:$WARP_PORT" https://1.1.1.1/cdn-cgi/trace 2>/dev/null | grep -q 'warp=on'; }
-fb_set(){ # on|off — تغییر routing بین warp و direct، سپس restart
+fb_set(){ # on|off — outbound warp را بین freedom(direct) و socks سوییچ می‌کند
   command -v jq >/dev/null 2>&1 || return 0
   [ -f "$CONFIG" ] || return 0
+  jq -e '.outbounds[]?|select(.tag=="warp")' "$CONFIG" >/dev/null 2>&1 || return 0
   local tmp; tmp="$(mktemp)"
   if [ "$1" = on ]; then
-    [ "$(cat "$FB_FLAG" 2>/dev/null)" = on ] && return 0
-    jq -e '.outbounds[]?|select(.tag=="warp")' "$CONFIG" >/dev/null 2>&1 || return 0
-    jq '(.routing.rules[]?|select(.outboundTag=="warp")|.outboundTag)="direct"' "$CONFIG" > "$tmp" \
+    [ "$(cat "$FB_FLAG" 2>/dev/null)" = on ] && { rm -f "$tmp"; return 0; }
+    jq '(.outbounds[]|select(.tag=="warp"))|={tag:"warp",protocol:"freedom",settings:{domainStrategy:"UseIP"}}' "$CONFIG" > "$tmp" \
       && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || { rm -f "$tmp"; return 0; }
     echo on > "$FB_FLAG"; log "WARP وصل نشد → fallback به direct فعال شد"
   else
-    [ "$(cat "$FB_FLAG" 2>/dev/null)" = on ] || return 0
-    jq '(.routing.rules[]?|select((.inboundTag//[])|any(test("^reality-warp-")))|.outboundTag)="warp"' "$CONFIG" > "$tmp" \
+    [ "$(cat "$FB_FLAG" 2>/dev/null)" = on ] || { rm -f "$tmp"; return 0; }
+    jq --argjson port "$WARP_PORT" '(.outbounds[]|select(.tag=="warp"))|={tag:"warp",protocol:"socks",settings:{servers:[{address:"127.0.0.1",port:$port}]}}' "$CONFIG" > "$tmp" \
       && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || { rm -f "$tmp"; return 0; }
     echo off > "$FB_FLAG"; log "WARP برگشت → routing به warp بازگردانده شد"
   fi

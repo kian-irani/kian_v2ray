@@ -19,6 +19,19 @@ class ConfigGen {
   static const _snis = ['www.speedtest.net', 'www.bing.com', 'www.microsoft.com'];
   static const _ports = [443, 2083, 2087];
 
+  // Only these geo-blocked services are routed through WARP (they reject
+  // Iranian/datacenter IPs). Everything else goes DIRECT at full server speed.
+  // Plain `domain:` rules — no geosite.dat dependency, so Xray never fails to
+  // start over a missing category.
+  static const warpDomains = [
+    'domain:openai.com', 'domain:chatgpt.com', 'domain:oaistatic.com',
+    'domain:oaiusercontent.com', 'domain:anthropic.com', 'domain:claude.ai',
+    'domain:gemini.google.com', 'domain:aistudio.google.com',
+    'domain:makersuite.google.com', 'domain:ai.google.dev',
+    'domain:generativelanguage.googleapis.com', 'domain:x.ai', 'domain:grok.com',
+    'domain:perplexity.ai',
+  ];
+
   // kind -> (proto, net, label) — mirrors TLS_PROTOS in app.js.
   static const Map<String, List<String>> tlsProtos = {
     'vless-ws': ['vless', 'ws', 'VLESS-WS'],
@@ -268,7 +281,11 @@ class ConfigGen {
         'sniffing': sniff});
     }
 
-    final anyWarp = warp; // reality channel warp (TLS warp not exposed in app yet)
+    // Speed: general traffic goes DIRECT (full server line, like plain Xray /
+    // 3x-ui). Only the curated geo-blocked services above are sent through
+    // WARP — so browsing/streaming/downloads run at native speed while
+    // ChatGPT/Claude/Gemini still work from a blocked server IP.
+    final anyWarp = warp;
     final outbounds = <Map<String, dynamic>>[
       {'tag': 'direct', 'protocol': 'freedom', 'settings': {'domainStrategy': 'UseIP'}},
     ];
@@ -278,16 +295,16 @@ class ConfigGen {
     }
     outbounds.add({'tag': 'block', 'protocol': 'blackhole', 'settings': {}});
 
-    final ssOut = (channel == 'direct' || !anyWarp) ? 'direct' : 'warp';
     final rules = <Map<String, dynamic>>[
       {'type': 'field', 'inboundTag': ['api'], 'outboundTag': 'api'},
       {'type': 'field', 'ip': ['geoip:private'], 'outboundTag': 'block'},
-      {'type': 'field', 'inboundTag': realityTags, 'outboundTag': channel},
+      if (anyWarp) {'type': 'field', 'domain': warpDomains, 'outboundTag': 'warp'},
+      {'type': 'field', 'inboundTag': realityTags, 'outboundTag': 'direct'},
     ];
     if (tlsTags.isNotEmpty) {
       rules.add({'type': 'field', 'inboundTag': tlsTags, 'outboundTag': 'direct'});
     }
-    if (ss) rules.add({'type': 'field', 'inboundTag': ['shadowsocks'], 'outboundTag': ssOut});
+    if (ss) rules.add({'type': 'field', 'inboundTag': ['shadowsocks'], 'outboundTag': 'direct'});
 
     return {
       'log': {'loglevel': 'warning', 'access': '/var/log/xray/access.log',

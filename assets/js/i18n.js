@@ -150,8 +150,8 @@
     "mg.callout": { fa: "🔭 در فازهای بعدی، این کارها مستقیم از <b>ربات تلگرام</b> بدون ترمینال انجام می‌شود (نقشهٔ راه را در تب «درباره» ببین).", en: "🔭 In future phases these will be done straight from a <b>Telegram bot</b> without a terminal (see the roadmap in the “About” tab)." },
 
     /* ---------- TIPS tab (deep prose) ---------- */
-    "tp.h.diff":      { fa: "چرا همه‌چیز از WARP می‌رود؟", en: "Why does everything go through WARP?" },
-    "tp.diff.1":      { fa: "<b>همهٔ کانفیگ‌ها از WARP کلودفلر خارج می‌شوند</b> — تقریباً همه‌چیز باز می‌شود (سایت‌هایی که پروایدرِ سرور بسته، یا تحریم‌های جغرافیایی) و IP واقعیِ خروجیِ سرورت کمتر دیده می‌شود.", en: "<b>Every config egresses through Cloudflare WARP</b> — almost everything opens (sites the server's provider blocks, or geo-restrictions) and your server's real exit IP is less exposed." },
+    "tp.h.diff":      { fa: "سرعتِ مستقیم + WARP فقط برای سایت‌های مسدود", en: "Direct speed + WARP only for blocked sites" },
+    "tp.diff.1":      { fa: "<b>ترافیکِ عمومی مستقیم از سرور خارج می‌شود</b> — با سرعتِ کاملِ خطِ سرور، مثل Xray معمولی. فقط دامنه‌های مسدود/تحریمی (ابزارهای AI مثل ChatGPT و Claude) خودکار از WARP کلودفلر می‌روند تا باز شوند.", en: "<b>General traffic egresses directly</b> — at the server's full line speed, like plain Xray. Only geo-blocked services (AI tools like ChatGPT and Claude) automatically route through Cloudflare WARP so they open." },
     "tp.diff.2":      { fa: "اگر WARP موقتاً قطع شود، سرور خودکار به خروجیِ مستقیم سوییچ می‌کند تا بی‌نت نمانی و بعد دوباره به WARP برمی‌گردد — این کاملاً خودکار است و انتخابی نداری.", en: "If WARP drops momentarily, the server auto-switches to a direct exit so you stay online, then returns to WARP — fully automatic, no choice to make." },
     "tp.diff.3":      { fa: "حالتِ «سریع/مستقیم» حذف شده است؛ دیگر لازم نیست بینِ کانفیگ‌ها انتخاب کنی.", en: "The old “Fast/Direct” mode is gone; you no longer pick between configs." },
     "tp.h.filter":    { fa: "🚨 آی‌پی سرورت کِی فیلتر می‌شه؟ (مهم‌ترین نکته)", en: "🚨 When does your server IP get blocked? (the key point)" },
@@ -358,8 +358,8 @@
     "cl.s2qr":       { fa: "• <b>QR:</b> در اپ دکمهٔ افزودن ← Scan QR ← کد روی صفحه را اسکن کن.", en: "• <b>QR:</b> in the app tap add ← Scan QR ← scan the code on screen." },
     "cl.s3t":        { fa: "وصل شو", en: "Connect" },
     "cl.s3d":        { fa: "روی کانفیگ بزن، بعد VPN را روشن کن. اولین بار مجوز VPN می‌خواد — تأیید کن.", en: "Tap a config, then turn on VPN. The first time it asks for VPN permission — approve it." },
-    "cl.s4t":        { fa: "همه‌چیز از WARP می‌رود", en: "Everything goes through WARP" },
-    "cl.s4d":        { fa: "همهٔ کانفیگ‌ها از <b>WARP</b> عبور می‌کنند — نیازی به انتخاب حالت نیست. اگر WARP موقتاً قطع شود، سرور خودکار به مستقیم سوییچ می‌کند.", en: "All configs egress through <b>WARP</b> — no mode to select. If WARP temporarily drops, the server auto-switches to direct and reconnects." },
+    "cl.s4t":        { fa: "سرعتِ مستقیم، WARP فقط برای سایت‌های مسدود", en: "Direct speed, WARP only for blocked sites" },
+    "cl.s4d":        { fa: "ترافیکِ عادی <b>مستقیم</b> و با سرعتِ کاملِ سرور می‌رود (مثل Xray معمولی). فقط سایت‌های مسدود/تحریمی (مثل ChatGPT و Claude) خودکار از <b>WARP</b> عبور می‌کنند — نیازی به تنظیم نیست.", en: "Normal traffic goes <b>direct</b> at the server's full speed (like plain Xray). Only blocked/geo-restricted sites (e.g. ChatGPT, Claude) automatically use <b>WARP</b> — nothing to configure." },
     "cl.share":      { fa: "📤 می‌خوای کانفیگ رو به دوستت بدی؟ همون لینک Subscription یا QR رو بفرست — همه‌چیز خودکار وارد می‌شه.", en: "📤 Want to share with a friend? Send the same subscription link or QR — everything imports automatically." },
 
     /* ---------- TLS auto-select note ---------- */
@@ -375,8 +375,8 @@
     "an.qr": { fa: "• <b>QR:</b> در اپ دکمهٔ افزودن ← اسکنِ QR ← کدِ روی صفحه را اسکن کن.", en: "• <b>QR:</b> in the app tap add ← Scan QR ← scan the code on screen." },
     "an.s3t": { fa: "وصل شو", en: "Connect" },
     "an.s3d": { fa: "روی کانفیگ بزن تا انتخاب بشه، بعد دکمهٔ گرد پایین (▶) رو بزن. اولین بار اجازهٔ VPN می‌خواد — تأیید کن.", en: "Tap the config to select it, then press the round button at the bottom (▶). The first time it asks for VPN permission — approve it." },
-    "an.s4t": { fa: "همه‌چیز از WARP می‌رود", en: "Everything goes through WARP" },
-    "an.s4d": { fa: "همهٔ کانفیگ‌های تو از <b>WARP</b> عبور می‌کنند (تقریباً همه‌چیز باز). فقط لینکِ Subscription را در v2rayNG/Kv2m وارد کن و وصل شو — انتخابِ حالت لازم نیست.", en: "All your configs egress through <b>WARP</b> (almost everything open). Just import the subscription link into v2rayNG/Kv2m and connect — no mode to choose." },
+    "an.s4t": { fa: "سرعتِ مستقیم، WARP فقط برای سایت‌های مسدود", en: "Direct speed, WARP only for blocked sites" },
+    "an.s4d": { fa: "ترافیکِ عادی مستقیم و با سرعتِ کاملِ سرور می‌رود؛ فقط سایت‌های مسدود/تحریمی (مثل ChatGPT) خودکار از <b>WARP</b> می‌روند. فقط لینکِ Subscription را در v2rayNG/Kv2m وارد کن و وصل شو.", en: "Normal traffic goes direct at full server speed; only blocked/geo-restricted sites (e.g. ChatGPT) automatically use <b>WARP</b>. Just import the subscription link into v2rayNG/Kv2m and connect." },
     "an.share": { fa: "📤 می‌خوای کانفیگ رو به دوستت بدی؟ همون لینک یا QR رو بفرست — همه‌چیز خودکار وارد می‌شه.", en: "📤 Want to share the config with a friend? Just send the same link or QR — everything imports automatically." },
 
     /* ---------- PC tab (steps) ---------- */

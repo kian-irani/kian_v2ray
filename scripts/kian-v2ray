@@ -264,13 +264,17 @@ cmd_status(){
 # --- مدیریت دستی WARP: تلاش مجدد (WireGuard/MASQUE) و برگرداندن از fallback ---
 _warp_up(){ curl -fsS --max-time 8 --socks5 "127.0.0.1:$WARP_PORT" https://1.1.1.1/cdn-cgi/trace 2>/dev/null | grep -q 'warp=on'; }
 _warp_restore_routing(){
+  # outbound warp را از freedom (fallback) به socks برمی‌گرداند — هماهنگ با
+  # مدلِ جدید که فقط دامنه‌های منتخب از warp می‌روند.
   local FB="$ETC_DIR/warp_fallback.txt" tmp
   [ "$(cat "$FB" 2>/dev/null)" = on ] || return 0
+  command -v jq >/dev/null 2>&1 || return 0
+  jq -e '.outbounds[]?|select(.tag=="warp")' "$CONFIG" >/dev/null 2>&1 || { echo off > "$FB"; return 0; }
   tmp="$(mktemp)"
-  jq '(.routing.rules[]?|select((.inboundTag//[])|any(test("^reality-warp-")))|.outboundTag)="warp"' "$CONFIG" > "$tmp" \
+  jq --argjson port "$WARP_PORT" '(.outbounds[]|select(.tag=="warp"))|={tag:"warp",protocol:"socks",settings:{servers:[{address:"127.0.0.1",port:$port}]}}' "$CONFIG" > "$tmp" \
     && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || rm -f "$tmp"
   echo off > "$FB"; ensure_cfg_perm; docker restart "$CONTAINER" >/dev/null 2>&1 || true
-  say "routing به warp بازگردانده شد"
+  say "WARP برگشت: ترافیک warp دوباره از WARP می‌رود"
 }
 # --- بازگرداندن بهینه‌سازی شبکه (rollback مرحلهٔ ۰.۴) ----------------------
 cmd_untune(){

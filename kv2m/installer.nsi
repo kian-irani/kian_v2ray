@@ -1,5 +1,5 @@
 !define APP_NAME "Kv2m"
-!define APP_VERSION "4.3.1"
+!define APP_VERSION "4.4.0"
 !define APP_EXE "Kv2m.exe"
 !define INST_DIR "$PROGRAMFILES64\Kv2m"
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Kv2m"
