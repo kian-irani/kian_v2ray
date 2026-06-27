@@ -21,6 +21,7 @@ import os
 import shutil
 import sqlite3
 import subprocess
+import tempfile
 from typing import Any
 
 USERS_JSON = os.environ.get("KIAN_USERS_JSON", "/etc/kian-v2ray/users.json")
@@ -216,3 +217,41 @@ def per_user_routing(name: str, routing: str | None = None,
     if servers:
         frag["dns"] = {"servers": servers}
     return frag
+
+
+# --------------------------------------------------------------------------- #
+# raw Xray config editor (advanced panel) — read the live config and apply an
+# edited one through the CLI's safe path (backup → apply → restart → rollback).
+# --------------------------------------------------------------------------- #
+XRAY_CONFIG = os.environ.get("KIAN_XRAY_CONFIG", "/etc/kian-v2ray/config.json")
+
+
+def read_xray_config() -> dict[str, Any]:
+    """Return the live Xray config.json as parsed JSON (or {} if missing)."""
+    try:
+        with open(XRAY_CONFIG, "r", encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return {}
+
+
+def apply_xray_config(cfg: dict[str, Any]) -> tuple[int, str]:
+    """Validate + apply an edited Xray config through the CLI's safe path.
+
+    Writes the JSON to a temp file and calls ``kian-v2ray apply-config <file>``
+    which backs up, swaps, restarts, and rolls back if Xray fails to come up.
+    Returns ``(exit_code, output)``; non-zero means the change was rejected and
+    the previous config is still live.
+    """
+    if not isinstance(cfg, dict) or "inbounds" not in cfg or "outbounds" not in cfg:
+        return 2, "config must be a JSON object with inbounds and outbounds"
+    fd, tmp = tempfile.mkstemp(prefix="kian-xray-", suffix=".json")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(cfg, fh, ensure_ascii=False, indent=2)
+        return cli("apply-config", tmp, timeout=90.0)
+    finally:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass

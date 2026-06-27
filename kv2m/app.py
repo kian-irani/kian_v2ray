@@ -323,6 +323,13 @@ class MainWindow(QWidget):
             uh.addWidget(ca); ul.addLayout(uh)
             for it in pu["items"]: ul.addWidget(self._link_row(it["link"], f"{tr('ch.'+it['channel'])} · {it['sni']}"))
             for x in pu.get("tlsLinks",[]): ul.addWidget(self._link_row(x["link"], f"🌐 {x['label']}"))
+            # لینکِ HTTPS روی دامنهٔ خودِ کاربر — هم‌زمان با لینکِ Gist نشان داده می‌شود
+            dom_url = pu.get("domainSubUrl") or ""
+            if dom_url:
+                d = QHBoxLayout(); dl = QLabel("🌐 HTTPS (دامنهٔ خودت)"); dl.setObjectName("muted")
+                du = QLabel(dom_url); du.setStyleSheet("color:#76B900")
+                dcpy = QPushButton("📋"); dcpy.setObjectName("mini"); dcpy.clicked.connect(lambda _,u=dom_url: self._copy(u))
+                d.addWidget(dl); d.addWidget(du); d.addStretch(1); d.addWidget(dcpy); ul.addLayout(d)
             gist = (g.get("_gist") or {}).get(pu["subToken"])
             sub_url = gist or (pu.get("subUrls") or [""])[0]
             if sub_url:

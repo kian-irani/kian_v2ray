@@ -128,6 +128,11 @@ class ConfigGen {
           '\thandle @$tag {', '\t\treverse_proxy 127.0.0.1:$port', '\t}']);
       }
     }
+    // Subscription over the user's OWN domain (real HTTPS via Caddy → the local
+    // kian-sub server on the fixed bridge port). Lets domain users skip the Gist:
+    // https://<domain>/sub/<token> works directly in v2rayNG.
+    l.addAll(['\t@kiansub {', '\t\tpath /sub/*', '\t}',
+      '\thandle @kiansub {', '\t\treverse_proxy 127.0.0.1:8765', '\t}']);
     l.addAll(['\thandle {', '\t\trespond "It works!" 200', '\t}', '}']);
     return l.join('\n');
   }

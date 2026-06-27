@@ -845,7 +845,10 @@ if [ -z "$SUB_PORTS" ]; then
   done
 fi
 [ -z "$SUB_PORTS" ] && SUB_PORTS="80"   # برای ایمنی؛ نباید برسیم اینجا
-echo "$SUB_PORTS" > "$ETC_DIR/sub_port.txt"   # ممکن است "80,8888,2086" یا "23456"
+# پورت پل ثابت روی loopback که Caddy لینک HTTPS دامنه‌دار را به آن reverse_proxy می‌کند
+# (https://<domain>/sub/<token>). همیشه bind می‌شود؛ اگر اشغال بود sub-server فقط آن را رد می‌کند.
+case ",$SUB_PORTS," in *",8765,"*) : ;; *) SUB_PORTS="${SUB_PORTS},8765" ;; esac
+echo "$SUB_PORTS" > "$ETC_DIR/sub_port.txt"   # ممکن است "80,8888,2086,8765" یا "23456,8765"
 cat > /etc/systemd/system/kian-sub.service <<UNIT
 [Unit]
 Description=KIAN V2Ray Subscription server (multi-port)

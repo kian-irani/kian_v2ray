@@ -311,6 +311,15 @@ function buildCaddyfile(domain, tlsProfiles) {
       lines.push(`\t}`);
     }
   });
+  // Subscription روی دامنهٔ خودِ کاربر (HTTPS واقعی از طریق Caddy → سرور محلی sub
+  // روی پورت پل ثابت). کاربر دامنه‌دار دیگر به Gist نیاز ندارد:
+  // https://<domain>/sub/<token> مستقیم در v2rayNG کار می‌کند.
+  lines.push(`\t@kiansub {`);
+  lines.push(`\t\tpath /sub/*`);
+  lines.push(`\t}`);
+  lines.push(`\thandle @kiansub {`);
+  lines.push(`\t\treverse_proxy 127.0.0.1:8765`);
+  lines.push(`\t}`);
   // صفحهٔ طعمه برای بقیهٔ مسیرها (شبیه یک سایت معمولی)
   lines.push(`\thandle {`);
   lines.push(`\t\trespond "It works!" 200`);
@@ -556,6 +565,12 @@ async function generate(f) {
   }
   perUser.forEach(pu => { pu.subUrl = gistUrls[pu.subToken] || ''; });
 
+  // لینکِ HTTPS روی دامنهٔ خودِ کاربر (https://<domain>/sub/<token>). فقط وقتی معتبر
+  // است که دامنه ست شده و حداقل یک پروتکلِ TLS فعال باشد (Caddy نصب می‌شود).
+  if (tlsProfiles.length && f.tls && f.tls.domain) {
+    perUser.forEach(pu => { pu.domainSubUrl = `https://${f.tls.domain}/sub/${pu.subToken}`; });
+  }
+
   return { f, reality, users, perUser, ssOut, ports, profiles, sniList, config, payloadB64, installCmd, gistOk: Object.keys(gistUrls).length > 0 };
 }
 
@@ -685,6 +700,14 @@ function render(out) {
       const card = document.createElement('div');
       card.className = 'usercard';
       card.innerHTML = `<div class="usercard-title">👤 ${u.local}</div>`;
+      if (u.domainSubUrl) {
+        // لینکِ HTTPS روی دامنهٔ خودِ کاربر — هم‌زمان با لینکِ Gist نشان داده می‌شود
+        const dHead = document.createElement('div');
+        dHead.className = 'sub-head';
+        dHead.innerHTML = '⭐ <b>لینک Subscription روی دامنهٔ خودت (HTTPS)</b>';
+        card.appendChild(dHead);
+        card.appendChild(linkRow('روی دامنه و گواهی خودت — بدون وابستگی به Gist', u.domainSubUrl));
+      }
       if (u.subUrl) {
         // حالت موفق: همان لینک HTTPS که سرور هم خواهد داد
         const subHead = document.createElement('div');

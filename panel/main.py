@@ -484,6 +484,45 @@ def api_rotate_keys(admin: str = Depends(require_admin), conn=Depends(get_db)):
 
 
 # --------------------------------------------------------------------------- #
+# raw Xray config editor (advanced mode) — view + edit the live config.json,
+# more control than a plain 3x-ui panel. Writes go through the CLI's safe
+# backup → apply → restart → rollback path so a bad edit can't brick Xray.
+# --------------------------------------------------------------------------- #
+@app.get("/api/xray")
+def api_xray_get(admin: str = Depends(require_admin)):
+    """Return the live Xray config.json for the advanced editor."""
+    cfg = bridge.read_xray_config()
+    return {
+        "config": cfg,
+        "inbounds": len(cfg.get("inbounds", []) or []),
+        "outbounds": len(cfg.get("outbounds", []) or []),
+        "editable": bool(cfg),
+    }
+
+
+@app.post("/api/xray")
+def api_xray_apply(body: dict, admin: str = Depends(require_admin),
+                   conn=Depends(get_db)):
+    """Apply an edited Xray config. Body: {"config": {...}}.
+
+    Rejected (and the previous config kept live) if the JSON is invalid, is
+    missing inbounds/outbounds, or Xray fails to start with it."""
+    cfg = body.get("config") if isinstance(body, dict) else None
+    if not isinstance(cfg, dict):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            "body must be {\"config\": {...}}")
+    code, out = bridge.apply_xray_config(cfg)
+    if code != 0:
+        audit.record(conn, actor=admin, action="xray.config.rejected",
+                     target="config.json", detail=out.strip()[:500])
+        raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                            out.strip() or "config rejected; previous config kept")
+    audit.record(conn, actor=admin, action="xray.config.applied",
+                 target="config.json", detail=out.strip()[:500])
+    return {"ok": True, "output": out.strip()}
+
+
+# --------------------------------------------------------------------------- #
 # websocket live stats
 # --------------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #

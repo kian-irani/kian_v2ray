@@ -53,6 +53,8 @@ class Strings {
     'setup.tlsprotos': ['پروتکل‌های TLS (چندتا قابل‌انتخاب):', 'TLS protocols (pick any):'],
     'setup.install': ['ساخت و نصب', 'Build & install'],
     'setup.sublink': ['لینک Subscription (روی Gist):', 'Subscription link (on Gist):'],
+    'setup.subdomain': ['لینک Subscription روی دامنهٔ خودت (HTTPS):', 'Subscription on your own domain (HTTPS):'],
+    'setup.subgist': ['لینک Subscription روی Gist (HTTPS):', 'Subscription on Gist (HTTPS):'],
     'setup.suball': ['کپیِ همهٔ لینک‌های Subscription', 'Copy all subscription links'],
     'setup.suballcopied': ['لینکِ Subscription کپی شد', 'subscription links copied'],
     'setup.warp': ['WARP (همه‌چیز باز)', 'WARP (everything open)'],

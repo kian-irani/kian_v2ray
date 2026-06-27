@@ -121,6 +121,11 @@ def build_caddyfile(domain,tls_profiles):
         else:
             lines+=[f"\t@{t['tag']} {{",f"\t\tpath {t['path']}","\t}",
                     f"\thandle @{t['tag']} {{",f"\t\treverse_proxy 127.0.0.1:{t['intPort']}","\t}"]
+    # Subscription over the user's OWN domain (real HTTPS via Caddy → the local
+    # kian-sub server on the fixed bridge port). Domain users skip the Gist:
+    # https://<domain>/sub/<token> works directly in v2rayNG.
+    lines+=["\t@kiansub {","\t\tpath /sub/*","\t}",
+            "\thandle @kiansub {","\t\treverse_proxy 127.0.0.1:8765","\t}"]
     lines+=["\thandle {","\t\trespond \"It works!\" 200","\t}","}"]
     return "\n".join(lines)
 
@@ -269,9 +274,12 @@ def generate(opts):
         user_links=[it["link"] for it in items]+[t["link"] for t in tls_items_links]
         if ss["enabled"]:
             user_links.append(ss_link(ip,ss["port"],ss["password"],f'{local}-shadowsocks-{ss["port"]}'))
+        # لینکِ HTTPS روی دامنهٔ خودِ کاربر (https://<domain>/sub/<token>). فقط وقتی
+        # معتبر است که دامنه ست شده و حداقل یک پروتکلِ TLS فعال باشد (Caddy نصب می‌شود).
+        domain_sub_url=f"https://{tls_domain}/sub/{token}" if (tls_profiles and tls_domain) else ""
         per_user.append({"email":u["email"],"local":local,"items":items,
                          "tlsLinks":tls_items_links,"userLinks":user_links,
-                         "subUrls":sub_urls,"subToken":token})
+                         "subUrls":sub_urls,"subToken":token,"domainSubUrl":domain_sub_url})
     ss_out_link=ss_link(ip,ss["port"],ss["password"],"shadowsocks") if ss["enabled"] else None
     links=[it["link"] for u in per_user for it in u["items"]]
     links+=[t["link"] for u in per_user for t in u.get("tlsLinks",[])]

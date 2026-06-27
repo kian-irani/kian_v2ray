@@ -53,7 +53,8 @@ class _SetupScreenState extends State<SetupScreen> {
   final _panelPass = TextEditingController();
   final _log = <String>[];
   String? _subUrl;
-  final _subUrls = <String>[];   // all per-user subscription URLs (for copy)
+  final _subUrls = <String>[];   // all per-user Gist subscription URLs (for copy)
+  final _domainSubUrls = <String>[]; // per-user HTTPS sub URLs on the user's own domain
   String? _panelInfo;
   String? _panelUrlOut, _panelUserOut, _panelPassOut;   // each separately copyable
   int _imported = 0;
@@ -108,7 +109,7 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Future<void> _run() async {
-    setState(() { _busy = true; _log.clear(); _subUrl = null; _subUrls.clear(); });
+    setState(() { _busy = true; _log.clear(); _subUrl = null; _subUrls.clear(); _domainSubUrls.clear(); });
     final ssh = SshInstaller();
     try {
       _say('• ساختِ کانفیگ و کلید (روی همین دستگاه)…');
@@ -136,6 +137,16 @@ class _SetupScreenState extends State<SetupScreen> {
       _subUrls
         ..clear()
         ..addAll(urls.values);
+
+      // لینکِ HTTPS روی دامنهٔ خودِ کاربر (https://<domain>/sub/<token>). فقط وقتی
+      // معتبر است که دامنه ست شده و حداقل یک پروتکلِ TLS تیک خورده باشد (Caddy نصب
+      // می‌شود). توکن‌ها همان‌هایی هستند که سرور استفاده می‌کند → بدون نیاز به parse.
+      final dom = _tlsDomain.text.trim();
+      if (_tls && dom.isNotEmpty && _tlsSelected.isNotEmpty) {
+        _domainSubUrls
+          ..clear()
+          ..addAll(bundle.subItems.keys.map((tok) => 'https://$dom/sub/$tok'));
+      }
 
       _say('• اتصالِ SSH به ${_ip.text.trim()}…');
       final err = await ssh.connect(
@@ -501,9 +512,17 @@ class _SetupScreenState extends State<SetupScreen> {
               child: Text(_log.join('\n'),
                   style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
             ),
+          if (_domainSubUrls.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(s.t('setup.subdomain'),
+                style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            for (var i = 0; i < _domainSubUrls.length; i++)
+              _copyRow('#${i + 1}', _domainSubUrls[i], s),
+          ],
           if (_subUrls.isNotEmpty) ...[
             const SizedBox(height: 14),
-            Text(s.t('setup.sublink'),
+            Text(_domainSubUrls.isNotEmpty ? s.t('setup.subgist') : s.t('setup.sublink'),
                 style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             // هر لینکِ Subscription جداگانه با دکمهٔ کپیِ خودش.

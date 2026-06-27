@@ -486,24 +486,37 @@ EOF
     # لینک Gist (HTTPS — تضمینی) را از gist_map پیدا کن
     local gist_url=""
     [ -f "$ETC_DIR/gist_map.json" ] && gist_url="$(jq -r --arg t "$tok" '.[$t].url // ""' "$ETC_DIR/gist_map.json" 2>/dev/null)"
-    printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
-    if [ -n "$gist_url" ]; then
-      say "⭐ لینک Subscription (HTTPS — توصیه‌شده):"
-      printf "  ${C_G}%s${C_N}\n" "$gist_url"
-      inf "این لینک روی همهٔ پروایدرها و فایروال‌ها کار می‌کند."
+    # لینک HTTPS روی دامنهٔ خودِ کاربر (از طریق Caddy روی :443 → سرور محلی sub).
+    # فقط وقتی نشان داده می‌شود که دامنه ست شده و Caddy بالا باشد (TLS فعال است).
+    local tls_dom="" dom_url=""
+    [ -f "$ETC_DIR/tls_domain.txt" ] && tls_dom="$(cat "$ETC_DIR/tls_domain.txt" 2>/dev/null)"
+    if [ -n "$tls_dom" ] && systemctl is-active caddy >/dev/null 2>&1; then
+      dom_url="https://${tls_dom}/sub/${tok}"
     fi
-    # لینک‌های پشتیبان فقط در صورتی نشان داده شوند که Gist موفق نبود
+    printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
+    # هر دو لینکِ HTTPS را نشان بده تا کاربر خودش انتخاب کند (هر دو در v2rayNG کار می‌کنند).
+    if [ -n "$dom_url" ]; then
+      say "⭐ لینک Subscription روی دامنهٔ خودت (HTTPS):"
+      printf "  ${C_G}%s${C_N}\n" "$dom_url"
+      inf "روی دامنه و گواهی خودت میزبانی می‌شود — بدون وابستگی به Gist ما."
+    fi
+    if [ -n "$gist_url" ]; then
+      say "⭐ لینک Subscription روی Gist (HTTPS):"
+      printf "  ${C_G}%s${C_N}\n" "$gist_url"
+      inf "روی همهٔ پروایدرها و فایروال‌ها کار می‌کند."
+    fi
+    # لینک‌های پشتیبان فقط در صورتی نشان داده شوند که هیچ HTTPS در دسترس نبود
     # (v2rayNG فقط https://Subscription می‌پذیرد، پس http همه را به اشتباه نمی‌اندازد)
-    if [ -z "$gist_url" ] && systemctl is-active kian-sub >/dev/null 2>&1; then
+    if [ -z "$gist_url" ] && [ -z "$dom_url" ] && systemctl is-active kian-sub >/dev/null 2>&1; then
       printf "\n"
-      warn "Gist در دسترس نبود — لینک‌های پشتیبان فقط برای curl/مرورگر کار می‌کنند، نه v2rayNG:"
+      warn "Gist و دامنهٔ HTTPS در دسترس نبود — لینک‌های پشتیبان فقط برای curl/مرورگر کار می‌کنند، نه v2rayNG:"
       for sp in $(echo "$subports" | tr ',' ' '); do
-        [ -n "$sp" ] && printf "    http://${ip}:${sp}/sub/${tok}\n"
+        [ -n "$sp" ] && [ "$sp" != "8765" ] && printf "    http://${ip}:${sp}/sub/${tok}\n"
       done
       inf "برای import در v2rayNG، فایل خام را در یک Gist عمومی آپلود کن یا 'kian-v2ray configs' را بزن و لینک‌ها را تک‌تک کپی کن."
     fi
-    if [ -z "$gist_url" ] && ! systemctl is-active kian-sub >/dev/null 2>&1; then
-      warn "نه Gist و نه سرویس sub فعال است. فایل خام: $outfile"
+    if [ -z "$gist_url" ] && [ -z "$dom_url" ] && ! systemctl is-active kian-sub >/dev/null 2>&1; then
+      warn "نه Gist، نه دامنهٔ HTTPS و نه سرویس sub فعال است. فایل خام: $outfile"
     fi
   done
 }
@@ -600,6 +613,48 @@ cmd_renew(){
   say "تمدید شد: $email  (تا $([ "$days" -le 0 ] && echo دائمی || echo "${days} روز دیگر"))"
 }
 
+# نصب‌های قدیمی را به مدلِ «لینکِ HTTPS روی دامنهٔ خودِ کاربر» ارتقا می‌دهد:
+#  ۱) پورت پلِ ثابت (8765) را به sub_port.txt اضافه و kian-sub را ری‌استارت می‌کند
+#     تا سرور محلیِ sub روی loopback در دسترسِ Caddy باشد.
+#  ۲) اگر دامنه ست شده و Caddyfile مالِ ماست (تک‌بلوک)، هندلرِ /sub/* را به آن
+#     تزریق و Caddy را reload می‌کند. کاملاً idempotent — اگر از قبل باشد کاری نمی‌کند.
+ensure_domain_sub(){
+  # (۱) پورت پل
+  local pf="$ETC_DIR/sub_port.txt" ports
+  ports="$(cat "$pf" 2>/dev/null || echo 80)"
+  case ",$ports," in
+    *",8765,"*) : ;;
+    *) printf '%s' "${ports},8765" > "$pf"
+       systemctl restart kian-sub >/dev/null 2>&1 || true ;;
+  esac
+  # (۲) هندلرِ Caddy
+  local cf=/etc/caddy/Caddyfile dom=""
+  [ -f "$ETC_DIR/tls_domain.txt" ] && dom="$(cat "$ETC_DIR/tls_domain.txt" 2>/dev/null)"
+  [ -n "$dom" ] && [ -f "$cf" ] || return 0
+  grep -q 'path /sub/\*' "$cf" 2>/dev/null && return 0
+  # فقط وقتی دست بزن که Caddyfile دقیقاً یک بلوکِ دامنه دارد و آن بلوک مالِ ماست
+  [ "$(grep -c '^[a-z0-9.-]\+ {' "$cf" 2>/dev/null)" = "1" ] || return 0
+  grep -q "^${dom} {" "$cf" 2>/dev/null || return 0
+  local tmp; tmp="$(mktemp)"
+  # هندلر را درست قبل از اولین «handle {» بدونِ matcher (صفحهٔ طعمه) درج کن
+  awk '
+    !done && /^\thandle \{$/ {
+      print "\t@kiansub {"; print "\t\tpath /sub/*"; print "\t}";
+      print "\thandle @kiansub {"; print "\t\treverse_proxy 127.0.0.1:8765"; print "\t}";
+      done=1
+    }
+    { print }
+  ' "$cf" > "$tmp" 2>/dev/null || { rm -f "$tmp"; return 0; }
+  if grep -q 'path /sub/\*' "$tmp" 2>/dev/null && caddy validate --config "$tmp" >/dev/null 2>&1; then
+    cp "$cf" "$ETC_DIR/backups/Caddyfile_$(date -u +%Y%m%d-%H%M%S)" 2>/dev/null || true
+    mv "$tmp" "$cf"
+    systemctl reload caddy >/dev/null 2>&1 || systemctl restart caddy >/dev/null 2>&1 || true
+    say "لینکِ HTTPS روی دامنهٔ $dom فعال شد (https://${dom}/sub/<token>)"
+  else
+    rm -f "$tmp"
+  fi
+}
+
 cmd_update(){
   need_root
   # نسخهٔ پایدار را از VERSION ریپو بخوان (نه latest کور)
@@ -687,6 +742,10 @@ cmd_update(){
       && say "پنلِ وب به‌روز شد (قابلیت‌های جدید اضافه شد)" \
       || warn "به‌روزرسانیِ پنل ناموفق — بررسی: systemctl status kian-panel"
   fi
+
+  # ۴.۵) نصب‌های قدیمی را به لینکِ HTTPS روی دامنهٔ خودِ کاربر ارتقا بده
+  #      (پورت پل + هندلرِ /sub/* در Caddy) — بدونِ نیاز به اقدامِ کاربر.
+  ensure_domain_sub
 
   # ۵) همهٔ لینک‌های Subscription را بازسازی و با Gist همگام کن تا قابلیت‌های جدید
   #    (پروتکل‌های اضافه‌شده) خودکار در لینکِ همهٔ کاربران بیاید — بدونِ دادنِ لینکِ تازه.
@@ -874,7 +933,33 @@ cmd_openports(){
   say "پورت‌های سرویس در فایروال باز شدند"
 }
 
+# --- اعمالِ امنِ کانفیگِ Xray (ویرایش از پنل): backup → اعمال → اگر Xray بالا
+#     نیامد، rollback. ورودی: مسیرِ فایلِ JSONِ جدید. ----------------------------
+cmd_apply_config(){
+  need_root; need_jq
+  local src="${1:-}"
+  [ -f "$src" ] || { err "فایلِ کانفیگ پیدا نشد: $src"; exit 1; }
+  jq -e '.inbounds and .outbounds' "$src" >/dev/null 2>&1 \
+    || { err "JSON نامعتبر است یا inbounds/outbounds ندارد."; exit 2; }
+  local bak="$ETC_DIR/backups"; mkdir -p "$bak"
+  local ts; ts="$(date -u +%Y%m%d-%H%M%S)"; local snap="$bak/config_${ts}.json"
+  cp "$CONFIG" "$snap" 2>/dev/null || true
+  cp "$src" "$CONFIG"; ensure_cfg_perm
+  docker restart "$CONTAINER" >/dev/null 2>&1 || docker start "$CONTAINER" >/dev/null 2>&1 || true
+  sleep 4
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$CONTAINER"; then
+    say "کانفیگ اعمال شد و Xray بالا آمد ✅ (بکاپ: $snap)"
+    return 0
+  fi
+  warn "Xray با کانفیگِ جدید بالا نیامد — بازگردانی به نسخهٔ قبل"
+  [ -f "$snap" ] && { cp "$snap" "$CONFIG"; ensure_cfg_perm; }
+  docker restart "$CONTAINER" >/dev/null 2>&1 || docker start "$CONTAINER" >/dev/null 2>&1 || true
+  err "کانفیگِ جدید اعمال نشد؛ به نسخهٔ سالمِ قبلی برگشت."
+  exit 3
+}
+
 case "${1:-help}" in
+  apply-config) shift; cmd_apply_config "${1:-}" ;;
   status)    cmd_status ;;
   configs)   shift; cmd_configs "${1:-}" ;;
   sub)       shift; cmd_sub "${1:-}" ;;
