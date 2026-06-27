@@ -19,7 +19,46 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 PORTS_ARG = sys.argv[1] if len(sys.argv) > 1 else "80"
 SUBDIR = sys.argv[2] if len(sys.argv) > 2 else "/etc/kian-v2ray/sub"
 
-TOKEN_RE = re.compile(r"^[A-Za-z0-9]{8,64}$")  # فقط حروف/عدد — بدون / یا .
+TOKEN_RE = re.compile(r"^[A-Za-z0-9]{8,64}$")  # letters/digits only — no / or .
+
+# ETC dir = parent of the sub dir (e.g. /etc/kian-v2ray/sub -> /etc/kian-v2ray)
+_ETC = os.path.dirname(os.path.realpath(SUBDIR))
+
+
+def _user_info(token: str) -> str:
+    """Build the standard 'Subscription-Userinfo' header value for a token:
+    upload=..; download=..; total=..; expire=.. (bytes / epoch seconds).
+    Reads sub_tokens.json (email->token) and users.json. Fail-safe: returns ""
+    on any error so the subscription still serves."""
+    import json as _json
+    import time as _time
+    try:
+        with open(os.path.join(_ETC, "sub_tokens.json"), encoding="utf-8") as fh:
+            toks = _json.load(fh)
+        email = next((e for e, t in toks.items() if t == token), "")
+        if not email:
+            return ""
+        with open(os.path.join(_ETC, "users.json"), encoding="utf-8") as fh:
+            users = _json.load(fh).get("users", [])
+        u = next((x for x in users if x.get("email") == email), None)
+        if not u:
+            return ""
+        used = int(u.get("used_bytes") or 0)
+        total = int(u.get("quota_bytes") or 0)   # 0 = unlimited
+        exp = u.get("expires_at")
+        expire = 0
+        if exp:
+            try:
+                from datetime import datetime, timezone
+                s = str(exp).replace("Z", "+00:00")
+                expire = int(datetime.fromisoformat(s).replace(
+                    tzinfo=timezone.utc).timestamp())
+            except Exception:
+                expire = 0
+        # download carries the used bytes; upload 0 (we don't split directions)
+        return (f"upload=0; download={used}; total={total}; expire={expire}")
+    except Exception:
+        return ""
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -56,9 +95,16 @@ class Handler(BaseHTTPRequestHandler):
         except OSError:
             return self._deny()
         self.send_response(200)
-        # فرمتی که v2rayNG برای subscription می‌فهمد
+        # Format v2rayNG/NekoBox understand for a subscription
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.send_header("Profile-Update-Interval", "12")
+        # Standard Subscription-Userinfo header so clients (v2rayNG, NekoBox,
+        # Streisand…) can show usage + expiry, like Marzban/3x-ui. Fail-safe:
+        # any lookup error simply omits the header.
+        info = _user_info(token)
+        if info:
+            self.send_header("Subscription-Userinfo", info)
+            self.send_header("Profile-Title", token[:8])
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
