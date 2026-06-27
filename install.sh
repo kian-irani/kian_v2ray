@@ -710,7 +710,7 @@ docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
 # keep config.json root-only (640) — the container runs as --user 0:0 so root can read it
 chmod 640 "$XRAY_DIR/config.json"
 docker run -d --name "$CONTAINER" --restart unless-stopped \
-  --network host --memory="512m" \
+  --network host --memory="1g" \
   --user 0:0 \
   --cap-add=NET_BIND_SERVICE \
   -v "$XRAY_DIR/config.json:/etc/xray/config.json:ro" \

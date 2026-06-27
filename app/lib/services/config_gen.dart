@@ -310,7 +310,10 @@ class ConfigGen {
     if (ss) rules.add({'type': 'field', 'inboundTag': ['shadowsocks'], 'outboundTag': 'direct'});
 
     return {
-      'log': {'loglevel': 'warning', 'access': '/var/log/xray/access.log',
+      // access log off: a per-connection file write on the bind-mounted log
+      // dir adds latency/jitter under load (3x-ui ships it off). Usage stats
+      // come from the Xray stats API, not this log, so quotas keep working.
+      'log': {'loglevel': 'warning', 'access': 'none',
         'error': '/var/log/xray/error.log'},
       'dns': {'servers': ['1.1.1.1', '8.8.8.8']},
       'api': {'tag': 'api', 'services': ['HandlerService', 'StatsService']},

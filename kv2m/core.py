@@ -4,7 +4,7 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "4.4.1"  # 4.4.1: latency — AsIs DNS strategy + sniffing routeOnly (no per-request re-resolve)
+APP_VERSION = "4.4.2"  # 4.4.2: perf — disable Xray access log, raise container mem cap
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
@@ -172,7 +172,7 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
     if all_tags: rules.append({"type":"field","inboundTag":all_tags,"outboundTag":"direct"})
     if ss.get("enabled"): rules.append({"type":"field","inboundTag":["shadowsocks"],"outboundTag":"direct"})
     if tls_tags: rules.append({"type":"field","inboundTag":tls_tags,"outboundTag":"direct"})
-    return {"log":{"loglevel":"warning","access":"/var/log/xray/access.log","error":"/var/log/xray/error.log"},
+    return {"log":{"loglevel":"warning","access":"none","error":"/var/log/xray/error.log"},
             "dns":{"servers":["1.1.1.1","8.8.8.8"]},"api":{"tag":"api","services":["HandlerService","StatsService"]},
             "stats":{},"policy":{"levels":{"0":{"statsUserUplink":True,"statsUserDownlink":True}},
             "system":{"statsInboundUplink":True,"statsInboundDownlink":True}},

@@ -208,7 +208,7 @@ function buildConfig(o) {
   if (tlsTags.length)  rules.push({ type: 'field', inboundTag: tlsTags, outboundTag: 'direct' });
 
   return {
-    log: { loglevel: 'warning', access: '/var/log/xray/access.log', error: '/var/log/xray/error.log' },
+    log: { loglevel: 'warning', access: 'none', error: '/var/log/xray/error.log' },
     dns: { servers: ['1.1.1.1', '8.8.8.8'] },
     api: { tag: 'api', services: ['HandlerService', 'StatsService'] },
     stats: {},
