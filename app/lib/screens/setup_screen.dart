@@ -110,6 +110,18 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Future<void> _run() async {
+    // Guard a custom base port against the reserved internal ports — a Reality
+    // inbound on any of these would clash with the API/WARP/sub-bridge service
+    // and Xray would fail to start. Reality uses base, base+1, base+2.
+    final bp = int.tryParse(_basePort.text.trim()) ?? 0;
+    if (bp > 0) {
+      const reserved = {10085, 40000, 8765};
+      final clash = [bp, bp + 1, bp + 2].where(reserved.contains).toList();
+      if (clash.isNotEmpty || bp < 1 || bp > 65500) {
+        setState(() => _log..clear()..add('✘ ${widget.strings.t('setup.baseportbad')}'));
+        return;
+      }
+    }
     setState(() { _busy = true; _log.clear(); _subUrl = null; _subUrls.clear(); _domainSubUrls.clear(); });
     final ssh = SshInstaller();
     try {

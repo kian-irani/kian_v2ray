@@ -64,3 +64,17 @@ def test_per_user_routing_fragment():
     # DNS list (comma or space separated)
     d = bridge.per_user_routing("ali", dns="1.1.1.1, 9.9.9.9")
     assert d["dns"]["servers"] == ["1.1.1.1", "9.9.9.9"]
+
+
+def test_apply_xray_config_rejects_invalid():
+    # All fail validation BEFORE the CLI is invoked, so no kian-v2ray binary needed.
+    bad = [
+        "not a dict",
+        {},                                          # missing inbounds/outbounds
+        {"inbounds": [], "outbounds": [{"x": 1}]},   # empty inbounds → would take users offline
+        {"inbounds": [{"a": 1}], "outbounds": []},   # empty outbounds
+        {"inbounds": "x", "outbounds": [{"x": 1}]},  # wrong type
+    ]
+    for cfg in bad:
+        code, _ = bridge.apply_xray_config(cfg)
+        assert code == 2, f"expected rejection for {cfg!r}"

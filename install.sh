@@ -931,9 +931,10 @@ if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi '^Status:
     ufw allow "${p}/udp" >/dev/null 2>&1 || true
   done
   # پورت‌های سرویس Subscription (می‌تواند چند پورت با ویرگول جدا باشد)
+  # پورت پلِ ۸۷۶۵ فقط برای Caddy روی loopback است — عمداً در فایروال باز نمی‌شود.
   SUB_PORTS_FW="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
   for sp in $(echo "$SUB_PORTS_FW" | tr ',' ' '); do
-    [ -n "$sp" ] && ufw allow "${sp}/tcp" >/dev/null 2>&1 || true
+    [ -n "$sp" ] && [ "$sp" != "8765" ] && ufw allow "${sp}/tcp" >/dev/null 2>&1 || true
   done
   # پورت‌های TLS (Caddy) — اگر فاز ۳ فعال است
   if [ -f "$ETC_DIR/tls_domain.txt" ]; then

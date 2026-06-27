@@ -53,6 +53,7 @@ class Strings {
     'setup.ports': ['تنظیمِ پورت‌ها (فقط در صورت نیاز)', 'Port settings (only if needed)'],
     'setup.ports.d': ['اگر پورت‌های پیش‌فرض روی سرورت با چیزِ دیگری پُر است، این‌جا عوضشان کن. وگرنه خالی بگذار.', 'If the default ports are taken by something else on your server, change them here. Otherwise leave empty.'],
     'setup.baseport': ['پورت پایه (اختیاری — خالی=خودکار)', 'Base port (optional — empty = auto)'],
+    'setup.baseportbad': ['پورت پایه نامعتبر است یا با پورت‌های رزرو (۱۰۰۸۵، ۴۰۰۰۰، ۸۷۶۵) تداخل دارد — عددِ دیگری بده یا خالی بگذار.', 'Base port is invalid or clashes with reserved ports (10085, 40000, 8765) — pick another or leave empty.'],
     'setup.tlsprotos': ['پروتکل‌های TLS (چندتا قابل‌انتخاب):', 'TLS protocols (pick any):'],
     'setup.install': ['ساخت و نصب', 'Build & install'],
     'setup.sublink': ['لینک Subscription (روی Gist):', 'Subscription link (on Gist):'],

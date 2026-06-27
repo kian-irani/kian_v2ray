@@ -956,7 +956,8 @@ cmd_openports(){
   done
   sub="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
   for one in $(echo "$sub" | tr ',' ' '); do
-    [ -n "$one" ] && ufw allow "${one}/tcp" >/dev/null 2>&1 && say "باز شد: $one (Subscription)"
+    # پورت پلِ ۸۷۶۵ فقط برای Caddy روی loopback است — در فایروال باز نمی‌شود.
+    [ -n "$one" ] && [ "$one" != "8765" ] && ufw allow "${one}/tcp" >/dev/null 2>&1 && say "باز شد: $one (Subscription)"
   done
   ufw reload >/dev/null 2>&1 || true
   say "پورت‌های سرویس در فایروال باز شدند"
@@ -968,8 +969,8 @@ cmd_apply_config(){
   need_root; need_jq
   local src="${1:-}"
   [ -f "$src" ] || { err "فایلِ کانفیگ پیدا نشد: $src"; exit 1; }
-  jq -e '.inbounds and .outbounds' "$src" >/dev/null 2>&1 \
-    || { err "JSON نامعتبر است یا inbounds/outbounds ندارد."; exit 2; }
+  jq -e '(.inbounds|type=="array" and length>0) and (.outbounds|type=="array" and length>0)' "$src" >/dev/null 2>&1 \
+    || { err "JSON نامعتبر است یا inbounds/outbounds خالی/غایب است."; exit 2; }
   local bak="$ETC_DIR/backups"; mkdir -p "$bak"
   local ts; ts="$(date -u +%Y%m%d-%H%M%S)"; local snap="$bak/config_${ts}.json"
   cp "$CONFIG" "$snap" 2>/dev/null || true

@@ -243,8 +243,16 @@ def apply_xray_config(cfg: dict[str, Any]) -> tuple[int, str]:
     Returns ``(exit_code, output)``; non-zero means the change was rejected and
     the previous config is still live.
     """
-    if not isinstance(cfg, dict) or "inbounds" not in cfg or "outbounds" not in cfg:
-        return 2, "config must be a JSON object with inbounds and outbounds"
+    if not isinstance(cfg, dict):
+        return 2, "config must be a JSON object"
+    ins, outs = cfg.get("inbounds"), cfg.get("outbounds")
+    # Require NON-EMPTY arrays: an empty inbounds is valid to xray-core and would
+    # start cleanly (so rollback never triggers) while silently taking every user
+    # offline — reject it up front instead.
+    if not isinstance(ins, list) or not ins:
+        return 2, "config must have a non-empty inbounds array"
+    if not isinstance(outs, list) or not outs:
+        return 2, "config must have a non-empty outbounds array"
     fd, tmp = tempfile.mkstemp(prefix="kian-xray-", suffix=".json")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:

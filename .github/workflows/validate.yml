@@ -87,6 +87,9 @@ jobs:
               console.log('PASS: no-TLS payload');
               $('#tls-enabled').checked = true;
               $('#tls-domain').value = 'vpn.example.com';
+              // Domain mode no longer pre-checks any protocol — tick one so a TLS
+              // profile (and thus a Caddyfile with reverse_proxy) is generated.
+              $('input[name="tls-proto"][value="vless-ws"]').checked = true;
               $('#gen-btn').click();
               setTimeout(() => {
                 const m2 = $('#result').textContent.match(/KIAN_PAYLOAD='([^']+)'/);
