@@ -184,7 +184,7 @@ class ConfigGen {
       final links = <String>[];
       for (var p = 0; p < _ports.length; p++) {
         links.add(_vlessReality(uuid, serverIp, _ports[p], useSnis[p % useSnis.length],
-            pub, sid, 'KIAN-$name-${_ports[p]}'));
+            pub, sid, 'KIAN-$name-Reality-${_ports[p]}'));
       }
       for (final t in tls) {
         links.add(_tlsLink(t['kind'] as String, uuid, dom, t['path'] as String,

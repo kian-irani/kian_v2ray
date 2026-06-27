@@ -359,8 +359,6 @@ function readForm() {
   };
 }
 
-const CH_LABEL = { direct: 'سریع', warp: 'WARP' };
-
 /* ------------------------------ generate ------------------------------- */
 async function generate(f) {
   const reality = genReality();
@@ -464,7 +462,7 @@ async function generate(f) {
       const link = vlessLink({
         uuid: u.id, ip: f.serverIp, port: p.port, sni: p.sni,
         pubkey: reality.publicKey, shortId: reality.shortId,
-        label: `KIAN-${local}-${CH_LABEL[p.channel]}-${p.sni}`,
+        label: `KIAN-${local}-Reality-${p.port}`,
       });
       links.push(link);
       return { channel: p.channel, sni: p.sni, port: p.port, link };

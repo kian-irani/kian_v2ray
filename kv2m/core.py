@@ -33,7 +33,6 @@ SNI_MANUAL_OPTIONS = [
     "speedtest.net","bing.com","microsoft.com","apple.com",
     "icloud.com","samsung.com","nvidia.com","cloudflare.com",
 ]
-CH_LABEL = {"direct":"سریع","warp":"WARP"}
 
 TLS_PROTOS = {
     "vless-ws":          {"proto":"vless", "net":"ws",          "label":"VLESS-WS",          "note":"پایدارترین برای عبور از DPI و CDN"},
@@ -255,7 +254,7 @@ def generate(opts):
         local=u["email"].split("@")[0]
         items=[{"channel":p["channel"],"sni":p["sni"],"port":p["port"],
                 "link":vless_link(u["id"],ip,p["port"],p["sni"],reality["publicKey"],
-                                  reality["shortId"],f'KIAN-{local}-{CH_LABEL[p["channel"]]}-{p["sni"]}')}
+                                  reality["shortId"],f'KIAN-{local}-Reality-{p["port"]}')}
                for p in profiles]
         tls_items_links=[]
         for t in tls_profiles:
