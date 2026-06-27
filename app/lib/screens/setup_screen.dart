@@ -51,6 +51,7 @@ class _SetupScreenState extends State<SetupScreen> {
   String? _subUrl;
   final _subUrls = <String>[];   // all per-user subscription URLs (for copy)
   String? _panelInfo;
+  String? _panelUrlOut, _panelUserOut, _panelPassOut;   // each separately copyable
   int _imported = 0;
 
   void _say(String s) => setState(() => _log.add(s));
@@ -172,7 +173,12 @@ class _SetupScreenState extends State<SetupScreen> {
             panelUser = user;
             panelPass = _panelPick(pout, 'Password:', pass);
             panelUrl = _panelPick(pout, 'URL:', '');
-            setState(() => _panelInfo = _parsePanel(pout, fallbackUser: user, fallbackPass: pass));
+            setState(() {
+              _panelInfo = _parsePanel(pout, fallbackUser: user, fallbackPass: pass);
+              _panelUrlOut = (panelUrl != null && panelUrl.isNotEmpty) ? panelUrl : null;
+              _panelUserOut = panelUser;
+              _panelPassOut = panelPass;
+            });
             _say('✅ پنلِ وب آماده شد.');
           } else {
             _say('⚠️ راه‌اندازیِ پنل ناموفق بود (کد $pc).');
@@ -462,33 +468,17 @@ class _SetupScreenState extends State<SetupScreen> {
               child: Text(_log.join('\n'),
                   style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
             ),
-          if (_subUrl != null) ...[
+          if (_subUrls.isNotEmpty) ...[
             const SizedBox(height: 14),
             Text(s.t('setup.sublink'),
                 style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B1426),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(children: [
-                Expanded(
-                  child: SelectableText(_subUrl!,
-                      maxLines: 2,
-                      style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
-                ),
-                IconButton(
-                  tooltip: s.t('cfg.copy'),
-                  icon: const Icon(Icons.copy_outlined, size: 20),
-                  onPressed: () => _copyText(_subUrl!, s.t('cfg.copied')),
-                ),
-              ]),
-            ),
+            // هر لینکِ Subscription جداگانه با دکمهٔ کپیِ خودش.
+            for (var i = 0; i < _subUrls.length; i++)
+              _copyRow('#${i + 1}', _subUrls[i], s),
             if (_subUrls.length > 1) ...[
-              const SizedBox(height: 8),
-              FilledButton.icon(
+              const SizedBox(height: 4),
+              OutlinedButton.icon(
                 onPressed: () => _copyText(_subUrls.join('\n'),
                     '${_subUrls.length} ${s.t('setup.suballcopied')}'),
                 icon: const Icon(Icons.copy_all_outlined, size: 18),
@@ -496,20 +486,14 @@ class _SetupScreenState extends State<SetupScreen> {
               ),
             ],
           ],
-          if (_panelInfo != null) ...[
+          if (_panelUrlOut != null || _panelUserOut != null) ...[
             const SizedBox(height: 14),
             Text(s.t('setup.panelinfo'),
-                style: const TextStyle(color: KianTheme.accent)),
-            Container(
-              margin: const EdgeInsets.only(top: 6),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B1426),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: SelectableText(_panelInfo!,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
-            ),
+                style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            if (_panelUrlOut != null) _copyRow('URL', _panelUrlOut!, s),
+            if (_panelUserOut != null) _copyRow('user', _panelUserOut!, s),
+            if (_panelPassOut != null) _copyRow('pass', _panelPassOut!, s),
           ],
           if (_imported > 0) ...[
             const SizedBox(height: 16),
@@ -520,6 +504,39 @@ class _SetupScreenState extends State<SetupScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  /// A boxed row: short label + selectable value + its own copy button.
+  Widget _copyRow(String label, String value, Strings s) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0B1426),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(children: [
+          if (label.isNotEmpty)
+            SizedBox(
+              width: 46,
+              child: Text(label,
+                  style: const TextStyle(
+                      color: KianTheme.accent, fontSize: 11, fontWeight: FontWeight.bold)),
+            ),
+          Expanded(
+            child: SelectableText(value,
+                maxLines: 2,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+          ),
+          IconButton(
+            tooltip: s.t('cfg.copy'),
+            icon: const Icon(Icons.copy_outlined, size: 18),
+            onPressed: () => _copyText(value, s.t('cfg.copied')),
+          ),
+        ]),
       ),
     );
   }
