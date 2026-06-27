@@ -105,7 +105,10 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
   systemctl daemon-reload
-  systemctl enable --now "$SVC"
+  systemctl enable "$SVC" >/dev/null 2>&1 || true
+  # restart (not just `enable --now`) so a re-deploy actually reloads the new
+  # EnvironmentFile — otherwise an already-running panel keeps the old admin env.
+  systemctl restart "$SVC"
 }
 
 sync_users(){

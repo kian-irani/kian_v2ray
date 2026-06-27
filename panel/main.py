@@ -94,22 +94,43 @@ def _bootstrap() -> None:
     with core_db.session(DB_PATH) as conn:
         if repo.get_setting(conn, "jwt_secret") is None:
             repo.set_setting(conn, "jwt_secret", secrets.token_urlsafe(48))
-        if repo.get_setting(conn, "admin_pw_hash") is None:
-            import logging
-            _log = logging.getLogger("kian.panel")
-            env_pw = os.environ.get("KIAN_ADMIN_PASSWORD", "")
-            if not env_pw or env_pw == "admin":
-                # Auto-generate a secure password on first boot if none provided
+
+        # --- Admin credentials -------------------------------------------------
+        # Seed on first boot AND re-apply when the operator deploys NEW creds via
+        # env (the app/desktop "set panel user/password"). Previously the admin
+        # was seeded only when none existed, so re-deploying with a chosen
+        # password was silently ignored — login with the new password failed.
+        # A stable fingerprint of the env password distinguishes "new password
+        # provided" from "same env, plain restart", so a password later changed
+        # from the panel UI is NOT clobbered on every restart.
+        import hashlib
+        import logging
+        _log = logging.getLogger("kian.panel")
+        env_user = (os.environ.get("KIAN_ADMIN_USER", "") or "admin").strip()
+        env_pw = os.environ.get("KIAN_ADMIN_PASSWORD", "")
+        env_pw_set = bool(env_pw) and env_pw != "admin"
+        env_fp = (hashlib.sha256(f"{env_user}\x00{env_pw}".encode()).hexdigest()
+                  if env_pw_set else "")
+        have_admin = repo.get_setting(conn, "admin_pw_hash") is not None
+        last_fp = repo.get_setting(conn, "admin_env_fp") or ""
+
+        if not have_admin:
+            if env_pw_set:
+                initial = env_pw
+            else:
                 initial = secrets.token_urlsafe(16)
                 _log.warning(
                     "⚠️  KIAN_ADMIN_PASSWORD not set — auto-generated admin "
                     "password: %s  (save this; it won't be shown again)", initial)
-            else:
-                initial = env_pw
-            repo.set_setting(conn, "admin_user",
-                             os.environ.get("KIAN_ADMIN_USER", "admin"))
-            repo.set_setting(conn, "admin_pw_hash",
-                             security.hash_password(initial))
+            repo.set_setting(conn, "admin_user", env_user)
+            repo.set_setting(conn, "admin_pw_hash", security.hash_password(initial))
+            repo.set_setting(conn, "admin_env_fp", env_fp)
+        elif env_pw_set and env_fp != last_fp:
+            # Operator deployed new credentials -> apply them.
+            repo.set_setting(conn, "admin_user", env_user)
+            repo.set_setting(conn, "admin_pw_hash", security.hash_password(env_pw))
+            repo.set_setting(conn, "admin_env_fp", env_fp)
+            _log.warning("Admin credentials updated from deploy env.")
 
 
 @app.on_event("startup")
