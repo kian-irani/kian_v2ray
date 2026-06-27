@@ -4,7 +4,7 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "4.4.3"  # 4.4.3: no-domain protocols always-on, uninstall-over-SSH, panel password, config labels
+APP_VERSION = "4.4.4"  # 4.4.4: domain-first protocol flow, per-link copy, one-click panel
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
