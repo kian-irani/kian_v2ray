@@ -1,25 +1,26 @@
 #!/usr/bin/env bash
 # ============================================================================
-#  kian-v2ray — ابزار مدیریت  (نصب‌شده در /usr/local/bin/kian-v2ray)
-#  ریپو: https://github.com/KIAN-IRANI/kian_v2ray
+#  kian-v2ray — management tool  (installed at /usr/local/bin/kian-v2ray)
+#  Repo: https://github.com/KIAN-IRANI/kian_v2ray
 #
-#  دستورها:
-#     kian-v2ray status              وضعیت سرویس و کاربرها
-#     kian-v2ray configs [نام]       نمایش لینک کانفیگ‌ها + QR ترمینالی
-#     kian-v2ray sub [نام]           ساخت فایل لینک Subscription (توکن تصادفی هر کاربر)
-#     kian-v2ray users               فهرست کاربرها + مصرف/انقضا
-#     kian-v2ray add <نام> [حجم_GB] [روز]   افزودن کاربر  (پیش‌فرض 100GB / 30روز)
-#     kian-v2ray remove <نام>        حذف کاربر
-#     kian-v2ray reset <نام> [حجم_GB]   صفر کردن مصرف (و در صورت دادن، تنظیم حجم)
-#     kian-v2ray renew <نام> [روز]   تمدید اعتبار از همین لحظه
-#     kian-v2ray update              به‌روزرسانی کامل: Xray + اسکریپت‌ها + پنل + پروتکل‌ها + سینکِ سابسکرایب
-#     kian-v2ray resync              بازسازیِ لینکِ Subscription همهٔ کاربران + همگام‌سازیِ Gist (بعد از تغییرِ پروتکل/متد)
-#     kian-v2ray fixport             رفع تداخل پورت API (کرش‌لوپ روی سرور دارای پنل دیگر)
-#     kian-v2ray rebind              بازسازی Xray با اجازهٔ bind روی پورت‌های زیر ۱۰۲۴ (۴۴۳/۸۰)
-#     kian-v2ray warp                تلاش مجدد WARP (WireGuard/MASQUE) و برگرداندن از fallback
-#     kian-v2ray untune              بازگرداندن بهینه‌سازی شبکه (BBR/بافرها)
-#     kian-v2ray uninstall           حذف کامل
-#  «نام» می‌تواند بخشِ قبل از @ در ایمیل کاربر باشد (مثلاً user-1).
+#  Commands:
+#     kian-v2ray status              service and user status
+#     kian-v2ray configs [name]      show config links + terminal QR
+#     kian-v2ray sub [name]          build the subscription file (random per-user token)
+#     kian-v2ray users               list users + usage/expiry
+#     kian-v2ray add <name> [GB] [days] [all|domain|nodomain]   add a user (default 100GB / 30d)
+#     kian-v2ray filter <name> <all|domain|nodomain>   set which config types this user gets
+#     kian-v2ray remove <name>       remove a user
+#     kian-v2ray reset <name> [GB]   reset usage (and set quota if given)
+#     kian-v2ray renew <name> [days] extend validity from now
+#     kian-v2ray update              full update: Xray + scripts + panel + protocols + sub sync
+#     kian-v2ray resync              rebuild every user's subscription + Gist sync (after a protocol change)
+#     kian-v2ray fixport             fix API port conflict (crash loop on a server with another panel)
+#     kian-v2ray rebind              rebuild Xray allowed to bind ports below 1024 (443/80)
+#     kian-v2ray warp                retry WARP (WireGuard/MASQUE) and restore from fallback
+#     kian-v2ray untune              revert network tuning (BBR/buffers)
+#     kian-v2ray uninstall           full removal
+#  "name" can be the part before @ in the user's email (e.g. user-1).
 # ============================================================================
 set -uo pipefail
 
@@ -55,9 +56,9 @@ say(){ printf "${C_G}✔${C_N} %s\n" "$*"; }
 inf(){ printf "${C_B}→${C_N} %s\n" "$*"; }
 warn(){ printf "${C_Y}⚠${C_N} %s\n" "$*"; }
 err(){ printf "${C_R}✘${C_N} %s\n" "$*" >&2; }
-need_root(){ [ "$(id -u)" -eq 0 ] || { err "این دستور به root نیاز دارد (sudo)."; exit 1; }; }
-need_jq(){ command -v jq >/dev/null 2>&1 || { err "jq نصب نیست."; exit 1; }; }
-need_files(){ [ -f "$CONFIG" ] && [ -f "$USERS_FILE" ] || { err "نصب پیدا نشد. اول از صفحه تعاملی نصب کن."; exit 1; }; }
+need_root(){ [ "$(id -u)" -eq 0 ] || { err "This command needs root (sudo)."; exit 1; }; }
+need_jq(){ command -v jq >/dev/null 2>&1 || { err "jq is not installed."; exit 1; }; }
+need_files(){ [ -f "$CONFIG" ] && [ -f "$USERS_FILE" ] || { err "Install not found. Install from the web page first."; exit 1; }; }
 
 # --- استخراج اطلاعات سرور از config.json + links.txt ----------------------
 meta_ip(){ awk -F': ' '/Server IP/{print $2; exit}' "$INFO_FILE" 2>/dev/null | tr -d ' '; }
@@ -132,9 +133,9 @@ rebuild_and_restart(){
     mv "$cfgtmp" "$CONFIG"
     ensure_cfg_perm
     docker restart "$CONTAINER" >/dev/null 2>&1 || true
-    say "کانفیگ بازسازی و Xray ری‌استارت شد"
+    say "Config rebuilt and Xray restarted"
   else
-    rm -f "$cfgtmp"; err "بازسازی config ناموفق"; return 1
+    rm -f "$cfgtmp"; err "Config rebuild failed"; return 1
   fi
 }
 
@@ -145,53 +146,53 @@ resolve_email(){ # نام یا ایمیل → ایمیل دقیق
 
 # ===========================================================================
 cmd_status(){
-  printf "\n${C_B}━━━ kian-v2ray — وضعیت ━━━${C_N}\n\n"
+  printf "\n${C_B}━━━ kian-v2ray — Status ━━━${C_N}\n\n"
   local PROBLEMS=""
   if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$CONTAINER"; then
-    say "Xray در حال اجراست  ($(cat "$IMAGE_FILE" 2>/dev/null || echo image))"
-    docker ps --filter "name=$CONTAINER" --format '   آپ‌تایم: {{.Status}}'
+    say "Xray is running  ($(cat "$IMAGE_FILE" 2>/dev/null || echo image))"
+    docker ps --filter "name=$CONTAINER" --format '   Uptime: {{.Status}}'
   else
     # خودتشخیصی (۰.۳): کرش‌لوپ یا توقف؟
     local st; st="$(docker inspect -f '{{.State.Status}}' "$CONTAINER" 2>/dev/null || echo missing)"
     if [ "$st" = "restarting" ]; then
-      err "Xray در کرش‌لوپ است (Restarting)"
+      err "Xray is crash-looping (Restarting)"
       # علت رایج: تداخل پورت bind در لاگ
       local logtail; logtail="$(docker logs "$CONTAINER" --tail 30 2>&1 || true)"
       if printf '%s' "$logtail" | grep -qiE 'permission denied'; then
-        err "علت: مجوز config.json (کانتینر نمی‌تواند بخواند). رفع: kian-v2ray fixperm"
+        err "Cause: config.json permission (container can't read it). Fix: kian-v2ray fixperm"
         PROBLEMS="perm"
       elif printf '%s' "$logtail" | grep -qiE 'address already in use|bind:.*in use|listen.*fail'; then
         local badport; badport="$(printf '%s' "$logtail" | grep -oiE ':[0-9]+: bind|:[0-9]+ .*in use' | grep -oE '[0-9]+' | head -1)"
-        err "علت: تداخل پورت${badport:+ ($badport)} — احتمالاً پنل دیگری (3x-ui/Marzban) همان پورت را گرفته"
+        err "Cause: port conflict${badport:+ ($badport)} — likely another panel (3x-ui/Marzban) took that port"
         PROBLEMS="port"
       else
         PROBLEMS="crash"
       fi
     elif [ "$st" = "missing" ]; then
-      err "کانتینر Xray وجود ندارد"
+      err "Xray container does not exist"
       PROBLEMS="missing"
     else
-      err "Xray اجرا نمی‌شود (وضعیت: $st)"
+      err "Xray is not running (status: $st)"
       PROBLEMS="stopped"
     fi
   fi
   if command -v warp-cli >/dev/null 2>&1; then
     if curl -fsS --max-time 8 --socks5 "127.0.0.1:$WARP_PORT" https://1.1.1.1/cdn-cgi/trace 2>/dev/null | grep -q 'warp=on'; then
-      say "WARP: متصل (socks5 :$WARP_PORT$( [ -f "$ETC_DIR/warp_proto.txt" ] && printf ' — %s' "$(cat "$ETC_DIR/warp_proto.txt")"))"
+      say "WARP: connected (socks5 :$WARP_PORT$( [ -f "$ETC_DIR/warp_proto.txt" ] && printf ' — %s' "$(cat "$ETC_DIR/warp_proto.txt")"))"
       if [ "$(cat "$ETC_DIR/warp_fallback.txt" 2>/dev/null)" = on ]; then
-        warn "اما routing هنوز روی fallback (direct) است — برای برگرداندن: kian-v2ray warp"
+        warn "but routing is still on fallback (direct) — to restore: kian-v2ray warp"
         PROBLEMS="${PROBLEMS:+$PROBLEMS,}warpfb"
       fi
     elif [ "$(cat "$ETC_DIR/warp_fallback.txt" 2>/dev/null)" = on ]; then
-      warn "WARP قطع — fallback فعال است: ترافیک warp فعلاً مستقیم می‌رود (کاربر بی‌نت نمی‌ماند)"
+      warn "WARP down — fallback active: warp traffic goes direct for now (users stay online)"
       PROBLEMS="${PROBLEMS:+$PROBLEMS,}warp"
-    else warn "WARP: قطع — watchdog تلاش می‌کند یا: kian-v2ray warp"; PROBLEMS="${PROBLEMS:+$PROBLEMS,}warp"; fi
-  else inf "WARP نصب نشده (حالت مستقیم)"; fi
+    else warn "WARP: down — watchdog will retry, or run: kian-v2ray warp"; PROBLEMS="${PROBLEMS:+$PROBLEMS,}warp"; fi
+  else inf "WARP not installed (direct mode)"; fi
   # تداخل پورت API را مستقل هم چک کن
   local apiport; apiport="${API##*:}"
   if [ -n "$apiport" ] && ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${apiport}\$"; then
     if ! docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-      warn "پورت API ($apiport) توسط سرویس دیگری اشغال است"
+      warn "API port ($apiport) is taken by another service"
       case "$PROBLEMS" in *port*) :;; *) PROBLEMS="${PROBLEMS:+$PROBLEMS,}apiport";; esac
     fi
   fi
@@ -199,18 +200,18 @@ cmd_status(){
     local total act
     total="$(jq '.users|length' "$USERS_FILE" 2>/dev/null)"
     act="$(jq '[.users[]|select(.active==true)]|length' "$USERS_FILE" 2>/dev/null)"
-    inf "کاربرها: $act فعال از $total"
+    inf "Users: $act active of $total"
   fi
-  # --- چک پورت‌های سرویس: واقعاً listening هستند؟ (مهم برای تشخیص مشکل پورت/فایروال) ---
+  # --- چک Service ports: واقعاً listening هستند؟ (مهم برای تشخیص مشکل پورت/فایروال) ---
   local svc_ports lport_problem=""
   svc_ports="$(jq -r '.inbounds[]|select(((.tag//"")|startswith("reality-")) or (.tag=="shadowsocks"))|.port' "$CONFIG" 2>/dev/null)"
   if [ -n "$svc_ports" ]; then
-    printf "\n${C_B}پورت‌های سرویس:${C_N}\n"
+    printf "\n${C_B}Service ports:${C_N}\n"
     for p in $svc_ports; do
       if ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${p}\$"; then
-        printf "   ✅ %s — در حال گوش دادن\n" "$p"
+        printf "   ✅ %s — listening\n" "$p"
       else
-        printf "   ❌ %s — گوش نمی‌دهد (Xray بالا نیست یا پورت bind نشده)\n" "$p"
+        printf "   ❌ %s — not listening (Xray down or port not bound)\n" "$p"
         lport_problem=1
       fi
     done
@@ -221,43 +222,43 @@ cmd_status(){
         ufw status 2>/dev/null | grep -qE "(^|[^0-9])${p}(/|[[:space:]])" || fw_missing="$fw_missing $p"
       done
       if [ -n "$fw_missing" ]; then
-        warn "فایروال فعال است ولی این پورت‌ها در ufw باز نیستند:$fw_missing"
+        warn "Firewall is active but these ports are not open in ufw:$fw_missing"
         PROBLEMS="${PROBLEMS:+$PROBLEMS,}fw"
       else
-        say "فایروال: همهٔ پورت‌های سرویس باز است"
+        say "Firewall: all service ports are open"
       fi
     fi
     [ -n "$lport_problem" ] && PROBLEMS="${PROBLEMS:+$PROBLEMS,}listen"
   fi
   # --- دستور رفع (۰.۳): یک خط، بدون نیاز به دانش کاربر ---
   if [ -n "$PROBLEMS" ]; then
-    printf "\n${C_Y}━━━ رفع خودکار ━━━${C_N}\n"
+    printf "\n${C_Y}━━━ Auto-fix ━━━${C_N}\n"
     case "$PROBLEMS" in
       *port*|*apiport*|*missing*)
-        printf "   تداخل پورت تشخیص داده شد. این دستور پورت API را به یک پورت آزاد می‌برد و Xray را بالا می‌آورد:\n"
+        printf "   Port conflict detected. This moves the API port to a free one and brings Xray up:\n"
         printf "${C_G}   kian-v2ray fixport${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
-      *warpfb*) printf "   WARP سالم است ولی routing روی fallback مانده. برگرداندن:  ${C_G}kian-v2ray warp${C_N}\n" ;;
+      *warpfb*) printf "   WARP is healthy but routing is stuck on fallback. Restore:  ${C_G}kian-v2ray warp${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
-      *warp*) printf "   WARP قطع است. تلاش مجدد (WireGuard/MASQUE + fallback):  ${C_G}kian-v2ray warp${C_N}\n" ;;
+      *warp*) printf "   WARP is down. Retry (WireGuard/MASQUE + fallback):  ${C_G}kian-v2ray warp${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
-      *perm*) printf "   مشکل مجوز config. رفع فوری:  ${C_G}kian-v2ray fixperm${C_N}\n" ;;
+      *perm*) printf "   config permission issue. Quick fix:  ${C_G}kian-v2ray fixperm${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
-      *crash*) printf "   لاگ کرش:  ${C_G}docker logs $CONTAINER --tail 40${C_N}\n" ;;
+      *crash*) printf "   crash log:  ${C_G}docker logs $CONTAINER --tail 40${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
-      *fw*) printf "   پورت‌ها در فایروال باز نیستند. باز کردن خودکار:  ${C_G}kian-v2ray openports${C_N}\n" ;;
+      *fw*) printf "   ports not open in the firewall. Auto-open:  ${C_G}kian-v2ray openports${C_N}\n" ;;
     esac
     case "$PROBLEMS" in
-      *listen*) printf "   پورت سرویس گوش نمی‌دهد. ری‌استارت Xray:  ${C_G}docker restart $CONTAINER${C_N}  یا  ${C_G}kian-v2ray fixport${C_N}\n" ;;
+      *listen*) printf "   service port not listening. Restart Xray:  ${C_G}docker restart $CONTAINER${C_N}  or  ${C_G}kian-v2ray fixport${C_N}\n" ;;
     esac
     echo ""
   else
-    printf "\n${C_D}برای لینک‌ها: kian-v2ray configs   |   فهرست کاربرها: kian-v2ray users${C_N}\n\n"
+    printf "\n${C_D}For links: kian-v2ray configs   |   List users: kian-v2ray users${C_N}\n\n"
   fi
 }
 
@@ -274,28 +275,28 @@ _warp_restore_routing(){
   jq --argjson port "$WARP_PORT" '(.outbounds[]|select(.tag=="warp"))|={tag:"warp",protocol:"socks",settings:{servers:[{address:"127.0.0.1",port:$port}]}}' "$CONFIG" > "$tmp" \
     && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || rm -f "$tmp"
   echo off > "$FB"; ensure_cfg_perm; docker restart "$CONTAINER" >/dev/null 2>&1 || true
-  say "WARP برگشت: ترافیک warp دوباره از WARP می‌رود"
+  say "WARP restored: warp traffic goes through WARP again"
 }
 # --- بازگرداندن بهینه‌سازی شبکه (rollback مرحلهٔ ۰.۴) ----------------------
 cmd_untune(){
   need_root
   local f="/etc/sysctl.d/99-kian-v2ray.conf"
-  if [ -f "$f" ]; then rm -f "$f"; say "فایل tune حذف شد ($f)"; else inf "فایل tune وجود نداشت"; fi
+  if [ -f "$f" ]; then rm -f "$f"; say "tune file removed ($f)"; else inf "tune file did not exist"; fi
   rm -f /etc/modules-load.d/bbr.conf 2>/dev/null || true
   sysctl --system >/dev/null 2>&1 || true
-  inf "برای بازگشت کامل تنظیمات کرنل به مقادیر قبلی، سرور را reboot کن (یا مقادیر را از $ETC_DIR/sysctl.backup ببین)."
-  say "بهینه‌سازی شبکه برگردانده شد"
+  inf "To fully revert the kernel settings, reboot the server (or see the values in $ETC_DIR/sysctl.backup)."
+  say "Network tuning reverted"
 }
 
 cmd_warp(){
   need_root
-  command -v warp-cli >/dev/null 2>&1 || { err "WARP نصب نیست."; exit 1; }
+  command -v warp-cli >/dev/null 2>&1 || { err "WARP is not installed."; exit 1; }
 
   # اول سرویس رو بالا بیار (ممکنه down باشه)
   systemctl is-active --quiet warp-svc 2>/dev/null || systemctl start warp-svc 2>/dev/null || true
   sleep 2
 
-  inf "تلاش برای اتصال WARP (WireGuard)..."
+  inf "Trying to connect WARP (WireGuard)..."
   warp-cli --accept-tos disconnect >/dev/null 2>&1 || true
   sleep 1
   warp-cli --accept-tos connect >/dev/null 2>&1 || true
@@ -303,7 +304,7 @@ cmd_warp(){
 
   if ! _warp_up; then
     # تلاش با MASQUE (HTTP/3 روی UDP 443 — اغلب از فیلترینگ رد می‌شود)
-    inf "WireGuard وصل نشد — تلاش با MASQUE (UDP 443)..."
+    inf "WireGuard did not connect — trying MASQUE (UDP 443)..."
     warp-cli --accept-tos tunnel protocol set MASQUE >/dev/null 2>&1 \
       || warp-cli --accept-tos set-tunnel-protocol masque >/dev/null 2>&1 || true
     warp-cli --accept-tos disconnect >/dev/null 2>&1; sleep 1
@@ -313,7 +314,7 @@ cmd_warp(){
 
   if ! _warp_up; then
     # برگشت به WireGuard یک بار دیگر با reset کامل ثبت
-    inf "MASQUE هم وصل نشد — reset و تلاش مجدد با WireGuard..."
+    inf "MASQUE did not connect either — resetting and retrying WireGuard..."
     warp-cli --accept-tos tunnel protocol set WireGuard >/dev/null 2>&1 || true
     warp-cli --accept-tos registration delete >/dev/null 2>&1 || true
     sleep 1
@@ -324,17 +325,17 @@ cmd_warp(){
   fi
 
   if _warp_up; then
-    say "WARP متصل است ✅"
+    say "WARP is connected ✅"
     # پروتکل فعلی رو ذخیره کن (برای نمایش در status)
     warp-cli --accept-tos tunnel protocol get 2>/dev/null \
       | grep -oiE 'wireguard|masque' | head -1 > "$ETC_DIR/warp_proto.txt" || true
     _warp_restore_routing
   else
-    err "WARP هنوز وصل نشد — fallback (direct) فعال می‌ماند تا کاربر بی‌نت نماند."
-    warn "راه‌حل‌های احتمالی:"
-    warn "  ۱) UDP ممکن است روی این سرور یا ISP بلاک باشد — پورت UDP 443 را چک کن"
-    warn "  ۲) دوباره امتحان کن:  kian-v2ray warp"
-    warn "  ۳) برای دیدن خطای دقیق:  warp-cli --accept-tos status"
+    err "WARP still not connected — fallback (direct) stays active so users keep internet."
+    warn "Possible fixes:"
+    warn "  1) UDP may be blocked on this server or ISP — check UDP port 443"
+    warn "  2) Try again:  kian-v2ray warp"
+    warn "  3) For the exact error:  warp-cli --accept-tos status"
   fi
 }
 
@@ -344,7 +345,7 @@ cmd_fixport(){
   local cur free
   cur="$(jq -r '(.inbounds[]|select(.tag=="api")|.port)//10085' "$CONFIG")"
   if ! ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${cur}\$" || docker ps --format '{{.Names}}'|grep -qx "$CONTAINER"; then
-    inf "پورت API فعلی ($cur) مشکلی ندارد — تلاش برای restart"
+    inf "Current API port ($cur) is fine — trying restart"
   fi
   free="$cur"
   local svc_ports; svc_ports="$(jq -r '[.inbounds[]|select(((.tag//"")|startswith("reality-")) or ((.tag//"")=="shadowsocks"))|.port]|join(" ")' "$CONFIG")"
@@ -356,24 +357,24 @@ cmd_fixport(){
   done
   local tmpc; tmpc="$(mktemp)"
   jq --argjson new "$free" '(.inbounds[]|select(.tag=="api")|.port)|=$new' "$CONFIG" > "$tmpc" && mv "$tmpc" "$CONFIG"
-  jq -e . "$CONFIG" >/dev/null || { err "config خراب شد — بازگردانی لازم است"; exit 1; }
+  jq -e . "$CONFIG" >/dev/null || { err "config is broken — restore needed"; exit 1; }
   echo "127.0.0.1:${free}" > "$API_FILE"
   ensure_cfg_perm
   docker restart "$CONTAINER" >/dev/null 2>&1 || docker start "$CONTAINER" >/dev/null 2>&1 || true
   sleep 3
-  if docker ps --format '{{.Names}}'|grep -qx "$CONTAINER"; then say "پورت API به $free تغییر کرد و Xray بالا آمد ✅"
-  else err "هنوز بالا نیامد — لاگ: docker logs $CONTAINER --tail 40"; fi
+  if docker ps --format '{{.Names}}'|grep -qx "$CONTAINER"; then say "API port changed to $free and Xray came up ✅"
+  else err "still not up — log: docker logs $CONTAINER --tail 40"; fi
 }
 
 cmd_users(){
   need_jq; need_files
-  printf "\n${C_B}%-22s %-9s %-12s %-12s %s${C_N}\n" "ایمیل" "فعال" "مصرف" "حجم" "انقضا"
+  printf "\n${C_B}%-22s %-9s %-12s %-12s %s${C_N}\n" "Email" "Active" "Used" "Quota" "Expiry"
   printf '%.0s─' {1..72}; printf '\n'
   jq -r '.users[] | [
-      .email, (if .active then "بله" else "خیر" end),
+      .email, (if .active then "yes" else "no" end),
       ((.used_bytes/1073741824*100|floor)/100|tostring)+"G",
       (if .quota_bytes>0 then ((.quota_bytes/1073741824)|tostring)+"G" else "∞" end),
-      (.expires_at // "دائمی")
+      (.expires_at // "permanent")
     ] | @tsv' "$USERS_FILE" | while IFS=$'\t' read -r e a u q x; do
       printf "%-22s %-9s %-12s %-12s %s\n" "$e" "$a" "$u" "$q" "$x"
     done
@@ -384,7 +385,7 @@ cmd_configs(){
   need_jq; need_files
   local filter="${1:-}" ss inbounds_tsv
   ss="$(meta_ss)"
-  [ -n "$(meta_pbk)" ] || { err "کلید عمومی در links.txt پیدا نشد."; exit 1; }
+  [ -n "$(meta_pbk)" ] || { err "public key not found in links.txt."; exit 1; }
 
   # همهٔ inboundهای reality:  tag \t port \t sni
   inbounds_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("reality-"))|[.tag,(.port|tostring),(.streamSettings.realitySettings.serverNames[0]//"")]|@tsv' "$CONFIG")"
@@ -396,7 +397,7 @@ cmd_configs(){
     printf '%s\n' "$inbounds_tsv" | while IFS=$'\t' read -r tag port sni; do
       [ -z "$tag" ] && continue
       local l; l="$(build_vless "$uuid" "$port" "$sni" "${local_name}-reality-${port}")"
-      printf "${C_G}• Reality · %s · پورت %s:${C_N}\n%s\n" "$sni" "$port" "$l"; show_qr "$l"
+      printf "${C_G}• Reality · %s · port %s:${C_N}\n%s\n" "$sni" "$port" "$l"; show_qr "$l"
     done
     # کانفیگ‌های TLS (فاز ۳) — اگر دامنه نصب باشد
     if [ -n "$(meta_tls_domain)" ]; then
@@ -417,7 +418,7 @@ cmd_configs(){
   if [ -n "$ss" ] && { [ -z "$filter" ] || [ "$filter" = "ss" ]; }; then
     read -r sp sm spw <<<"$ss"
     local l; l="ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#shadowsocks-${sp}"
-    printf "\n${C_B}🧩 Shadowsocks (مشترک):${C_N}\n%s\n" "$l"; show_qr "$l"
+    printf "\n${C_B}🧩 Shadowsocks (shared):${C_N}\n%s\n" "$l"; show_qr "$l"
   fi
   echo ""
 }
@@ -429,7 +430,7 @@ cmd_sub(){
   need_root; need_jq; need_files
   local filter="${1:-}" tokfile="$ETC_DIR/sub_tokens.json" subdir="$ETC_DIR/sub"
   mkdir -p "$subdir"; [ -f "$tokfile" ] || echo '{}' > "$tokfile"
-  local pbk; pbk="$(meta_pbk)"; [ -n "$pbk" ] || { err "کلید عمومی پیدا نشد."; exit 1; }
+  local pbk; pbk="$(meta_pbk)"; [ -n "$pbk" ] || { err "public key not found."; exit 1; }
   local ss; ss="$(meta_ss)"
   local inbounds_tsv; inbounds_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("reality-"))|[.tag,(.port|tostring),(.streamSettings.realitySettings.serverNames[0]//"")]|@tsv' "$CONFIG")"
   jq -r '.users[]|select(.active==true)|.id+"\t"+.email+"\t"+(.sub_filter//"all")' "$USERS_FILE" | while IFS=$'\t' read -r uuid email ufilter; do
@@ -504,27 +505,27 @@ EOF
     printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
     # هر دو لینکِ HTTPS را نشان بده تا کاربر خودش انتخاب کند (هر دو در v2rayNG کار می‌کنند).
     if [ -n "$dom_url" ]; then
-      say "⭐ لینک Subscription روی دامنهٔ خودت (HTTPS):"
+      say "⭐ Subscription on your own domain (HTTPS):"
       printf "  ${C_G}%s${C_N}\n" "$dom_url"
-      inf "روی دامنه و گواهی خودت میزبانی می‌شود — بدون وابستگی به Gist ما."
+      inf "Hosted on your own domain & certificate — no dependency on our Gist."
     fi
     if [ -n "$gist_url" ]; then
-      say "⭐ لینک Subscription روی Gist (HTTPS):"
+      say "⭐ Subscription on Gist (HTTPS):"
       printf "  ${C_G}%s${C_N}\n" "$gist_url"
-      inf "روی همهٔ پروایدرها و فایروال‌ها کار می‌کند."
+      inf "Works on all providers and firewalls."
     fi
     # لینک‌های پشتیبان فقط در صورتی نشان داده شوند که هیچ HTTPS در دسترس نبود
     # (v2rayNG فقط https://Subscription می‌پذیرد، پس http همه را به اشتباه نمی‌اندازد)
     if [ -z "$gist_url" ] && [ -z "$dom_url" ] && systemctl is-active kian-sub >/dev/null 2>&1; then
       printf "\n"
-      warn "Gist و دامنهٔ HTTPS در دسترس نبود — لینک‌های پشتیبان فقط برای curl/مرورگر کار می‌کنند، نه v2rayNG:"
+      warn "Gist and HTTPS domain unavailable — backup links work only for curl/browser, not v2rayNG:"
       for sp in $(echo "$subports" | tr ',' ' '); do
         [ -n "$sp" ] && [ "$sp" != "8765" ] && printf "    http://${ip}:${sp}/sub/${tok}\n"
       done
-      inf "برای import در v2rayNG، فایل خام را در یک Gist عمومی آپلود کن یا 'kian-v2ray configs' را بزن و لینک‌ها را تک‌تک کپی کن."
+      inf "To import in v2rayNG, upload the raw file to a public Gist, or run 'kian-v2ray configs' and copy the links one by one."
     fi
     if [ -z "$gist_url" ] && [ -z "$dom_url" ] && ! systemctl is-active kian-sub >/dev/null 2>&1; then
-      warn "نه Gist، نه دامنهٔ HTTPS و نه سرویس sub فعال است. فایل خام: $outfile"
+      warn "No Gist, no HTTPS domain, and no sub service is active. Raw file: $outfile"
     fi
   done
 }
@@ -533,11 +534,11 @@ cmd_add(){
   need_root; need_jq; need_files
   local name="${1:-}" gb="${2:-100}" days="${3:-30}" flt="${4:-all}"
   [ "$flt" = "domain" ] || [ "$flt" = "nodomain" ] || flt="all"   # per-user config selection
-  [ -n "$name" ] || { err "نام لازم است:  kian-v2ray add <نام> [حجم_GB] [روز] [all|domain|nodomain]"; exit 1; }
+  [ -n "$name" ] || { err "Name required:  kian-v2ray add <name> [quota_GB] [days] [all|domain|nodomain]"; exit 1; }
   name="$(printf '%s' "$name" | tr -cd 'a-zA-Z0-9_-')"
   local email="${name}@kian"
   if jq -e --arg e "$email" '.users[]|select(.email==$e)' "$USERS_FILE" >/dev/null 2>&1; then
-    err "کاربری با ایمیل $email از قبل وجود دارد."; exit 1
+    err "A user with email $email already exists."; exit 1
   fi
   local uuid quota exp tmp
   uuid="$(cat /proc/sys/kernel/random/uuid)"
@@ -561,7 +562,7 @@ cmd_add(){
       fi
     fi
   fi
-  say "کاربر افزوده شد: $email  (حجم: $([ "$gb" -le 0 ] && echo ∞ || echo ${gb}G) / مدت: $([ "$days" -le 0 ] && echo دائمی || echo ${days}روز))"
+  say "User added: $email  (quota: $([ "$gb" -le 0 ] && echo ∞ || echo ${gb}G) / period: $([ "$days" -le 0 ] && echo permanent || echo ${days}d))"
   # لینک Subscription کاربر را بساز (Reality + TLS + SS + Hy2/TUIC) و در Gist همگام کن
   cmd_sub "$name"
   cmd_configs "$name"
@@ -569,9 +570,9 @@ cmd_add(){
 
 cmd_remove(){
   need_root; need_jq; need_files
-  local q="${1:-}"; [ -n "$q" ] || { err "نام لازم است:  kian-v2ray remove <نام>"; exit 1; }
+  local q="${1:-}"; [ -n "$q" ] || { err "Name required:  kian-v2ray remove <name>"; exit 1; }
   local email; email="$(resolve_email "$q")"
-  [ -n "$email" ] || { err "کاربری با نام/ایمیل «$q» پیدا نشد."; exit 1; }
+  [ -n "$email" ] || { err "No user with name/email "$q" found."; exit 1; }
   local tmp; tmp="$(mktemp)"
   jq --arg e "$email" '.users |= map(select(.email != $e))' "$USERS_FILE" > "$tmp" && mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
   rebuild_and_restart
@@ -590,13 +591,13 @@ cmd_remove(){
     tmp="$(mktemp)"; jq --arg e "$email" 'del(.[$e])' "$ETC_DIR/sub_tokens.json" > "$tmp" 2>/dev/null && mv "$tmp" "$ETC_DIR/sub_tokens.json" || rm -f "$tmp"
   fi
   gist_sync
-  say "کاربر حذف شد: $email"
+  say "User removed: $email"
 }
 
 cmd_reset(){
   need_root; need_jq; need_files
-  local q="${1:-}" gb="${2:-}"; [ -n "$q" ] || { err "نام لازم است."; exit 1; }
-  local email; email="$(resolve_email "$q")"; [ -n "$email" ] || { err "کاربر پیدا نشد."; exit 1; }
+  local q="${1:-}" gb="${2:-}"; [ -n "$q" ] || { err "Name required."; exit 1; }
+  local email; email="$(resolve_email "$q")"; [ -n "$email" ] || { err "User not found."; exit 1; }
   local tmp; tmp="$(mktemp)"
   if [ -n "$gb" ]; then
     local quota=$(( gb * GIB )); [ "$gb" -le 0 ] && quota=0
@@ -606,20 +607,20 @@ cmd_reset(){
   fi
   mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
   rebuild_and_restart
-  say "مصرف صفر شد: $email${gb:+  (حجم جدید: ${gb}G)}"
+  say "Usage reset: $email${gb:+  (new quota: ${gb}G)}"
 }
 
 cmd_renew(){
   need_root; need_jq; need_files
-  local q="${1:-}" days="${2:-30}"; [ -n "$q" ] || { err "نام لازم است."; exit 1; }
-  local email; email="$(resolve_email "$q")"; [ -n "$email" ] || { err "کاربر پیدا نشد."; exit 1; }
+  local q="${1:-}" days="${2:-30}"; [ -n "$q" ] || { err "Name required."; exit 1; }
+  local email; email="$(resolve_email "$q")"; [ -n "$email" ] || { err "User not found."; exit 1; }
   local exp tmp
   if [ "$days" -gt 0 ]; then exp="\"$(date -u -d "+${days} days" +%FT%TZ)\""; else exp="null"; fi
   tmp="$(mktemp)"
   jq --arg e "$email" --argjson x "$exp" '.users |= map(if .email==$e then (.expires_at=$x|.active=true) else . end)' "$USERS_FILE" > "$tmp"
   mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
   rebuild_and_restart
-  say "تمدید شد: $email  (تا $([ "$days" -le 0 ] && echo دائمی || echo "${days} روز دیگر"))"
+  say "Renewed: $email  (until $([ "$days" -le 0 ] && echo permanent || echo "${days} more days"))"
 }
 
 # نصب‌های قدیمی را به مدلِ «لینکِ HTTPS روی دامنهٔ خودِ کاربر» ارتقا می‌دهد:
@@ -664,7 +665,7 @@ ensure_domain_sub(){
     cp "$cf" "$ETC_DIR/backups/Caddyfile_$(date -u +%Y%m%d-%H%M%S)" 2>/dev/null || true
     mv "$tmp" "$cf"
     systemctl reload caddy >/dev/null 2>&1 || systemctl restart caddy >/dev/null 2>&1 || true
-    say "لینکِ HTTPS روی دامنهٔ $dom فعال شد (https://${dom}/sub/<token>)"
+    say "HTTPS link on domain $dom enabled (https://${dom}/sub/<token>)"
   else
     rm -f "$tmp"
   fi
@@ -679,33 +680,33 @@ ensure_swap(){
   [ "${ram_mb:-0}" -gt 0 ] && [ "$ram_mb" -le 2048 ] || return 0
   local size_mb=2048 free_mb sf=/swapfile
   free_mb="$(df -Pm / 2>/dev/null | awk 'NR==2{print $4}')"
-  [ "${free_mb:-0}" -ge $((size_mb + 1024)) ] || { warn "فضای دیسک برای swap کافی نیست — رد شد"; return 0; }
-  inf "ساختِ فایلِ swap (${size_mb} MB) برای سرورِ کم‌رم..."
+  [ "${free_mb:-0}" -ge $((size_mb + 1024)) ] || { warn "not enough disk for swap — skipped"; return 0; }
+  inf "creating swap file (${size_mb} MB) for low-RAM server..."
   rm -f "$sf" 2>/dev/null || true
   fallocate -l "${size_mb}M" "$sf" 2>/dev/null \
     || dd if=/dev/zero of="$sf" bs=1M count="$size_mb" status=none 2>/dev/null \
-    || { warn "ساختِ swap ناموفق — رد شد"; rm -f "$sf"; return 0; }
+    || { warn "creating swap failed — skipped"; rm -f "$sf"; return 0; }
   chmod 600 "$sf"
-  mkswap "$sf" >/dev/null 2>&1 || { warn "mkswap ناموفق (OpenVZ/LXC؟) — رد شد"; rm -f "$sf"; return 0; }
-  swapon "$sf" 2>/dev/null || { warn "swapon ناموفق — رد شد"; rm -f "$sf"; return 0; }
+  mkswap "$sf" >/dev/null 2>&1 || { warn "mkswap failed (OpenVZ/LXC?) — skipped"; rm -f "$sf"; return 0; }
+  swapon "$sf" 2>/dev/null || { warn "swapon failed — skipped"; rm -f "$sf"; return 0; }
   grep -qF "$sf" /etc/fstab 2>/dev/null || echo "$sf none swap sw 0 0" >> /etc/fstab
   printf 'vm.swappiness=10\nvm.vfs_cache_pressure=50\n' > /etc/sysctl.d/99-kian-swap.conf
   sysctl -p /etc/sysctl.d/99-kian-swap.conf >/dev/null 2>&1 || true
-  say "swap فعال شد (${size_mb} MB) — جلوی کرشِ سرویس‌ها روی VPS کم‌رم گرفته شد"
+  say "swap enabled (${size_mb} MB) — prevents service crashes on low-RAM VPS"
 }
 
 cmd_update(){
   need_root
   # نسخهٔ پایدار را از VERSION ریپو بخوان (نه latest کور)
-  inf "چک نسخهٔ پایدار..."
+  inf "checking stable version..."
   local remote sv xv
   remote="$(curl -fsSL "$RAW_BASE/VERSION" 2>/dev/null || true)"
   sv="$(printf '%s' "$remote" | grep '^SCRIPT_VERSION=' | cut -d= -f2 | tr -d '\r ')"
   xv="$(printf '%s' "$remote" | grep '^XRAY_VERSION=' | cut -d= -f2 | tr -d '\r ')"
   [ -z "$xv" ] && xv="latest"
   local cur_sv; cur_sv="$(cat "$ETC_DIR/script_version.txt" 2>/dev/null || echo "?")"
-  inf "نسخهٔ اسکریپت — فعلی: $cur_sv | جدید: ${sv:-?}"
-  inf "نسخهٔ Xray  — هدف: $xv"
+  inf "Script version — current: $cur_sv | new: ${sv:-?}"
+  inf "Xray version — target: $xv"
 
   # بکاپ همه‌چیز قبل از آپدیت (برای rollback)
   local bdir="$ETC_DIR/backups" bts; bts="$(date -u +%Y%m%d-%H%M%S)"
@@ -717,7 +718,7 @@ cmd_update(){
   echo "ROLLBACK_IMG=$prev_img" > "$bdir/rollback_${bts}.env"
 
   # ۱) آپدیت اسکریپت‌ها (manager + watchdog + sub-server + protocols + panel)
-  inf "دریافت اسکریپت‌های جدید..."
+  inf "fetching new scripts..."
   local ok_scripts=1
   curl -fsSL "$RAW_BASE/scripts/kian-v2ray"   -o /usr/local/bin/kian-v2ray.new   && chmod +x /usr/local/bin/kian-v2ray.new   || ok_scripts=0
   curl -fsSL "$RAW_BASE/scripts/watchdog.sh"  -o /usr/local/bin/kian-v2ray-watchdog.sh.new && chmod +x /usr/local/bin/kian-v2ray-watchdog.sh.new || ok_scripts=0
@@ -737,10 +738,10 @@ cmd_update(){
     mv /usr/local/bin/kian-v2ray-watchdog.sh.new /usr/local/bin/kian-v2ray-watchdog.sh
     mv /usr/local/bin/kian-sub-server.py.new /usr/local/bin/kian-sub-server.py
     systemctl restart kian-sub >/dev/null 2>&1 || true
-    say "اسکریپت‌ها به‌روز شدند"
+    say "scripts updated"
   else
     rm -f /usr/local/bin/*.new 2>/dev/null
-    warn "دریافت/اعتبارسنجی اسکریپت‌ها ناموفق — اسکریپت‌های فعلی دست‌نخورده ماند"
+    warn "fetch/validate of scripts failed — current scripts left untouched"
   fi
 
   # ۲) آپدیت Xray به نسخهٔ pin‌شده (با rollback اگر بالا نیامد)
@@ -753,33 +754,33 @@ cmd_update(){
       "$img" run -c /etc/xray/config.json >/dev/null 2>&1 || true
     sleep 3
     if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-      echo "$img" > "$IMAGE_FILE"; say "Xray به‌روز شد → $img"
+      echo "$img" > "$IMAGE_FILE"; say "Xray updated → $img"
     elif [ -n "$prev_img" ]; then
-      warn "نسخهٔ جدید بالا نیامد — rollback به $prev_img"
+      warn "new version did not come up — rolling back to $prev_img"
       docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
       docker run -d --name "$CONTAINER" --restart unless-stopped --network host --memory="512m" --user 0:0 --cap-add=NET_BIND_SERVICE \
         -v "$CONFIG:/etc/xray/config.json:ro" -v "$LOG_DIR:/var/log/xray" \
         "$prev_img" run -c /etc/xray/config.json >/dev/null 2>&1 || true
       sleep 2
-      docker ps --format '{{.Names}}' | grep -qx "$CONTAINER" && say "rollback موفق — نسخهٔ قبلی برگشت" || err "rollback هم ناموفق — لاگ: docker logs $CONTAINER"
+      docker ps --format '{{.Names}}' | grep -qx "$CONTAINER" && say "rollback ok — previous version restored" || err "rollback failed too — log: docker logs $CONTAINER"
     fi
-  else warn "pull نسخهٔ $img ناموفق — Xray دست‌نخورده ماند"; fi
+  else warn "pull of $img failed — Xray left untouched"; fi
 
   # ۳) اگر کامپنیون پروتکل‌ها (Hysteria2/TUIC/AnyTLS) فعال بود، دوباره enable کن
   #    تا پروتکل‌های جدید (مثل AnyTLS) خودکار اضافه شوند — بدون نصبِ دوباره.
   if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
-    inf "به‌روزرسانیِ پروتکل‌های جانبی (sing-box: Hysteria2/TUIC/AnyTLS)..."
+    inf "updating companion protocols (sing-box: Hysteria2/TUIC/AnyTLS)..."
     bash /usr/local/bin/kian-protocols.sh enable >/dev/null 2>&1 \
-      && say "پروتکل‌های جانبی به‌روز شدند (قابلیت‌های جدید اضافه شد)" \
-      || warn "به‌روزرسانیِ پروتکل‌های جانبی ناموفق — پروتکل‌های فعلی دست‌نخورده‌اند"
+      && say "companion protocols updated (new features added)" \
+      || warn "updating companion protocols failed — current protocols left untouched"
   fi
 
   # ۴) اگر پنلِ وب نصب است، کد و وابستگی‌هایش را به‌روز کن (بدون ریست رمز)
   if [ -x /usr/local/bin/kian-panel.sh ] && systemctl is-active --quiet kian-panel 2>/dev/null; then
-    inf "به‌روزرسانیِ پنلِ وب..."
+    inf "updating the web panel..."
     bash /usr/local/bin/kian-panel.sh update >/dev/null 2>&1 \
-      && say "پنلِ وب به‌روز شد (قابلیت‌های جدید اضافه شد)" \
-      || warn "به‌روزرسانیِ پنل ناموفق — بررسی: systemctl status kian-panel"
+      && say "web panel updated (new features added)" \
+      || warn "panel update failed — check: systemctl status kian-panel"
   fi
 
   # ۴.۵) نصب‌های قدیمی را به لینکِ HTTPS روی دامنهٔ خودِ کاربر ارتقا بده
@@ -795,8 +796,8 @@ cmd_update(){
 
   # ۶) ثبت نسخهٔ جدید + کاربران دست‌نخورده می‌مانند (config/users.json تغییر نکرد)
   [ -n "$sv" ] && echo "$sv" > "$ETC_DIR/script_version.txt"
-  say "آپدیت کامل شد. کاربران، کانفیگ‌ها و لینک‌های Subscription حفظ و به‌روز شدند. (بکاپ: $bdir/*_${bts}.*)"
-  inf "برای دیدن وضعیت: kian-v2ray status"
+  say "Update complete. Users, configs and subscription links were preserved and refreshed. (backup: $bdir/*_${bts}.*)"
+  inf "To see status: kian-v2ray status"
 }
 
 # --- بازسازیِ همهٔ سابسکرایب‌ها (resync) -----------------------------------
@@ -816,16 +817,16 @@ cmd_resync_quiet(){
 }
 cmd_resync(){
   need_root; need_jq; need_files
-  inf "بازسازیِ لینک‌های Subscription همهٔ کاربران..."
+  inf "rebuilding subscription links for all users..."
   _refresh_extra_links
   cmd_sub ""
-  say "همهٔ لینک‌های Subscription بازسازی و با Gist همگام شد — کاربران با رفرش، کانفیگ‌های جدید را می‌گیرند."
+  say "All subscription links rebuilt and synced with Gist — users get the new configs on refresh."
 }
 
 cmd_uninstall(){
   need_root
-  warn "این کار فقط Xrayِ kian-v2ray (kian-xray) و فایل‌های خودش را حذف می‌کند."
-  warn "به پنل‌ها/Xrayهای دیگرِ این سرور (/etc/xray) دست نمی‌زند."
+  warn "This only removes kian-v2ray's Xray (kian-xray) and its own files."
+  warn "It does not touch other panels/Xray on this server (/etc/xray)."
   # تأییدِ غیرتعاملی برای اپ‌ها/دسکتاپ که از طریق SSH اجرا می‌کنند (بدون TTY):
   # `kian-v2ray uninstall --yes|-y|force|DELETE` یا env: KIAN_YES=1
   local confirmed=0
@@ -833,15 +834,15 @@ cmd_uninstall(){
   [ "${KIAN_YES:-}" = "1" ] && confirmed=1
   if [ "$confirmed" != 1 ]; then
     if [ -t 0 ]; then
-      read -rp "برای تأیید بنویس: DELETE  → " ans
-      [ "$ans" = "DELETE" ] || { inf "لغو شد."; exit 0; }
+      read -rp "Type to confirm: DELETE  → " ans
+      [ "$ans" = "DELETE" ] || { inf "Cancelled."; exit 0; }
     else
       # بدونِ TTY: اگر تأیید pipe شده باشد (echo DELETE | ...) قبولش کن، وگرنه
       # به‌جای حذفِ ناخواسته با خطا خارج شو (قبلاً اینجا بی‌صدا لغو و exit 0 می‌شد
       # و اپ‌ها فکر می‌کردند حذف شده در حالی‌که هیچ‌چیز پاک نشده بود).
       read -r ans 2>/dev/null || true
       if [ "$ans" != "DELETE" ] && [ "$ans" != "yes" ]; then
-        err "تأیید لازم است. برای حذفِ غیرتعاملی: kian-v2ray uninstall --yes"
+        err "Confirmation required. For non-interactive removal: kian-v2ray uninstall --yes"
         exit 2
       fi
     fi
@@ -849,7 +850,7 @@ cmd_uninstall(){
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
   # حذف Gistهای ابری از طریق Worker (در صورت وجود)
   if [ -f "$ETC_DIR/gist_proxy" ] && [ -f /usr/local/bin/kian-gist-sync.py ]; then
-    inf "حذف Gistهای ابری..."
+    inf "deleting cloud Gists..."
     proxy_u="$(cat "$ETC_DIR/gist_proxy" 2>/dev/null)"
     [ -n "$proxy_u" ] && python3 /usr/local/bin/kian-gist-sync.py "$proxy_u" "$ETC_DIR/install_id" "$ETC_DIR/sub" "$ETC_DIR/gist_map.json" --delete >/dev/null 2>&1 || true
   fi
@@ -878,13 +879,13 @@ cmd_uninstall(){
   if [ -f /etc/caddy/Caddyfile ] && [ -f "$ETC_DIR/tls_domain.txt" ]; then
     local dom; dom="$(cat "$ETC_DIR/tls_domain.txt" 2>/dev/null)"
     if [ -n "$dom" ] && grep -q "^${dom} {" /etc/caddy/Caddyfile 2>/dev/null; then
-      inf "متوقف کردن Caddy برای این دامنه..."
+      inf "stopping Caddy for this domain..."
       # اگر Caddyfile فقط بلوک ما را دارد، کاملاً پاکش می‌کنیم
       if [ "$(grep -c '^[a-z0-9.-]\+ {' /etc/caddy/Caddyfile 2>/dev/null)" = "1" ]; then
         systemctl stop caddy >/dev/null 2>&1 || true
         systemctl disable caddy >/dev/null 2>&1 || true
         rm -f /etc/caddy/Caddyfile
-        warn "Caddy متوقف شد. اگر این Caddy فقط برای kian-v2ray بود، می‌تونی با apt remove caddy حذفش کنی."
+        warn "Caddy stopped. If this Caddy was only for kian-v2ray, you can remove it with: apt remove caddy."
       else
         # کاربر سایت دیگری هم پشت همین Caddy داشته؛ فقط بلوک خودمان را پاک می‌کنیم
         local tmpcad; tmpcad="$(mktemp)"
@@ -895,14 +896,14 @@ cmd_uninstall(){
           { print }
         ' /etc/caddy/Caddyfile > "$tmpcad" && mv "$tmpcad" /etc/caddy/Caddyfile
         systemctl reload caddy >/dev/null 2>&1 || true
-        say "بلوک مربوط به $dom از Caddyfile حذف شد (Caddy ادامه می‌دهد برای بقیه)"
+        say "the $dom block was removed from the Caddyfile (Caddy keeps running for the rest)"
       fi
     fi
   fi
   rm -f /etc/cron.d/kian-v2ray-watchdog /usr/local/bin/kian-v2ray-watchdog.sh
   rm -rf "$ETC_DIR" /opt/kian-v2ray "$LOG_DIR"
   rm -f /usr/local/bin/kian-v2ray
-  say "حذف کامل شد. (WARP و سایر سرویس‌ها دست‌نخورده ماندند.)"
+  say "Uninstall complete. (WARP and other services were left untouched.)"
 }
 
 cmd_help(){
@@ -912,13 +913,13 @@ cmd_help(){
 cmd_fixperm(){
   need_root
   ensure_cfg_perm
-  inf "مجوز config.json به 644 تنظیم شد (خواندنی برای کانتینر)"
+  inf "config.json permission set to 644 (readable by the container)"
   docker restart "$CONTAINER" >/dev/null 2>&1 || docker start "$CONTAINER" >/dev/null 2>&1 || true
   sleep 3
   if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-    say "Xray بالا آمد ✅ — حالا کانفیگ‌ها باید کار کنند"
+    say "Xray came up ✅ — configs should work now"
   else
-    err "هنوز بالا نیامد — لاگ: docker logs $CONTAINER --tail 20"
+    err "still not up — log: docker logs $CONTAINER --tail 20"
     docker logs "$CONTAINER" --tail 15 2>&1 || true
   fi
 }
@@ -928,7 +929,7 @@ cmd_fixperm(){
 # روی پورت‌های زیر 1024 (مثل 443 و 80) bind کند.
 cmd_rebind(){
   need_root
-  inf "بازسازی کانتینر Xray با اجازهٔ bind روی پورت‌های زیر ۱۰۲۴..."
+  inf "rebuilding the Xray container with permission to bind ports below 1024..."
   local img
   img="$(cat "$IMAGE_FILE" 2>/dev/null || echo 'ghcr.io/xtls/xray-core:latest')"
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
@@ -939,41 +940,41 @@ cmd_rebind(){
     "$img" run -c /etc/xray/config.json >/dev/null 2>&1
   sleep 3
   if docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
-    say "Xray با --user 0:0 بالا آمد ✅"
+    say "Xray came up with --user 0:0 ✅"
     # تأیید: آیا روی پورت‌های پایین واقعاً bind شد؟
     sleep 1
-    inf "تست پورت‌های Reality:"
+    inf "testing Reality ports:"
     jq -r '.inbounds[]|select((.tag//"")|startswith("reality-"))|.port' "$CONFIG" 2>/dev/null | while read p; do
       [ -z "$p" ] && continue
       if ss -tln 2>/dev/null | awk '{print $4}' | grep -qE "[:.]${p}\$"; then
-        say "  ✓ پورت $p در حال گوش دادن"
+        say "  ✓ port $p is listening"
       else
-        err "  ✘ پورت $p هنوز bind نشده"
+        err "  ✘ port $p is not bound yet"
       fi
     done
   else
-    err "Xray بالا نیامد — لاگ: docker logs $CONTAINER --tail 30"
+    err "Xray did not come up — log: docker logs $CONTAINER --tail 30"
     docker logs "$CONTAINER" --tail 20 2>&1 || true
   fi
 }
 
 cmd_openports(){
   need_root
-  if ! command -v ufw >/dev/null 2>&1; then inf "ufw نصب نیست — پورت‌ها آزادند"; return 0; fi
+  if ! command -v ufw >/dev/null 2>&1; then inf "ufw not installed — ports are open"; return 0; fi
   if ! ufw status 2>/dev/null | grep -qi '^Status: active'; then
-    inf "فایروال ufw فعال نیست — نیازی به باز کردن نیست (پورت‌ها در دسترس‌اند)"; return 0
+    inf "ufw firewall is not active — nothing to open (ports are reachable)"; return 0
   fi
   local ports sub; ports="$(jq -r '.inbounds[]|select(((.tag//"")|startswith("reality-")) or (.tag=="shadowsocks"))|.port' "$CONFIG" 2>/dev/null)"
   for p in $ports; do
-    ufw allow "${p}/tcp" >/dev/null 2>&1 && ufw allow "${p}/udp" >/dev/null 2>&1 && say "باز شد: $p"
+    ufw allow "${p}/tcp" >/dev/null 2>&1 && ufw allow "${p}/udp" >/dev/null 2>&1 && say "opened: $p"
   done
   sub="$(cat "$ETC_DIR/sub_port.txt" 2>/dev/null || echo 80)"
   for one in $(echo "$sub" | tr ',' ' '); do
     # پورت پلِ ۸۷۶۵ فقط برای Caddy روی loopback است — در فایروال باز نمی‌شود.
-    [ -n "$one" ] && [ "$one" != "8765" ] && ufw allow "${one}/tcp" >/dev/null 2>&1 && say "باز شد: $one (Subscription)"
+    [ -n "$one" ] && [ "$one" != "8765" ] && ufw allow "${one}/tcp" >/dev/null 2>&1 && say "opened: $one (Subscription)"
   done
   ufw reload >/dev/null 2>&1 || true
-  say "پورت‌های سرویس در فایروال باز شدند"
+  say "service ports opened in the firewall"
 }
 
 # --- اعمالِ امنِ کانفیگِ Xray (ویرایش از پنل): backup → اعمال → اگر Xray بالا
@@ -981,9 +982,9 @@ cmd_openports(){
 cmd_apply_config(){
   need_root; need_jq
   local src="${1:-}"
-  [ -f "$src" ] || { err "فایلِ کانفیگ پیدا نشد: $src"; exit 1; }
+  [ -f "$src" ] || { err "config file not found: $src"; exit 1; }
   jq -e '(.inbounds|type=="array" and length>0) and (.outbounds|type=="array" and length>0)' "$src" >/dev/null 2>&1 \
-    || { err "JSON نامعتبر است یا inbounds/outbounds خالی/غایب است."; exit 2; }
+    || { err "Invalid JSON, or inbounds/outbounds are empty/missing."; exit 2; }
   local bak="$ETC_DIR/backups"; mkdir -p "$bak"
   local ts; ts="$(date -u +%Y%m%d-%H%M%S)"; local snap="$bak/config_${ts}.json"
   cp "$CONFIG" "$snap" 2>/dev/null || true
@@ -991,13 +992,13 @@ cmd_apply_config(){
   docker restart "$CONTAINER" >/dev/null 2>&1 || docker start "$CONTAINER" >/dev/null 2>&1 || true
   sleep 4
   if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$CONTAINER"; then
-    say "کانفیگ اعمال شد و Xray بالا آمد ✅ (بکاپ: $snap)"
+    say "Config applied and Xray came up ✅ (backup: $snap)"
     return 0
   fi
-  warn "Xray با کانفیگِ جدید بالا نیامد — بازگردانی به نسخهٔ قبل"
+  warn "Xray did not come up with the new config — rolling back"
   [ -f "$snap" ] && { cp "$snap" "$CONFIG"; ensure_cfg_perm; }
   docker restart "$CONTAINER" >/dev/null 2>&1 || docker start "$CONTAINER" >/dev/null 2>&1 || true
-  err "کانفیگِ جدید اعمال نشد؛ به نسخهٔ سالمِ قبلی برگشت."
+  err "The new config was not applied; reverted to the previous good one."
   exit 3
 }
 
@@ -1005,15 +1006,15 @@ cmd_filter(){
   need_root; need_jq; need_files
   local name="${1:-}" mode="${2:-}"
   name="$(printf '%s' "$name" | tr -cd 'a-zA-Z0-9_-')"
-  [ -n "$name" ] || { err "نام لازم است:  kian-v2ray filter <نام> <all|domain|nodomain>"; exit 1; }
-  case "$mode" in all|domain|nodomain) : ;; *) err "حالت باید all یا domain یا nodomain باشد."; exit 1 ;; esac
+  [ -n "$name" ] || { err "Name required:  kian-v2ray filter <name> <all|domain|nodomain>"; exit 1; }
+  case "$mode" in all|domain|nodomain) : ;; *) err "Mode must be all, domain, or nodomain."; exit 1 ;; esac
   local email="${name}@kian" tmp
   jq -e --arg e "$email" '.users[]|select(.email==$e)' "$USERS_FILE" >/dev/null 2>&1 \
-    || { err "کاربری با نام $name پیدا نشد."; exit 1; }
+    || { err "No user named $name found."; exit 1; }
   tmp="$(mktemp)"
   jq --arg e "$email" --arg m "$mode" '(.users[]|select(.email==$e)).sub_filter=$m' \
     "$USERS_FILE" > "$tmp" && mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
-  say "نوعِ کانفیگِ کاربر $name تنظیم شد: $mode"
+  say "Config type for user $name set to: $mode"
   cmd_sub "$name" >/dev/null 2>&1 || true   # rebuild only this user's subscription
   cmd_configs "$name"
 }
@@ -1043,19 +1044,19 @@ case "${1:-help}" in
       bash /usr/local/bin/kian-protocols.sh "$sub"
       # بعد از فعال/غیرفعال‌کردن، لینکِ همهٔ کاربران را خودکار به‌روز کن تا
       # پروتکلِ جدید بدونِ دادنِ لینکِ تازه به کاربران اضافه (یا حذف) شود.
-      case "$sub" in enable|adduser|deluser|disable) cmd_resync_quiet; say "لینک‌های Subscription به‌روز شد (پروتکل‌ها سینک شد)";; esac
+      case "$sub" in enable|adduser|deluser|disable) cmd_resync_quiet; say "Subscription links updated (protocols synced)";; esac
     else
-      err "kian-protocols.sh نصب نیست — دوباره نصب کن یا از RAW بگیر"; exit 1
+      err "kian-protocols.sh is not installed — reinstall or fetch from RAW"; exit 1
     fi ;;
   panel)     # deploy/manage the web panel — additive, opt-in
     shift
     if [ -x /usr/local/bin/kian-panel.sh ]; then
       bash /usr/local/bin/kian-panel.sh "${1:-enable}"
     else
-      err "kian-panel.sh نصب نیست — دوباره نصب کن یا از RAW بگیر"; exit 1
+      err "kian-panel.sh is not installed — reinstall or fetch from RAW"; exit 1
     fi ;;
   untune)    cmd_untune ;;
   uninstall) shift; cmd_uninstall "$@" ;;
   help|-h|--help) cmd_help ;;
-  *) err "دستور ناشناخته: $1"; cmd_help; exit 1 ;;
+  *) err "Unknown command: $1"; cmd_help; exit 1 ;;
 esac
