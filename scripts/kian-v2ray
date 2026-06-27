@@ -432,9 +432,12 @@ cmd_sub(){
   local pbk; pbk="$(meta_pbk)"; [ -n "$pbk" ] || { err "کلید عمومی پیدا نشد."; exit 1; }
   local ss; ss="$(meta_ss)"
   local inbounds_tsv; inbounds_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("reality-"))|[.tag,(.port|tostring),(.streamSettings.realitySettings.serverNames[0]//"")]|@tsv' "$CONFIG")"
-  jq -r '.users[]|select(.active==true)|.id+"\t"+.email' "$USERS_FILE" | while IFS=$'\t' read -r uuid email; do
+  jq -r '.users[]|select(.active==true)|.id+"\t"+.email+"\t"+(.sub_filter//"all")' "$USERS_FILE" | while IFS=$'\t' read -r uuid email ufilter; do
     local local_name="${email%@*}"
     [ -n "$filter" ] && [ "$filter" != "$local_name" ] && [ "$filter" != "$email" ] && continue
+    # per-user config selection: "all" (default) | "domain" (TLS protocols only) |
+    # "nodomain" (Reality/Shadowsocks/Hysteria2/TUIC — IP-based only).
+    [ "$ufilter" = "domain" ] || [ "$ufilter" = "nodomain" ] || ufilter="all"
     # توکن تصادفی یک‌بارساخت (در صورت نبود)
     local tok; tok="$(jq -r --arg e "$email" '.[$e]//empty' "$tokfile")"
     if [ -z "$tok" ]; then
@@ -443,14 +446,17 @@ cmd_sub(){
     fi
     # جمع‌آوری همهٔ لینک‌های این کاربر
     local all=""
+    # Reality (no-domain / IP-based) — included unless the user is domain-only
+    if [ "$ufilter" != "domain" ]; then
     while IFS=$'\t' read -r tag port sni; do
       [ -z "$tag" ] && continue
       all="${all}$(build_vless "$uuid" "$port" "$sni" "${local_name}-reality-${port}")"$'\n'
     done <<EOF
 $inbounds_tsv
 EOF
-    # لینک‌های TLS (فاز ۳) — اگر دامنه نصب شده باشد
-    if [ -n "$(meta_tls_domain)" ]; then
+    fi
+    # لینک‌های TLS (فاز ۳) — اگر دامنه نصب شده باشد و کاربر no-domain-only نباشد
+    if [ -n "$(meta_tls_domain)" ] && [ "$ufilter" != "nodomain" ]; then
       local tls_tsv
       tls_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("tls-"))|[.tag,.protocol,(.streamSettings.network//"ws"),(.streamSettings.wsSettings.path // .streamSettings.httpupgradeSettings.path // ("/"+(.streamSettings.grpcSettings.serviceName//"")) // "/")]|@tsv' "$CONFIG" 2>/dev/null)"
       while IFS=$'\t' read -r t_tag t_proto t_net t_path; do
@@ -467,12 +473,12 @@ EOF
 $tls_tsv
 EOF
     fi
-    if [ -n "$ss" ]; then
+    if [ -n "$ss" ] && [ "$ufilter" != "domain" ]; then
       read -r sp sm spw <<<"$ss"
       all="${all}ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#${local_name}-shadowsocks-${sp}"$'\n'
     fi
-    # لینک‌های Hysteria2/TUIC این کاربر (اگر کامپنیون sing-box فعال است) — per-user
-    if [ -f "$ETC_DIR/extra_links.txt" ]; then
+    # لینک‌های Hysteria2/TUIC این کاربر (IP-based) — کاربرِ domain-only آن‌ها را نمی‌گیرد
+    if [ -f "$ETC_DIR/extra_links.txt" ] && [ "$ufilter" != "domain" ]; then
       local ex; ex="$(grep -F "#${local_name}-" "$ETC_DIR/extra_links.txt" 2>/dev/null || true)"
       [ -n "$ex" ] && all="${all}${ex}"$'\n'
     fi
@@ -525,8 +531,9 @@ EOF
 
 cmd_add(){
   need_root; need_jq; need_files
-  local name="${1:-}" gb="${2:-100}" days="${3:-30}"
-  [ -n "$name" ] || { err "نام لازم است:  kian-v2ray add <نام> [حجم_GB] [روز]"; exit 1; }
+  local name="${1:-}" gb="${2:-100}" days="${3:-30}" flt="${4:-all}"
+  [ "$flt" = "domain" ] || [ "$flt" = "nodomain" ] || flt="all"   # per-user config selection
+  [ -n "$name" ] || { err "نام لازم است:  kian-v2ray add <نام> [حجم_GB] [روز] [all|domain|nodomain]"; exit 1; }
   name="$(printf '%s' "$name" | tr -cd 'a-zA-Z0-9_-')"
   local email="${name}@kian"
   if jq -e --arg e "$email" '.users[]|select(.email==$e)' "$USERS_FILE" >/dev/null 2>&1; then
@@ -537,8 +544,8 @@ cmd_add(){
   quota=$(( gb * GIB )); [ "$gb" -le 0 ] && quota=0
   if [ "$days" -gt 0 ]; then exp="\"$(date -u -d "+${days} days" +%FT%TZ)\""; else exp="null"; fi
   tmp="$(mktemp)"
-  jq --arg id "$uuid" --arg e "$email" --argjson q "$quota" --argjson x "$exp" \
-    '.users += [{id:$id,email:$e,quota_bytes:$q,used_bytes:0,expires_at:$x,active:true,note:""}]' \
+  jq --arg id "$uuid" --arg e "$email" --argjson q "$quota" --argjson x "$exp" --arg f "$flt" \
+    '.users += [{id:$id,email:$e,quota_bytes:$q,used_bytes:0,expires_at:$x,active:true,note:"",sub_filter:$f}]' \
     "$USERS_FILE" > "$tmp" && mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
   rebuild_and_restart
   # اگر کامپنیون Hysteria2/TUIC فعال است، کاربر جدید را به آن هم اضافه کن و
@@ -994,8 +1001,26 @@ cmd_apply_config(){
   exit 3
 }
 
+cmd_filter(){
+  need_root; need_jq; need_files
+  local name="${1:-}" mode="${2:-}"
+  name="$(printf '%s' "$name" | tr -cd 'a-zA-Z0-9_-')"
+  [ -n "$name" ] || { err "نام لازم است:  kian-v2ray filter <نام> <all|domain|nodomain>"; exit 1; }
+  case "$mode" in all|domain|nodomain) : ;; *) err "حالت باید all یا domain یا nodomain باشد."; exit 1 ;; esac
+  local email="${name}@kian" tmp
+  jq -e --arg e "$email" '.users[]|select(.email==$e)' "$USERS_FILE" >/dev/null 2>&1 \
+    || { err "کاربری با نام $name پیدا نشد."; exit 1; }
+  tmp="$(mktemp)"
+  jq --arg e "$email" --arg m "$mode" '(.users[]|select(.email==$e)).sub_filter=$m' \
+    "$USERS_FILE" > "$tmp" && mv "$tmp" "$USERS_FILE" && chmod 600 "$USERS_FILE"
+  say "نوعِ کانفیگِ کاربر $name تنظیم شد: $mode"
+  cmd_sub "$name" >/dev/null 2>&1 || true   # rebuild only this user's subscription
+  cmd_configs "$name"
+}
+
 case "${1:-help}" in
   apply-config) shift; cmd_apply_config "${1:-}" ;;
+  filter)    shift; cmd_filter "$@" ;;
   status)    cmd_status ;;
   configs)   shift; cmd_configs "${1:-}" ;;
   sub)       shift; cmd_sub "${1:-}" ;;

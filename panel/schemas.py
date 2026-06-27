@@ -40,6 +40,8 @@ class UserCreate(BaseModel):
     hwid: Optional[str] = None
     routing: Optional[str] = Field(None, pattern=_ROUTING)  # per-user routing (11.2)
     dns: Optional[str] = None                               # per-user DNS (11.2)
+    # per-user config selection: which kinds this user's subscription includes.
+    sub_filter: str = Field("all", pattern=r"^(all|domain|nodomain)$")
 
 
 class UserUpdate(BaseModel):
@@ -52,6 +54,7 @@ class UserUpdate(BaseModel):
     enabled: Optional[bool] = None
     routing: Optional[str] = Field(None, pattern=_ROUTING)
     dns: Optional[str] = None
+    sub_filter: Optional[str] = Field(None, pattern=r"^(all|domain|nodomain)$")
 
 
 class UserOut(BaseModel):
@@ -69,6 +72,7 @@ class UserOut(BaseModel):
     routing: Optional[str] = None
     dns: Optional[str] = None
     sub_token: Optional[str] = None
+    sub_filter: str = "all"   # per-user config selection (from installer users.json)
 
 
 class BulkAction(BaseModel):

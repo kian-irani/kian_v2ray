@@ -291,7 +291,19 @@ def sessions(admin: str = Depends(require_admin)):
 @app.get("/api/users", response_model=list[UserOut])
 def api_list_users(q: str = "", limit: int = 100, offset: int = 0,
                    admin: str = Depends(require_admin), conn=Depends(get_db)):
-    return repo.list_users(conn, q=q, limit=limit, offset=offset)
+    users = repo.list_users(conn, q=q, limit=limit, offset=offset)
+    # Attach the per-user config selection (lives in the installer's users.json).
+    filters = bridge.read_user_filters()
+    for u in users:
+        u["sub_filter"] = filters.get(u.get("name"), "all")
+    return users
+
+
+def _days_until(expires_at: Optional[int]) -> int:
+    """Whole days from now until an epoch-seconds expiry (0 = permanent)."""
+    if not expires_at:
+        return 0
+    return max(0, int((int(expires_at) - int(time.time())) // 86400))
 
 
 @app.post("/api/users", response_model=UserOut, status_code=201)
@@ -299,7 +311,18 @@ def api_create_user(body: UserCreate, admin: str = Depends(require_admin),
                     conn=Depends(get_db)):
     if repo.get_user(conn, body.name):
         raise HTTPException(status.HTTP_409_CONFLICT, "user exists")
-    return repo.create_user(conn, actor=admin, **body.model_dump())
+    data = body.model_dump()
+    flt = data.pop("sub_filter", "all")
+    # Create the user on the REAL server first — this adds the Xray client AND
+    # generates the subscription/configs. Without it the user would be a DB-only
+    # ghost with no configs (the 'add user but no config' bug).
+    if bridge.cli_available():
+        gb = int((body.quota_bytes or 0) // (1024 ** 3))
+        code, out = bridge.add_user(body.name, gb, _days_until(body.expires_at), flt)
+        if code != 0:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                f"server add failed: {out.strip()[:300]}")
+    return repo.create_user(conn, actor=admin, **data)
 
 
 @app.get("/api/users/{name}", response_model=UserOut)
@@ -316,13 +339,22 @@ def api_update_user(name: str, body: UserUpdate,
                     admin: str = Depends(require_admin), conn=Depends(get_db)):
     if not repo.get_user(conn, name):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
-    return repo.update_user(conn, actor=admin, name=name,
-                            **body.model_dump(exclude_none=True))
+    fields = body.model_dump(exclude_none=True)
+    flt = fields.pop("sub_filter", None)
+    # Apply the per-user config selection on the real server (rebuilds that
+    # user's subscription with only the chosen kinds).
+    if flt and bridge.cli_available():
+        bridge.set_user_filter(name, flt)
+    return repo.update_user(conn, actor=admin, name=name, **fields)
 
 
 @app.delete("/api/users/{name}")
 def api_delete_user(name: str, admin: str = Depends(require_admin),
                     conn=Depends(get_db)):
+    # Remove from the REAL server too (drops the Xray client + its configs);
+    # otherwise the user would keep working even after panel deletion.
+    if bridge.cli_available():
+        bridge.remove_user(name)
     if not repo.delete_user(conn, actor=admin, name=name):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
     return {"ok": True}

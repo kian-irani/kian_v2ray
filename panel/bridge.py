@@ -98,12 +98,37 @@ def cli(*args: str, timeout: float = 60.0) -> tuple[int, str]:
         return 124, "timeout"
 
 
-def add_user(name: str, quota_gb: int = 0, days: int = 0) -> tuple[int, str]:
-    return cli("add", name, str(quota_gb), str(days))
+def add_user(name: str, quota_gb: int = 0, days: int = 0,
+             sub_filter: str = "all") -> tuple[int, str]:
+    flt = sub_filter if sub_filter in ("all", "domain", "nodomain") else "all"
+    return cli("add", name, str(quota_gb), str(days), flt)
 
 
 def remove_user(name: str) -> tuple[int, str]:
     return cli("remove", name)
+
+
+def set_user_filter(name: str, sub_filter: str) -> tuple[int, str]:
+    """Set which config kinds this user's subscription includes (rebuilds it)."""
+    flt = sub_filter if sub_filter in ("all", "domain", "nodomain") else "all"
+    return cli("filter", name, flt)
+
+
+def read_user_filters(path: str = USERS_JSON) -> dict[str, str]:
+    """Map each user's local name -> sub_filter (all|domain|nodomain) from the
+    installer's users.json. Used so the panel can display the real per-user
+    config selection (it lives server-side, not in the panel DB)."""
+    out: dict[str, str] = {}
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return out
+    for u in (data.get("users") or []):
+        name = str(u.get("email") or "").split("@")[0]
+        if name:
+            out[name] = u.get("sub_filter") or "all"
+    return out
 
 
 LINKS_FILE = os.environ.get("KIAN_LINKS_FILE", "/etc/kian-v2ray/links.txt")

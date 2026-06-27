@@ -78,3 +78,17 @@ def test_apply_xray_config_rejects_invalid():
     for cfg in bad:
         code, _ = bridge.apply_xray_config(cfg)
         assert code == 2, f"expected rejection for {cfg!r}"
+
+
+def test_read_user_filters(tmp_path):
+    p = os.path.join(str(tmp_path), "users.json")
+    with open(p, "w", encoding="utf-8") as fh:
+        json.dump({"users": [
+            {"email": "ali@kian", "sub_filter": "nodomain"},
+            {"email": "sara@kian", "sub_filter": "domain"},
+            {"email": "noflt@kian"},   # missing -> defaults to "all"
+        ]}, fh)
+    m = bridge.read_user_filters(p)
+    assert m == {"ali": "nodomain", "sara": "domain", "noflt": "all"}
+    # missing file -> empty map (no crash)
+    assert bridge.read_user_filters(os.path.join(str(tmp_path), "nope.json")) == {}
