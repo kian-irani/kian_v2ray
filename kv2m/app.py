@@ -326,7 +326,7 @@ class MainWindow(QWidget):
             # لینکِ HTTPS روی دامنهٔ خودِ کاربر — هم‌زمان با لینکِ Gist نشان داده می‌شود
             dom_url = pu.get("domainSubUrl") or ""
             if dom_url:
-                d = QHBoxLayout(); dl = QLabel("🌐 HTTPS (دامنهٔ خودت)"); dl.setObjectName("muted")
+                d = QHBoxLayout(); dl = QLabel("🌐 " + tr("gen.subdomain")); dl.setObjectName("muted")
                 du = QLabel(dom_url); du.setStyleSheet("color:#76B900")
                 dcpy = QPushButton("📋"); dcpy.setObjectName("mini"); dcpy.clicked.connect(lambda _,u=dom_url: self._copy(u))
                 d.addWidget(dl); d.addWidget(du); d.addStretch(1); d.addWidget(dcpy); ul.addLayout(d)

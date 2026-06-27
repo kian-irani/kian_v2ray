@@ -487,10 +487,12 @@ EOF
     local gist_url=""
     [ -f "$ETC_DIR/gist_map.json" ] && gist_url="$(jq -r --arg t "$tok" '.[$t].url // ""' "$ETC_DIR/gist_map.json" 2>/dev/null)"
     # لینک HTTPS روی دامنهٔ خودِ کاربر (از طریق Caddy روی :443 → سرور محلی sub).
-    # فقط وقتی نشان داده می‌شود که دامنه ست شده و Caddy بالا باشد (TLS فعال است).
+    # فقط وقتی نشان داده می‌شود که: دامنه ست شده، Caddy بالا باشد، و مسیرِ /sub/* واقعاً
+    # در Caddyfile تزریق شده باشد — وگرنه لینک به‌جای Subscription صفحهٔ «It works!» می‌دهد.
     local tls_dom="" dom_url=""
     [ -f "$ETC_DIR/tls_domain.txt" ] && tls_dom="$(cat "$ETC_DIR/tls_domain.txt" 2>/dev/null)"
-    if [ -n "$tls_dom" ] && systemctl is-active caddy >/dev/null 2>&1; then
+    if [ -n "$tls_dom" ] && systemctl is-active caddy >/dev/null 2>&1 \
+       && grep -q 'path /sub/\*' /etc/caddy/Caddyfile 2>/dev/null; then
       dom_url="https://${tls_dom}/sub/${tok}"
     fi
     printf "\n${C_B}👤 %s${C_N}\n" "$local_name"

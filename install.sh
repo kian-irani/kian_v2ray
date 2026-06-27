@@ -38,11 +38,12 @@ LOCK_FILE="$WORK_DIR/install.lock"
 C_G='\033[1;32m'; C_Y='\033[1;33m'; C_R='\033[1;31m'; C_B='\033[1;36m'; C_N='\033[0m'
 
 # ── Bilingual output ───────────────────────────────────────────────────────
-# Default Persian; the app/page sets KIAN_LANG=en when the user operates in
-# English, so the whole install console is English for them. _tr() maps the
-# Persian milestone/error strings → English (zero call-site changes), and
-# xlt() picks a side for interpolated lines.
-KIAN_LANG="${KIAN_LANG:-fa}"
+# English is primary. An explicit KIAN_LANG env (set by the app/page/desktop)
+# wins; payload.lang is consulted later as a fallback (see below); otherwise
+# the console is English. _tr() maps the Persian milestone/error strings →
+# English (zero call-site changes), and xlt() picks a side for interpolated lines.
+_ENV_LANG="${KIAN_LANG:-}"               # remember the explicit env choice (if any)
+case "$_ENV_LANG" in fa) KIAN_LANG=fa ;; *) KIAN_LANG=en ;; esac
 declare -A _EN=(
   ["باید با root اجرا شود (sudo)."]="Must run as root (sudo)."
   ["هیچ payload ای پیدا نشد."]="No payload found."
@@ -303,10 +304,11 @@ _grab(){ printf '%s' "$PAYLOAD_JSON" | tr -d '\n' | grep -oE "\"$1\"[[:space:]]*
 _bool(){ printf '%s' "$PAYLOAD_JSON" | tr -d '\n' | grep -oE "\"$1\"[[:space:]]*:[[:space:]]*(true|false)" | head -1 | grep -oE '(true|false)'; }
 WARP_NEEDED="$(_bool warp_needed || echo false)"
 SERVER_IP="$(_grab server_ip || true)"
-# Language: env KIAN_LANG wins (set by the app/page when the user is in English);
-# else fall back to payload.lang; else Persian default.
-if [ "${KIAN_LANG:-}" != "en" ] && [ "${KIAN_LANG:-}" != "fa" ]; then
+# Language: an explicit KIAN_LANG env wins (handled above). If none was given,
+# fall back to payload.lang; otherwise the default stays English.
+if [ -z "$_ENV_LANG" ]; then
   _PLANG="$(_grab lang || true)"
+  [ "$_PLANG" = "fa" ] && KIAN_LANG="fa"
   [ "$_PLANG" = "en" ] && KIAN_LANG="en"
 fi
 
