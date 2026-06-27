@@ -411,7 +411,7 @@ async function generate(f) {
   let portIdx = 0;
   const nextPort = () => {
     while (portIdx < portPool.length && banned.has(portPool[portIdx])) portIdx++;
-    if (portIdx >= portPool.length) throw new Error('پورت کافی پیدا نشد — basePort را عوض کن');
+    if (portIdx >= portPool.length) throw new Error(_t('پورت کافی پیدا نشد — basePort را عوض کن', 'Not enough free ports — change the base port'));
     return portPool[portIdx++];
   };
   channels.forEach(ch => {
@@ -575,6 +575,12 @@ async function generate(f) {
 }
 
 /* ------------------------------ rendering ------------------------------ */
+// Live-language picker for dynamically-rendered result cards. English is primary;
+// i18n.js keeps <html lang> current, so reading it here makes the cards follow the
+// page language (and default to English when nothing is set).
+function _L() { return document.documentElement.getAttribute('lang') === 'fa' ? 'fa' : 'en'; }
+function _t(fa, en) { return _L() === 'fa' ? fa : en; }
+
 function qr(el, text) {
   el.innerHTML = '';
   try {
@@ -598,7 +604,7 @@ function copyBtn(label, getText) {
     }
     const prev = b.innerHTML;
     b.classList.add('ok');
-    b.innerHTML = '<span>کپی شد ✓</span>';
+    b.innerHTML = `<span>${_t('کپی شد ✓', 'Copied ✓')}</span>`;
     setTimeout(() => { b.innerHTML = prev; b.classList.remove('ok'); }, 1400);
   });
   return b;
@@ -613,7 +619,7 @@ function linkRow(title, link) {
   titleSpan.className = 'linkrow-title';
   titleSpan.textContent = title;
   head.appendChild(titleSpan);
-  head.appendChild(copyBtn('کپی لینک', () => link));
+  head.appendChild(copyBtn(_t('کپی لینک', 'Copy link'), () => link));
   const code = document.createElement('div');
   code.className = 'linkrow-code mono';
   code.textContent = link;
@@ -630,19 +636,27 @@ function render(out) {
 
   const warn = document.createElement('div');
   warn.className = 'panel warn reveal';
-  warn.innerHTML = `
+  warn.innerHTML = _t(`
     <div class="panel-title">⚠️ مهم — قبل از بستن این صفحه بخوان</div>
     <ul class="tips">
       <li>کلیدها همین‌الان و فقط در همین صفحه ساخته شدند. اگر صفحه را ببندی <b>قابل بازیابی نیستند</b>.</li>
       <li>اول دستور نصب (بخش ۱) را روی سرور اجرا کن، بعد لینک‌های کاربر (بخش ۳) را ذخیره/پخش کن.</li>
       <li>هر بار «ساخت کانفیگ» بزنی، کلیدهای کاملاً جدید ساخته می‌شود و لینک‌های قبلی باطل می‌شوند.</li>
-    </ul>`;
+    </ul>`, `
+    <div class="panel-title">⚠️ Important — read before closing this page</div>
+    <ul class="tips">
+      <li>The keys were just generated and exist only on this page. If you close it they are <b>unrecoverable</b>.</li>
+      <li>Run the install command (section 1) on the server first, then save/share the user links (section 3).</li>
+      <li>Every time you press “Generate”, brand-new keys are created and the previous links are invalidated.</li>
+    </ul>`);
   box.appendChild(warn);
 
   const step1 = document.createElement('div');
   step1.className = 'panel reveal';
-  step1.innerHTML = `<div class="panel-title">۱) این دستور را در ترمینالِ سرور (SSH) اجرا کن</div>
-    <p class="muted">یک‌بار کپی کن و در ترمینال paste کن. نصب در پس‌زمینه اجرا می‌شود؛ <b>حتی اگر SSH قطع شد ادامه پیدا می‌کند</b>.</p>`;
+  step1.innerHTML = _t(`<div class="panel-title">۱) این دستور را در ترمینالِ سرور (SSH) اجرا کن</div>
+    <p class="muted">یک‌بار کپی کن و در ترمینال paste کن. نصب در پس‌زمینه اجرا می‌شود؛ <b>حتی اگر SSH قطع شد ادامه پیدا می‌کند</b>.</p>`,
+    `<div class="panel-title">1) Run this command in your server terminal (SSH)</div>
+    <p class="muted">Copy it once and paste into the terminal. The install runs in the background; <b>it keeps going even if SSH drops</b>.</p>`);
   const term = document.createElement('div');
   term.className = 'terminal';
   term.innerHTML = `<div class="term-bar"><i></i><i></i><i></i><span>root@server:~#</span></div>`;
@@ -652,23 +666,25 @@ function render(out) {
   term.appendChild(termBody);
   const termActions = document.createElement('div');
   termActions.className = 'row';
-  termActions.appendChild(copyBtn('کپی دستور نصب', () => out.installCmd));
+  termActions.appendChild(copyBtn(_t('کپی دستور نصب', 'Copy install command'), () => out.installCmd));
   step1.append(term, termActions);
   box.appendChild(step1);
 
   const step2 = document.createElement('div');
   step2.className = 'panel reveal';
-  step2.innerHTML = `<div class="panel-title">۲) بعد از ۲ تا ۵ دقیقه، وضعیت را چک کن</div>
-    <p class="muted">می‌توانی SSH را ببندی و دوباره وصل شوی. این دستور وضعیت نصب و سرویس را نشان می‌دهد:</p>`;
+  step2.innerHTML = _t(`<div class="panel-title">۲) بعد از ۲ تا ۵ دقیقه، وضعیت را چک کن</div>
+    <p class="muted">می‌توانی SSH را ببندی و دوباره وصل شوی. این دستور وضعیت نصب و سرویس را نشان می‌دهد:</p>`,
+    `<div class="panel-title">2) After 2–5 minutes, check the status</div>
+    <p class="muted">You can close SSH and reconnect. This command shows the install and service status:</p>`);
   const cmd2 = document.createElement('div');
   cmd2.className = 'cmdline mono';
   cmd2.textContent = 'bash /tmp/kian-v2ray.sh status';
   const a2 = document.createElement('div');
   a2.className = 'row';
-  a2.appendChild(copyBtn('کپی', () => 'bash /tmp/kian-v2ray.sh status'));
+  a2.appendChild(copyBtn(_t('کپی', 'Copy'), () => 'bash /tmp/kian-v2ray.sh status'));
   const note2 = document.createElement('p');
   note2.className = 'muted small';
-  note2.innerHTML = 'بعد از پایان نصب، این دستورها هم در دسترس‌اند: <span class="mono">kian-v2ray status</span> · <span class="mono">kian-v2ray configs</span> · <span class="mono">kian-v2ray users</span>';
+  note2.innerHTML = _t('بعد از پایان نصب، این دستورها هم در دسترس‌اند: ', 'After install, these commands are also available: ') + '<span class="mono">kian-v2ray status</span> · <span class="mono">kian-v2ray configs</span> · <span class="mono">kian-v2ray users</span>';
   step2.append(cmd2, a2, note2);
   box.appendChild(step2);
 
@@ -676,8 +692,8 @@ function render(out) {
   step3.className = 'panel reveal';
   const isNoSni = false;   // حالتِ بدون-SNI/سریع حذف شد
   const modeLabel  = 'WARP';
-  const quotaLabel = out.f.quotaGb > 0 ? `${out.f.quotaGb}GB` : 'نامحدود';
-  const daysLabel  = out.f.days > 0 ? `${out.f.days} روز` : 'دائمی';
+  const quotaLabel = out.f.quotaGb > 0 ? `${out.f.quotaGb}GB` : _t('نامحدود', 'Unlimited');
+  const daysLabel  = out.f.days > 0 ? `${out.f.days} ${_t('روز', 'days')}` : _t('دائمی', 'Permanent');
   const linksPerUser = out.profiles.length;
   if (isNoSni) {
     step3.innerHTML = `<div class="panel-title">۳) کانفیگ بدون SNI (Shadowsocks)</div>
@@ -685,7 +701,7 @@ function render(out) {
       ممکن است به‌مرور شناسایی شود و <b>آی‌پی سرورت فیلتر شود</b>. توصیه: این حالت را <b>فقط برای خودت</b> استفاده کن، نه پخش عمومی.
       اگر آی‌پی فیلتر شد، یک سرور/آی‌پی دیگر بگیر یا از حالت «سریع + WARP» (با SNI) استفاده کن.</div>`;
   } else {
-    step3.innerHTML = `<div class="panel-title">۳) لینک Subscription کاربرها (${out.users.length} کاربر)</div>
+    step3.innerHTML = _t(`<div class="panel-title">۳) لینک Subscription کاربرها (${out.users.length} کاربر)</div>
       <p class="muted small">برای هر کاربر <b>یک لینک Subscription</b> ساخته شد که همهٔ کانفیگ‌ها (SNIها و کانال‌های مختلف) را خودکار از سرور می‌آورد.</p>
       <div class="sub-port-note">⚠️ <b>خیلی مهم:</b> لینک Subscription روی <b>پورت ۸۰</b> سرورت کار می‌کند. این پورت باید روی سرورت <b>کاملاً خالی باشد</b> (نباید Caddy/Nginx/Apache یا وب‌سرور دیگری رویش باشد). اگر پورت ۸۰ اشغال باشد، نصب‌کننده یک پورت دیگر انتخاب می‌کند ولی ممکن است پروایدرت آن را از بیرون باز نگذارد. پورت ۸۰ استاندارد است و تقریباً همیشه از بیرون باز است.</div>
       <div class="badges">
@@ -693,7 +709,16 @@ function render(out) {
         <span class="badge">حجم: ${quotaLabel}</span>
         <span class="badge">اعتبار: ${daysLabel}</span>
         <span class="badge">${out.sniList.length} دامنه (SNI)</span>
-      </div>`;
+      </div>`,
+      `<div class="panel-title">3) User subscription links (${out.users.length} user${out.users.length > 1 ? 's' : ''})</div>
+      <p class="muted small">Each user gets <b>one subscription link</b> that automatically pulls all their configs (different SNIs and channels) from the server.</p>
+      <div class="sub-port-note">⚠️ <b>Very important:</b> the subscription link is served on <b>port 80</b> of your server. That port must be <b>completely free</b> (no Caddy/Nginx/Apache or other web server on it). If port 80 is taken, the installer picks another port, but your provider may not keep it open externally. Port 80 is standard and almost always open.</div>
+      <div class="badges">
+        <span class="badge">${modeLabel}</span>
+        <span class="badge">${_t('حجم', 'Quota')}: ${quotaLabel}</span>
+        <span class="badge">${_t('اعتبار', 'Validity')}: ${daysLabel}</span>
+        <span class="badge">${out.sniList.length} ${_t('دامنه (SNI)', 'domains (SNI)')}</span>
+      </div>`);
   }
   if (out.profiles.length) {
     out.perUser.forEach(u => {
@@ -704,30 +729,30 @@ function render(out) {
         // لینکِ HTTPS روی دامنهٔ خودِ کاربر — هم‌زمان با لینکِ Gist نشان داده می‌شود
         const dHead = document.createElement('div');
         dHead.className = 'sub-head';
-        dHead.innerHTML = '⭐ <b>لینک Subscription روی دامنهٔ خودت (HTTPS)</b>';
+        dHead.innerHTML = _t('⭐ <b>لینک Subscription روی دامنهٔ خودت (HTTPS)</b>', '⭐ <b>Subscription on your own domain (HTTPS)</b>');
         card.appendChild(dHead);
-        card.appendChild(linkRow('روی دامنه و گواهی خودت — بدون وابستگی به Gist', u.domainSubUrl));
+        card.appendChild(linkRow(_t('روی دامنه و گواهی خودت — بدون وابستگی به Gist', 'On your own domain & certificate — no Gist dependency'), u.domainSubUrl));
       }
       if (u.subUrl) {
         // حالت موفق: همان لینک HTTPS که سرور هم خواهد داد
         const subHead = document.createElement('div');
         subHead.className = 'sub-head';
-        subHead.innerHTML = '⭐ <b>لینک Subscription (HTTPS — یک‌بار برای همیشه)</b>';
+        subHead.innerHTML = _t('⭐ <b>لینک Subscription (HTTPS — یک‌بار برای همیشه)</b>', '⭐ <b>Subscription link (HTTPS — once and for all)</b>');
         card.appendChild(subHead);
-        card.appendChild(linkRow('این را در v2rayNG → Subscription وارد کن', u.subUrl));
+        card.appendChild(linkRow(_t('این را در v2rayNG → Subscription وارد کن', 'Import this in v2rayNG → Subscription'), u.subUrl));
         const hint = document.createElement('div');
         hint.className = 'sub-hint';
-        hint.innerHTML = 'این لینک <b>روی همهٔ پروایدرها</b> و فایروال‌ها کار می‌کند. سرور بعد از نصب همین لینک را آپدیت می‌کند، پس همیشه به‌روز می‌ماند.';
+        hint.innerHTML = _t('این لینک <b>روی همهٔ پروایدرها</b> و فایروال‌ها کار می‌کند. سرور بعد از نصب همین لینک را آپدیت می‌کند، پس همیشه به‌روز می‌ماند.', 'This link works <b>on all providers</b> and firewalls. The server keeps updating this same link after install, so it always stays current.');
         card.appendChild(hint);
       } else {
         // حالت ناموفق (Worker در دسترس نبود): کانفیگ‌های تکی به‌عنوان پشتیبان
         const warn = document.createElement('div');
         warn.className = 'sub-hint warn';
-        warn.innerHTML = '⚠️ ساخت لینک Subscription موفق نبود (احتمالاً به اینترنت نیاز است). کانفیگ‌های تکی پایین را در v2rayNG وارد کن، یا بعد از نصب روی سرورت بزن: <code class="mono">kian-v2ray sub ' + u.local + '</code>';
+        warn.innerHTML = _t('⚠️ ساخت لینک Subscription موفق نبود (احتمالاً به اینترنت نیاز است). کانفیگ‌های تکی پایین را در v2rayNG وارد کن، یا بعد از نصب روی سرورت بزن: ', '⚠️ Could not build the subscription link (it probably needs internet). Import the individual configs below in v2rayNG, or run this on your server after install: ') + '<code class="mono">kian-v2ray sub ' + u.local + '</code>';
         card.appendChild(warn);
         const sep = document.createElement('div');
         sep.className = 'config-sep';
-        sep.textContent = 'کانفیگ‌های تکی (پشتیبان):';
+        sep.textContent = _t('کانفیگ‌های تکی (پشتیبان):', 'Individual configs (backup):');
         card.appendChild(sep);
         u.items.forEach(it => {
           card.appendChild(linkRow(`WARP · ${it.sni}`, it.link));
@@ -735,7 +760,7 @@ function render(out) {
         if (u.tlsLinks && u.tlsLinks.length) {
           const tlsSep = document.createElement('div');
           tlsSep.className = 'config-sep';
-          tlsSep.textContent = 'کانفیگ‌های دامنه‌دار (TLS — روی :443):';
+          tlsSep.textContent = _t('کانفیگ‌های دامنه‌دار (TLS — روی :443):', 'Domain configs (TLS — on :443):');
           card.appendChild(tlsSep);
           u.tlsLinks.forEach(t => card.appendChild(linkRow(`${t.label} — ${t.note}`, t.link)));
         }
@@ -746,7 +771,7 @@ function render(out) {
   if (out.ssOut) {
     const card = document.createElement('div');
     card.className = 'usercard';
-    card.innerHTML = `<div class="usercard-title">🧩 Shadowsocks${isNoSni ? '' : ' (مشترک)'}</div>`;
+    card.innerHTML = `<div class="usercard-title">🧩 Shadowsocks${isNoSni ? '' : _t(' (مشترک)', ' (shared)')}</div>`;
     card.appendChild(linkRow('Shadowsocks', out.ssOut));
     step3.appendChild(card);
   }
@@ -756,16 +781,20 @@ function render(out) {
   const panelUrl = `http://${out.f.serverIp}:8443/app`;
   const step4 = document.createElement('div');
   step4.className = 'panel reveal';
-  step4.innerHTML = `<div class="panel-title">۴) پنل مدیریت وب</div>
-    <p class="muted">بعد از اتمام نصب، داشبورد مدیریت از این آدرس در دسترس است (ممکن است ۳-۵ دقیقه طول بکشد):</p>`;
-  step4.appendChild(linkRow('آدرس پنل مدیریت', panelUrl));
+  step4.innerHTML = _t(`<div class="panel-title">۴) پنل مدیریت وب</div>
+    <p class="muted">بعد از اتمام نصب، داشبورد مدیریت از این آدرس در دسترس است (ممکن است ۳-۵ دقیقه طول بکشد):</p>`,
+    `<div class="panel-title">4) Web admin panel</div>
+    <p class="muted">After install finishes, the admin dashboard is available at this address (may take 3–5 minutes):</p>`);
+  step4.appendChild(linkRow(_t('آدرس پنل مدیریت', 'Admin panel address'), panelUrl));
   const credNote = document.createElement('div');
   credNote.className = 'callout';
   const pUser = out.f.panelUser || 'admin';
   const pPass = out.f.panelPass;
   credNote.innerHTML = pPass
-    ? `🔑 <b>اطلاعات ورود:</b> نام کاربری <code class="mono">${pUser}</code> · رمز عبور: همانی که وارد کردید`
-    : `🔑 <b>نام کاربری:</b> <code class="mono">${pUser}</code> · <b>رمز عبور:</b> تصادفی — بعد از نصب در ترمینال نمایش داده می‌شود، یا دستور <code class="mono">kian-panel.sh url</code> بزن`;
+    ? _t(`🔑 <b>اطلاعات ورود:</b> نام کاربری <code class="mono">${pUser}</code> · رمز عبور: همانی که وارد کردید`,
+         `🔑 <b>Login:</b> username <code class="mono">${pUser}</code> · password: the one you entered`)
+    : _t(`🔑 <b>نام کاربری:</b> <code class="mono">${pUser}</code> · <b>رمز عبور:</b> تصادفی — بعد از نصب در ترمینال نمایش داده می‌شود، یا دستور <code class="mono">kian-panel.sh url</code> بزن`,
+         `🔑 <b>Username:</b> <code class="mono">${pUser}</code> · <b>Password:</b> random — shown in the terminal after install, or run <code class="mono">kian-panel.sh url</code>`);
   step4.appendChild(credNote);
   box.appendChild(step4);
 
@@ -856,7 +885,7 @@ function initCopyTrc20() {
       ta.remove();
     }
     const prev = btn.innerHTML;
-    btn.classList.add('ok'); btn.innerHTML = '<span>کپی شد ✓</span>';
+    btn.classList.add('ok'); btn.innerHTML = `<span>${_t('کپی شد ✓', 'Copied ✓')}</span>`;
     setTimeout(() => { btn.innerHTML = prev; btn.classList.remove('ok'); }, 1400);
   });
 }
@@ -869,7 +898,7 @@ function initManage() {
 
   function recompute() {
     const a = action.value;
-    const name = (nameEl.value.trim() || '<نام>').replace(/[^a-zA-Z0-9_<>-]/g, '');
+    const name = (nameEl.value.trim() || _t('<نام>', '<name>')).replace(/[^a-zA-Z0-9_<>-]/g, '');
     const gb = Math.max(0, parseInt(gbEl.value, 10) || 0);
     const days = Math.max(0, parseInt(daysEl.value, 10) || 0);
 
@@ -915,7 +944,7 @@ function initManage() {
   recompute();
 
   const row = $('#mg-copy-row');
-  if (row) row.appendChild(copyBtn('کپی دستور', () => out.textContent));
+  if (row) row.appendChild(copyBtn(_t('کپی دستور', 'Copy command'), () => out.textContent));
 }
 
 function init() {
@@ -942,7 +971,7 @@ function init() {
         navigator.clipboard.writeText(txt).catch(fallback);
       } else { fallback(); }
       const old = btn.textContent;
-      btn.textContent = '✓ کپی شد';
+      btn.textContent = _t('✓ کپی شد', '✓ Copied');
       setTimeout(() => { btn.textContent = old; }, 1500);
     });
   });
@@ -969,16 +998,16 @@ function init() {
     const err = $('#form-error');
     err.textContent = '';
 
-    if (!isServerAddr(f.serverIp)) { err.textContent = 'آی‌پی سرور معتبر نیست (نمونه: 203.0.113.10 یا 2001:db8::1).'; $('#server-ip').focus(); return; }
-    if (!f.prefix) { err.textContent = 'یک نام کاربر (انگلیسی) وارد کن — این نام لینک‌های هر کاربر را از هم جدا می‌کند.'; $('#user-prefix').focus(); return; }
+    if (!isServerAddr(f.serverIp)) { err.textContent = _t('آی‌پی سرور معتبر نیست (نمونه: 203.0.113.10 یا 2001:db8::1).', 'Server IP is not valid (e.g. 203.0.113.10 or 2001:db8::1).'); $('#server-ip').focus(); return; }
+    if (!f.prefix) { err.textContent = _t('یک نام کاربر (انگلیسی) وارد کن — این نام لینک‌های هر کاربر را از هم جدا می‌کند.', 'Enter a username (English) — it keeps each user’s links separate.'); $('#user-prefix').focus(); return; }
     if (f.tls && f.tls.enabled) {
-      if (!isDomain(f.tls.domain)) { err.textContent = 'دامنهٔ TLS معتبر نیست (نمونه: vpn.example.com). یک رکورد A این دامنه باید به IP سرورت اشاره کند.'; $('#tls-domain').focus(); return; }
+      if (!isDomain(f.tls.domain)) { err.textContent = _t('دامنهٔ TLS معتبر نیست (نمونه: vpn.example.com). یک رکورد A این دامنه باید به IP سرورت اشاره کند.', 'TLS domain is not valid (e.g. vpn.example.com). An A record for it must point to your server IP.'); $('#tls-domain').focus(); return; }
       // در حالتِ دامنه، کاربر خودش پروتکل‌ها را تیک می‌زند. اگر هیچ‌کدام را تیک نزند،
       // فقط Reality (پایه) نصب می‌شود — که معتبر است.
     }
-    if (f.sniMode === 'manual' && !f.manualSni) { err.textContent = 'یک دامنهٔ استتار (SNI) انتخاب یا وارد کن.'; return; }
-    if (f.basePort < 0 || f.basePort > 65500) { err.textContent = 'پورت پایه نامعتبر است؛ خالی بگذار یا عددی بین 1 تا 65500 بده.'; return; }
-    if (f.ss.enabled && (f.ss.port < 1 || f.ss.port > 65535)) { err.textContent = 'پورت Shadowsocks نامعتبر است.'; return; }
+    if (f.sniMode === 'manual' && !f.manualSni) { err.textContent = _t('یک دامنهٔ استتار (SNI) انتخاب یا وارد کن.', 'Pick or enter a camouflage domain (SNI).'); return; }
+    if (f.basePort < 0 || f.basePort > 65500) { err.textContent = _t('پورت پایه نامعتبر است؛ خالی بگذار یا عددی بین 1 تا 65500 بده.', 'Base port is invalid; leave it empty or use a number between 1 and 65500.'); return; }
+    if (f.ss.enabled && (f.ss.port < 1 || f.ss.port > 65535)) { err.textContent = _t('پورت Shadowsocks نامعتبر است.', 'Shadowsocks port is invalid.'); return; }
 
     const btn = $('#gen-btn');
     btn.disabled = true;
@@ -989,7 +1018,7 @@ function init() {
         const out = await generate(f);
         render(out);
       } catch (ex) {
-        err.textContent = 'خطا در ساخت کانفیگ: ' + (ex && ex.message ? ex.message : ex);
+        err.textContent = _t('خطا در ساخت کانفیگ: ', 'Error generating config: ') + (ex && ex.message ? ex.message : ex);
         console.error(ex);
       } finally {
         btn.disabled = false;
