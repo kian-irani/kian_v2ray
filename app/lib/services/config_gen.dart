@@ -145,12 +145,18 @@ class ConfigGen {
     bool warp = false,
     bool ss = false,
     int ssPort = 8388,
+    int basePort = 0,               // 0 = auto (well-known web ports). >0 = start Reality ports here.
     String? tlsDomain,
     List<String> tlsProtoKinds = const [],
     List<String> extraProtocols = const [],
     List<String> snis = const [],   // override the default Reality SNIs (page parity)
     String lang = 'en',             // install console language (matches app UI)
   }) async {
+    // Reality ports: custom base (sequential) when the user set one — useful when
+    // the defaults are taken by another panel — else the built-in well-known set.
+    final ports = basePort > 0
+        ? [for (var i = 0; i < _ports.length; i++) basePort + i]
+        : _ports;
     // Use caller-supplied SNIs when given (custom SNI), else the built-in set.
     final activeSnis = snis.where((s) => s.trim().isNotEmpty).toList();
     final useSnis = activeSnis.isEmpty ? _snis : activeSnis;
@@ -164,7 +170,7 @@ class ConfigGen {
     final dom = tlsDomain ?? '';   // non-null for the link/caddyfile builders
     final tls = <Map<String, dynamic>>[];
     if (tlsEnabled) {
-      final safeStart = [20810, (ss ? ssPort : 0) + 100, _ports.reduce(max) + 100].reduce(max);
+      final safeStart = [20810, (ss ? ssPort : 0) + 100, ports.reduce(max) + 100].reduce(max);
       var ip2 = safeStart;
       final rnd = _randHex(3);
       for (var i = 0; i < tlsProtoKinds.length; i++) {
@@ -187,9 +193,9 @@ class ConfigGen {
       final uuid = _uuid();
       users.add({'id': uuid, 'email': name, 'active': true});
       final links = <String>[];
-      for (var p = 0; p < _ports.length; p++) {
-        links.add(_vlessReality(uuid, serverIp, _ports[p], useSnis[p % useSnis.length],
-            pub, sid, '$name-reality-${_ports[p]}'));
+      for (var p = 0; p < ports.length; p++) {
+        links.add(_vlessReality(uuid, serverIp, ports[p], useSnis[p % useSnis.length],
+            pub, sid, '$name-reality-${ports[p]}'));
       }
       for (final t in tls) {
         // label: <name>-<proto>-443  (e.g. ali-vless-ws-443)
@@ -205,14 +211,14 @@ class ConfigGen {
     }
 
     final config = _buildConfig(users, priv, sid, channel, ss, ssPort,
-        ssPassword, tls, warp, useSnis);
+        ssPassword, tls, warp, useSnis, ports);
     final payload = {
       'warp_needed': warp,
       'server_ip': serverIp,
       'config_b64': _b64(jsonEncode(config)),
       'users_b64': _b64(jsonEncode({'users': users})),
       'links': allLinks,
-      'ports': [..._ports, if (ss) ssPort],
+      'ports': [...ports, if (ss) ssPort],
       'api_port': _apiPort,
       'sub_port': [80, 8888, 2086],
       'sub_tokens': subTokens,
@@ -237,7 +243,7 @@ class ConfigGen {
   Map<String, dynamic> _buildConfig(
       List<Map<String, dynamic>> users, String priv, String sid, String channel,
       bool ss, int ssPort, String ssPw, List<Map<String, dynamic>> tls, bool warp,
-      List<String> snis) {
+      List<String> snis, List<int> ports) {
     // routeOnly: sniff the domain for ROUTING only — never override the
     // connection's destination. Avoids a second DNS resolution per request and
     // keeps UDP/QUIC (gaming) intact. The big latency/packet-loss fix.
@@ -250,11 +256,11 @@ class ConfigGen {
         'settings': {'address': '127.0.0.1'}, 'tag': 'api'},
     ];
     final realityTags = <String>[];
-    for (var i = 0; i < _ports.length; i++) {
+    for (var i = 0; i < ports.length; i++) {
       final tag = 'reality-$channel-${i + 1}';
       realityTags.add(tag);
       final sni = snis[i % snis.length];
-      inbounds.add({'tag': tag, 'protocol': 'vless', 'port': _ports[i],
+      inbounds.add({'tag': tag, 'protocol': 'vless', 'port': ports[i],
         'settings': {'clients': realityClients, 'decryption': 'none'},
         'streamSettings': {'network': 'tcp', 'security': 'reality',
           // dest is REQUIRED by xray-core 26.x — without it the REALITY inbound

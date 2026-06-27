@@ -31,6 +31,7 @@ class _SetupScreenState extends State<SetupScreen> {
   final _username = TextEditingController(text: 'ali');
   final _numUsers = TextEditingController(text: '1');
   final _ssPort = TextEditingController(text: '8388');
+  final _basePort = TextEditingController();   // optional: custom Reality base port (empty = auto)
   final _customSni = TextEditingController();
   final _tlsDomain = TextEditingController();
 
@@ -122,6 +123,7 @@ class _SetupScreenState extends State<SetupScreen> {
         // بدونِ دامنه: SS/Hy2/TUIC خودکار. با دامنه: فقط آنهایی که کاربر تیک زده.
         ss: _tls ? _ssEnabled : true,
         ssPort: int.tryParse(_ssPort.text.trim()) ?? 8388,
+        basePort: int.tryParse(_basePort.text.trim()) ?? 0,   // 0 = auto (well-known ports)
         tlsDomain: _tls ? _tlsDomain.text.trim() : null,
         tlsProtoKinds: _tls ? _tlsSelected.toList() : const [],
         extraProtocols: _tls
@@ -423,6 +425,22 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 12),
+            // فقط تنظیماتِ پورت‌ها (طبقِ خواستهٔ کاربر): اگر پورت‌ها روی سرور پُر بودند
+            // قابلِ تغییرند. خالی بگذاری = پورت‌های وب معروف (۴۴۳، ۲۰۸۳، ۲۰۸۷) خودکار.
+            Text(s.t('setup.ports'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 4),
+            Text(s.t('setup.ports.d'),
+                style: const TextStyle(fontSize: 11, color: Color(0xFFC0A050))),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: _field(_basePort, s.t('setup.baseport'),
+                  hint: '443 / 2083 …', keyboardType: TextInputType.number)),
+              const SizedBox(width: 10),
+              Expanded(child: _field(_ssPort, s.t('setup.ssport'),
+                  keyboardType: TextInputType.number)),
+            ]),
           ],
           const Divider(height: 24),
           Row(children: [
@@ -615,6 +633,7 @@ class _SetupScreenState extends State<SetupScreen> {
     _username.dispose();
     _numUsers.dispose();
     _ssPort.dispose();
+    _basePort.dispose();
     _customSni.dispose();
     _tlsDomain.dispose();
     _panelUser.dispose();
