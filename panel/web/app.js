@@ -25,7 +25,7 @@
 
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
-  var state = { access: null, refresh: null, users: [], lang: "en", view: "users" };
+  var state = { access: null, refresh: null, users: [], lang: "en", view: "users", mode: "simple" };
 
   /* ── i18n ──────────────────────────────────────────────────────────────── */
   var T = {
@@ -48,7 +48,19 @@
     "stat.traffic": ["مصرف کل", "Total traffic"],
     "tab.users": ["کاربران", "Users"], "tab.audit": ["گزارش ممیزی", "Audit log"],
     "tab.chart": ["نمودار مصرف", "Usage chart"], "tab.nodes": ["سرورها", "Nodes"],
-    "tab.settings": ["تنظیمات", "Settings"],
+    "tab.settings": ["تنظیمات", "Settings"], "tab.xray": ["کانفیگ Xray", "Xray config"],
+    "mode.simple": ["ساده", "Simple"], "mode.advanced": ["پیشرفته", "Advanced"],
+    "xray.title": ["کانفیگ زندهٔ Xray", "Live Xray config"],
+    "xray.reload": ["بارگذاری مجدد", "Reload"], "xray.format": ["مرتب‌سازی JSON", "Format JSON"],
+    "xray.apply": ["اعمال و ری‌استارت", "Apply & restart"],
+    "xray.note": ["قبل از اعمال یک بکاپ گرفته می‌شود؛ اگر Xray با کانفیگِ جدید بالا نیاید، خودکار به نسخهٔ قبل برمی‌گردد.",
+      "A backup is taken before applying; if Xray fails to start with the new config it auto-rolls back."],
+    "xray.badjson": ["JSON نامعتبر", "Invalid JSON"],
+    "xray.needio": ["کانفیگ باید inbounds و outbounds داشته باشد.", "Config must have inbounds and outbounds."],
+    "xray.confirm": ["این کانفیگ اعمال و Xray ری‌استارت شود؟", "Apply this config and restart Xray?"],
+    "xray.applied": ["اعمال شد — Xray ری‌استارت شد", "Applied — Xray restarted"],
+    "xray.rejected": ["رد شد (کانفیگِ قبلی حفظ شد)", "Rejected (previous config kept)"],
+    "xray.loadfail": ["بارگذاری کانفیگ ناموفق", "Failed to load config"],
     "set.2fa": ["احراز هویت دومرحله‌ای (2FA)", "Two-factor auth (2FA)"],
     "set.2fa.d": ["با اپ Google Authenticator / Aegis یک لایه امنیتی اضافه کن.", "Add a security layer with Google Authenticator / Aegis."],
     "set.2fa.code": ["کد ۶ رقمی اپ:", "6-digit app code:"],
@@ -94,6 +106,7 @@
     $$("[data-i18n]").forEach(function (el) { el.textContent = t(el.getAttribute("data-i18n")); });
     $$("[data-i18n-ph]").forEach(function (el) { el.setAttribute("placeholder", t(el.getAttribute("data-i18n-ph"))); });
     var b = $("#lang-toggle"); if (b) b.textContent = fa ? "EN" : "FA";
+    if (typeof applyMode === "function") applyMode();  // keep the mode button label in sync
   }
 
   /* ── storage (sessionStorage با fallback به memory) ────────────────────── *
@@ -574,12 +587,73 @@
       $("#view-audit").classList.toggle("hidden", state.view !== "audit");
       $("#view-chart").classList.toggle("hidden", state.view !== "chart");
       $("#view-nodes").classList.toggle("hidden", state.view !== "nodes");
+      $("#view-xray").classList.toggle("hidden", state.view !== "xray");
       $("#view-settings").classList.toggle("hidden", state.view !== "settings");
       if (state.view === "audit") refreshAudit();
       if (state.view === "chart") { setTimeout(drawChart, 50); }
       if (state.view === "nodes") refreshNodes();
+      if (state.view === "xray") loadXray();
       if (state.view === "settings") refreshSettings();
     });
+  });
+
+  // ---- Simple / Advanced mode -------------------------------------------- //
+  // Simple = everyday essentials (Users + Settings). Advanced = everything,
+  // including the live Xray config editor. Persisted across sessions.
+  function applyMode() {
+    var adv = state.mode === "advanced";
+    $$(".tab.adv").forEach(function (x) { x.classList.toggle("hidden", !adv); });
+    var btn = $("#mode-toggle");
+    if (btn) btn.querySelector("span").textContent = adv ? t("mode.advanced") : t("mode.simple");
+    // If a now-hidden advanced tab was active, fall back to Users.
+    if (!adv && ["nodes", "audit", "chart", "xray"].indexOf(state.view) >= 0) {
+      var u = document.querySelector('.tab[data-view="users"]');
+      if (u) u.click();
+    }
+  }
+  $("#mode-toggle").addEventListener("click", function () {
+    state.mode = state.mode === "advanced" ? "simple" : "advanced";
+    try { localStorage.setItem("kian_mode", state.mode); } catch (e) {}
+    applyMode();
+  });
+
+  // ---- Xray config editor (advanced) ------------------------------------- //
+  async function loadXray() {
+    $("#xray-err").textContent = ""; $("#xray-ok").textContent = "";
+    try {
+      var d = await api("/api/xray");
+      $("#xray-editor").value = JSON.stringify(d.config || {}, null, 2);
+      $("#xray-counts").textContent = "in " + (d.inbounds || 0) + " · out " + (d.outbounds || 0);
+    } catch (e) {
+      $("#xray-err").textContent = (t("xray.loadfail") || "Failed to load config") + " — " + e.message;
+    }
+  }
+  $("#xray-reload").addEventListener("click", loadXray);
+  $("#xray-format").addEventListener("click", function () {
+    $("#xray-err").textContent = "";
+    try {
+      $("#xray-editor").value = JSON.stringify(JSON.parse($("#xray-editor").value), null, 2);
+    } catch (e) { $("#xray-err").textContent = (t("xray.badjson") || "Invalid JSON") + ": " + e.message; }
+  });
+  $("#xray-apply").addEventListener("click", async function () {
+    $("#xray-err").textContent = ""; $("#xray-ok").textContent = "";
+    var cfg;
+    try { cfg = JSON.parse($("#xray-editor").value); }
+    catch (e) { $("#xray-err").textContent = (t("xray.badjson") || "Invalid JSON") + ": " + e.message; return; }
+    if (!cfg || !cfg.inbounds || !cfg.outbounds) {
+      $("#xray-err").textContent = t("xray.needio") || "Config must have inbounds and outbounds.";
+      return;
+    }
+    if (!confirm(t("xray.confirm") || "Apply this config and restart Xray?")) return;
+    var btn = $("#xray-apply"); btn.disabled = true;
+    try {
+      var r = await api("/api/xray", { method: "POST", body: JSON.stringify({ config: cfg }) });
+      $("#xray-ok").textContent = (t("xray.applied") || "Applied — Xray restarted") +
+        (r.output ? " ✅" : "");
+      loadXray();
+    } catch (e) {
+      $("#xray-err").textContent = (t("xray.rejected") || "Rejected (previous config kept)") + " — " + e.message;
+    } finally { btn.disabled = false; }
   });
 
   $("#nd-add").addEventListener("click", async function () {
@@ -664,6 +738,8 @@
   /* ── boot ──────────────────────────────────────────────────────────────── */
   function showApp() {
     $("#login").classList.add("hidden"); $("#app").classList.remove("hidden");
+    try { state.mode = localStorage.getItem("kian_mode") || "simple"; } catch (e) {}
+    applyMode();
     refreshStats(); refreshUsers(); refreshSystem();
     clearInterval(window._kpTick);
     window._kpTick = setInterval(function () { refreshStats(); refreshSystem(); }, 5000);

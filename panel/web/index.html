@@ -127,6 +127,7 @@
       <span data-i18n="sys.load">بار</span> <b id="sys-load">—</b> · <span data-i18n="sys.mem">رم</span> <b id="sys-mem">—</b>
     </span>
     <span class="spacer"></span>
+    <button class="btn ghost sm" id="mode-toggle" type="button" title="Simple / Advanced" aria-label="Toggle mode"><span data-i18n="mode.simple">ساده</span></button>
     <button class="btn ghost sm" id="lang-toggle" type="button" aria-label="Switch language">EN</button>
     <button class="btn ghost sm" id="logout" type="button"><svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> <span data-i18n="logout">خروج</span></button>
   </header>
@@ -142,9 +143,10 @@
       <div class="toolbar">
         <div class="tabs">
           <button class="tab active" data-view="users" data-i18n="tab.users">کاربران</button>
-          <button class="tab" data-view="nodes" data-i18n="tab.nodes">سرورها</button>
-          <button class="tab" data-view="audit" data-i18n="tab.audit">گزارش ممیزی</button>
-          <button class="tab" data-view="chart" data-i18n="tab.chart">نمودار مصرف</button>
+          <button class="tab adv" data-view="nodes" data-i18n="tab.nodes">سرورها</button>
+          <button class="tab adv" data-view="audit" data-i18n="tab.audit">گزارش ممیزی</button>
+          <button class="tab adv" data-view="chart" data-i18n="tab.chart">نمودار مصرف</button>
+          <button class="tab adv" data-view="xray" data-i18n="tab.xray">کانفیگ Xray</button>
           <button class="tab" data-view="settings" data-i18n="tab.settings">تنظیمات</button>
         </div>
         <span class="spacer"></span>
@@ -212,6 +214,23 @@
           <tbody id="nodes-body"></tbody>
         </table>
         <div class="muted" id="nodes-route" style="padding:12px 16px;font-size:13px"></div>
+      </div>
+
+      <!-- XRAY CONFIG (advanced) -->
+      <div id="view-xray" class="hidden" style="padding:18px">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
+          <h3 style="margin:0" data-i18n="xray.title">کانفیگ زندهٔ Xray</h3>
+          <span class="pill" id="xray-counts" title="inbounds / outbounds">—</span>
+          <span class="spacer"></span>
+          <button class="btn sm" id="xray-reload" data-i18n="xray.reload">بارگذاری مجدد</button>
+          <button class="btn sm" id="xray-format" data-i18n="xray.format">مرتب‌سازی JSON</button>
+          <button class="btn primary sm" id="xray-apply" data-i18n="xray.apply">اعمال و ری‌استارت</button>
+        </div>
+        <p class="muted" style="margin:0 0 8px;font-size:13px" data-i18n="xray.note">قبل از اعمال یک بکاپ گرفته می‌شود؛ اگر Xray با کانفیگِ جدید بالا نیاید، خودکار به نسخهٔ قبل برمی‌گردد.</p>
+        <textarea id="xray-editor" spellcheck="false" dir="ltr"
+          style="width:100%;height:60vh;background:#0b1426;color:#cfe;border:1px solid var(--border);border-radius:10px;padding:12px;font-family:monospace;font-size:12.5px;line-height:1.5;white-space:pre;overflow:auto"></textarea>
+        <div class="err" id="xray-err" style="margin-top:8px"></div>
+        <div class="muted" id="xray-ok" style="margin-top:8px;color:#76B900"></div>
       </div>
 
       <!-- SETTINGS -->
