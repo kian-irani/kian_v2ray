@@ -210,33 +210,11 @@
           <input id="sni-custom" type="text" placeholder="example.com" autocomplete="off" spellcheck="false">
         </div>
         </div><!-- /sni-block -->
-        <!-- حالتِ بدون دامنه: پروتکل‌های UDP به‌صورت خودکار فعال هستند -->
+        <!-- Shadowsocks + Hysteria2 + TUIC: دامنه نمی‌خواهند → همیشه فعال، بدون تیک. -->
         <div id="nodomain-proto-note" class="callout">
-          ✅ <b>این پروتکل‌ها بدون نیاز به تنظیم، برای همه کاربران فعال می‌شوند:</b><br>
-          <b>Shadowsocks</b> (پروتکل پشتیبان) · <b>Hysteria2</b> (سریع روی شبکهٔ پُرافت/پُرتأخیر) · <b>TUIC v5</b> (QUIC، 0-RTT، BBR)<br>
-          <small class="muted">یک سرویسِ sing-box کنارِ Xray نصب می‌شود — هر کاربر برای هر پروتکل لینک جداگانه می‌گیرد.</small>
-        </div>
-        <!-- حالتِ دامنه‌دار: انتخاب دستی با چک‌باکس -->
-        <div id="domain-proto-manual" class="hidden">
-          <label class="switch">
-            <input type="checkbox" id="ss-enabled">
-            <span class="switch-track"><span class="switch-thumb"></span></span>
-            <span class="switch-label" data-i18n-html="g.adv.ss.l">Shadowsocks هم اضافه کن <span class="muted small">(پروتکل پشتیبان)</span></span>
-          </label>
-          <div class="field hidden" id="field-ss-port">
-            <label for="ss-port" data-i18n="g.adv.ssport.l">پورت Shadowsocks</label>
-            <input id="ss-port" type="number" min="1" max="65535" value="8388">
-          </div>
-          <div class="field" id="field-extra-protos">
-            <label data-i18n="gen.extra.label">پروتکل‌های اضافه (ضدِ DPI قوی)</label>
-            <p class="muted small" style="margin:.2rem 0 .6rem" data-i18n="gen.extra.note">
-              با فعال‌کردن، یک سرویسِ مستقلِ sing-box کنارِ Xray نصب می‌شود که <b>هر چهار پروتکلِ Hysteria2، TUIC v5، AnyTLS و ShadowTLS v3</b> را برای هر کاربر می‌سازد (هرکدام پورتِ جدا، اگر اشغال بود خودکار جابه‌جا می‌شود). مسیرِ Reality/SS/TLS دست‌نخورده می‌ماند و لینک‌ها خودکار به Subscription اضافه می‌شوند. اگر نسخهٔ sing-box پروتکلی را نپذیرفت، فقط همان حذف و بقیه فعال می‌مانند.
-            </p>
-            <div class="tls-protos">
-              <label class="proto-chk"><input type="checkbox" name="extra-proto" value="hysteria2"> <b>Hysteria2</b><small data-i18n="gen.extra.hy2">سریع روی شبکهٔ پُرافت/پُرتأخیر، عبورِ عالی از DPI</small></label>
-              <label class="proto-chk"><input type="checkbox" name="extra-proto" value="tuic"> <b>TUIC v5</b><small data-i18n="gen.extra.tuic">QUIC، 0-RTT، کنترلِ ازدحام BBR</small></label>
-            </div>
-          </div>
+          ✅ <b>این پروتکل‌ها همیشه و بدونِ نیاز به تنظیم، برای همهٔ کاربران فعال می‌شوند:</b><br>
+          <b>Reality</b> · <b>Shadowsocks</b> · <b>Hysteria2</b> (سریع روی شبکهٔ پُرافت/پُرتأخیر) · <b>TUIC v5</b> (QUIC، 0-RTT، BBR)<br>
+          <small class="muted">یک سرویسِ sing-box کنارِ Xray نصب می‌شود — هر کاربر برای هر پروتکل لینک جداگانه می‌گیرد. پروتکل‌های دامنه‌دار (TLS) فقط در صورتِ واردکردنِ دامنه — در بخشِ زیر — انتخاب می‌شوند.</small>
         </div>
         <div class="port-info">
           <div class="port-info-head" data-i18n="g.adv.ports.head">📋 پورت‌های kian-v2ray — راهنمای کامل</div>

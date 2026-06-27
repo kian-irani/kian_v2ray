@@ -179,7 +179,8 @@ class MainWindow(QWidget):
         self.adv_btn = QPushButton("▸  " + tr("gen.advanced")); self.adv_btn.setObjectName("ghost")
         self.adv_body = QWidget(); self.adv_body.setVisible(False)
         ab = QGridLayout(self.adv_body); ab.setContentsMargins(0,8,0,0); ab.setSpacing(10)
-        self.a_ss = QCheckBox(tr("gen.ss"))
+        # Shadowsocks همیشه فعال است (دامنه نمی‌خواهد) — فقط پورتش قابل تنظیم است.
+        self.a_ss = QCheckBox(tr("gen.ss")); self.a_ss.setChecked(True); self.a_ss.setEnabled(False)
         self.a_ssport = QLineEdit("8388"); self.a_ssport.setFixedWidth(90)
         self.a_base = QLineEdit(); self.a_base.setPlaceholderText("8443"); self.a_base.setFixedWidth(90)
         ab.addWidget(self.a_ss,0,0,1,2)
@@ -211,13 +212,9 @@ class MainWindow(QWidget):
             if k=="vless-ws": cb.setChecked(True)
             pr.addWidget(cb, 1+i//4, i%4)
         ab.addWidget(protrow,6,0,1,4)
-        # Extra protocols (Hysteria2 / TUIC over sing-box) — UDP, strong anti-DPI.
-        # Installed alongside Xray; their links are added to the subscription.
-        exrow = QWidget(); ex = QGridLayout(exrow); ex.setContentsMargins(0,0,0,0); ex.setSpacing(6)
-        ex.addWidget(mut(tr("gen.extra")),0,0,1,4)
-        self.a_hy2 = QCheckBox("Hysteria2"); self.a_tuic = QCheckBox("TUIC v5")
-        ex.addWidget(self.a_hy2,1,0); ex.addWidget(self.a_tuic,1,1)
-        ab.addWidget(exrow,7,0,1,4)
+        # Hysteria2 + TUIC (sing-box) — UDP، دامنه نمی‌خواهند → همیشه فعال، بدون تیک.
+        ab.addWidget(mut("✅ Shadowsocks + Hysteria2 + TUIC: همیشه فعال (دامنه نمی‌خواهند). "
+                         "پروتکل‌های TLS را فقط با واردکردنِ دامنه انتخاب کن."),7,0,1,4)
         # Panel credentials — always installed; user sets their own admin login.
         ab.addWidget(mut(tr("gen.panel")),8,0,1,4)
         self.a_panel_user = QLineEdit("admin"); self.a_panel_user.setPlaceholderText(tr("gen.paneluser"))
@@ -264,13 +261,13 @@ class MainWindow(QWidget):
             "sni_mode": self.a_snimode.currentData(),
             "sni_count": self.a_snicount.currentData(),
             "sni_manual": self.a_snicustom.text().strip(),
-            "ss_enabled": self.a_ss.isChecked(), "ss_port": num(self.a_ssport,8388),
+            # SS/Hysteria2/TUIC دامنه نمی‌خواهند → همیشه فعال (بدون تیک).
+            "ss_enabled": True, "ss_port": num(self.a_ssport,8388),
             "base_port": num(self.a_base,8443) if self.a_base.text().strip() else None,
             "tls_enabled": self.a_tls.isChecked(), "tls_domain": self.a_domain.text().strip().lower(),
             "tls_channel": "warp",   # همیشه WARP
             "tls_protos": [k for k,cb in self.a_protos.items() if cb.isChecked()],
-            "extra_protocols": ([ "hysteria2" ] if self.a_hy2.isChecked() else []) +
-                               ([ "tuic" ] if self.a_tuic.isChecked() else []),
+            "extra_protocols": ["hysteria2", "tuic"],
             "panel_user": self.a_panel_user.text().strip() or "admin",
             "panel_pass": self.a_panel_pass.text(),
             "lang": get_lang(),   # install console follows the desktop UI language

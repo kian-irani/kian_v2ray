@@ -42,10 +42,8 @@ class _SetupScreenState extends State<SetupScreen> {
   final Set<String> _tlsSelected = {'vless-ws'};
 
   // اتصال همیشه از WARP عبور می‌کند (غیرقابل‌انتخاب) — حالتِ «سریع» حذف شد.
-  bool _ss = false;
+  // SS/Hysteria2/TUIC همیشه فعال‌اند (دامنه نمی‌خواهند). فقط TLS اختیاری است.
   bool _tls = false;
-  bool _hy2 = false;
-  bool _tuic = false;
   bool _busy = false;
   final _panelUser = TextEditingController(text: 'admin');
   final _panelPass = TextEditingController();
@@ -115,11 +113,13 @@ class _SetupScreenState extends State<SetupScreen> {
         userPrefix: _username.text.trim().isEmpty ? 'user' : _username.text.trim(),
         count: (int.tryParse(_numUsers.text.trim()) ?? 1).clamp(1, 50),
         warp: true,   // همیشه WARP — حالتِ «سریع» حذف شد
-        ss: _tls ? _ss : true,
+        // پروتکل‌های بدونِ دامنه (Shadowsocks/Hysteria2/TUIC) همیشه فعال‌اند —
+        // تیک نمی‌خواهند. فقط پروتکل‌های TLS (دامنه‌دار) انتخابی‌اند.
+        ss: true,
         ssPort: int.tryParse(_ssPort.text.trim()) ?? 8388,
         tlsDomain: _tls ? _tlsDomain.text.trim() : null,
         tlsProtoKinds: _tls ? _tlsSelected.toList() : const [],
-        extraProtocols: _tls ? [if (_hy2) 'hysteria2', if (_tuic) 'tuic'] : const ['hysteria2', 'tuic'],
+        extraProtocols: const ['hysteria2', 'tuic'],
         snis: _customSni.text.trim().isEmpty ? const [] : [_customSni.text.trim()],
         lang: widget.strings.lang,   // install console follows the app's language
       );
@@ -189,10 +189,8 @@ class _SetupScreenState extends State<SetupScreen> {
           panelUser: panelUser,
           panelPass: panelPass,
           protocols: [
-            'reality',
-            'warp',
-            if (_tls) ...['tls', if (_ss) 'shadowsocks', if (_hy2) 'hysteria2', if (_tuic) 'tuic']
-            else ...['shadowsocks', 'hysteria2', 'tuic'],
+            'reality', 'warp', 'shadowsocks', 'hysteria2', 'tuic',
+            if (_tls) 'tls',
           ],
           userCount: imported.isEmpty ? 1 : imported.length,
         ));
@@ -326,6 +324,7 @@ class _SetupScreenState extends State<SetupScreen> {
             title: Text(s.t('setup.tls')), subtitle: Text(s.t('setup.tls.d')),
             contentPadding: EdgeInsets.zero,
           ),
+          // پروتکل‌های دامنه‌دار (TLS) فقط وقتی دامنه داری انتخاب می‌شوند.
           if (_tls) ...[
             _field(_tlsDomain, s.t('setup.tlsdomain'), hint: 'vpn.example.com'),
             const SizedBox(height: 6),
@@ -350,52 +349,31 @@ class _SetupScreenState extends State<SetupScreen> {
                 );
               }).toList(),
             ),
-            const Divider(height: 24),
-            SwitchListTile(
-              value: _ss, onChanged: (v) => setState(() => _ss = v),
-              title: Text(s.t('setup.ss')), subtitle: Text(s.t('setup.ss.d')),
-              contentPadding: EdgeInsets.zero,
-            ),
-            if (_ss)
-              _field(_ssPort, s.t('setup.ssport'), keyboardType: TextInputType.number),
-            Text(s.t('setup.extra'),
-                style: const TextStyle(color: KianTheme.accent, fontWeight: FontWeight.bold)),
-            Text(s.t('setup.extra.d'), style: const TextStyle(fontSize: 12)),
-            SwitchListTile(
-              value: _hy2, onChanged: (v) => setState(() => _hy2 = v),
-              title: Text(s.t('setup.hy2')), subtitle: Text(s.t('setup.hy2.d')),
-              contentPadding: EdgeInsets.zero,
-            ),
-            SwitchListTile(
-              value: _tuic, onChanged: (v) => setState(() => _tuic = v),
-              title: Text(s.t('setup.tuic')), subtitle: Text(s.t('setup.tuic.d')),
-              contentPadding: EdgeInsets.zero,
-            ),
-          ] else ...[
-            const Divider(height: 24),
-            Card(
-              color: const Color(0xFF0A1E0A),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.check_circle_outline,
-                          color: Color(0xFF4CAF50), size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(s.t('setup.autoproto'),
-                          style: const TextStyle(
-                              color: Color(0xFF4CAF50), fontWeight: FontWeight.bold))),
-                    ]),
-                    const SizedBox(height: 6),
-                    Text(s.t('setup.autoproto.d'),
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF80A880))),
-                  ],
-                ),
+          ],
+          // Shadowsocks + Hysteria2 + TUIC همیشه فعال‌اند (دامنه نمی‌خواهند، تیک نمی‌خواهند).
+          const Divider(height: 24),
+          Card(
+            color: const Color(0xFF0A1E0A),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    const Icon(Icons.check_circle_outline,
+                        color: Color(0xFF4CAF50), size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(s.t('setup.autoproto'),
+                        style: const TextStyle(
+                            color: Color(0xFF4CAF50), fontWeight: FontWeight.bold))),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(s.t('setup.autoproto.d'),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF80A880))),
+                ],
               ),
             ),
-          ],
+          ),
           const Divider(height: 24),
           Row(children: [
             Expanded(child: _field(_panelUser, s.t('setup.paneluser'))),

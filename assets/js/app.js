@@ -324,7 +324,8 @@ function readForm() {
   // حالتِ اتصال حذف شد — همیشه از WARP عبور می‌کند (غیرقابل‌انتخاب).
   const mode      = 'warp';
   const hasDomain = !!($('#tls-enabled')?.checked && $('#tls-domain')?.value.trim());
-  const ssEnabled = hasDomain ? ($('#ss-enabled') && $('#ss-enabled').checked) : true;
+  // SS/Hysteria2/TUIC دامنه نمی‌خواهند → همیشه فعال‌اند (تیک نمی‌خواهند).
+  const ssEnabled = true;
   const sniMode   = ($('#sni-mode') && $('#sni-mode').value) || 'auto';   // auto | manual
   const manualSni = ($('#sni').value === '__custom__' ? $('#sni-custom').value.trim() : $('#sni').value).trim();
   const sniCount  = parseInt(($('#sni-count') && $('#sni-count').value) || '2', 10);
@@ -352,10 +353,8 @@ function readForm() {
       channel: 'warp',   // همیشه از WARP — حالتِ مستقیم حذف شد
       protos: $$('input[name="tls-proto"]:checked').map(el => el.value),
     },
-    // پروتکل‌های اضافه روی sing-box (بدون دامنه: خودکار همه؛ با دامنه: انتخابِ کاربر)
-    extraProtocols: hasDomain
-      ? $$('input[name="extra-proto"]:checked').map(el => el.value)
-      : ['hysteria2', 'tuic'],
+    // Hysteria2/TUIC دامنه نمی‌خواهند → همیشه فعال (چه دامنه باشد چه نباشد).
+    extraProtocols: ['hysteria2', 'tuic'],
   };
 }
 
@@ -759,9 +758,6 @@ function syncVisibility() {
   $('#field-sni-count').classList.toggle('hidden', isManual);
   $('#field-sni').classList.toggle('hidden', !isManual);
   $('#field-sni-custom').classList.toggle('hidden', !(isManual && $('#sni').value === '__custom__'));
-  const ssEnabledChk = $('#ss-enabled');
-  const fieldSsPort = $('#field-ss-port');
-  if (ssEnabledChk && fieldSsPort) fieldSsPort.classList.toggle('hidden', !ssEnabledChk.checked);
   const tlsEn = $('#tls-enabled');
   const tlsOpts = $('#tls-options');
   if (tlsEn && tlsOpts) tlsOpts.hidden = !tlsEn.checked;
@@ -769,12 +765,7 @@ function syncVisibility() {
   // ولی اگر TLS غیر است، هشدار همیشه دیده می‌شود
   const ipWarn = $('#ip-blacklist-warn');
   if (ipWarn) ipWarn.classList.toggle('hidden', !!(tlsEn && tlsEn.checked));
-  // پروتکل‌های بدون دامنه (Shadowsocks/Hy2/TUIC): خودکار فعال — نیازی به چک‌باکس نیست
-  const hasDomainSync = !!(tlsEn && tlsEn.checked && $('#tls-domain') && $('#tls-domain').value.trim());
-  const nodomainNote = $('#nodomain-proto-note');
-  const domainManual = $('#domain-proto-manual');
-  if (nodomainNote) nodomainNote.classList.toggle('hidden', hasDomainSync);
-  if (domainManual) domainManual.classList.toggle('hidden', !hasDomainSync);
+  // Shadowsocks/Hy2/TUIC همیشه فعال‌اند — note همیشه دیده می‌شود (چک‌باکسی نیست).
 }
 
 function initTabs() {
@@ -928,8 +919,6 @@ function init() {
   });
 
   $$('input[name="mode"]').forEach(r => r.addEventListener('change', syncVisibility));
-  const ssChk = $('#ss-enabled');
-  if (ssChk) ssChk.addEventListener('change', syncVisibility);
   const tlsEn2 = $('#tls-enabled');
   if (tlsEn2) tlsEn2.addEventListener('change', syncVisibility);
   $('#sni-mode') && $('#sni-mode').addEventListener('change', syncVisibility);
