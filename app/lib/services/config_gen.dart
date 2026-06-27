@@ -152,11 +152,19 @@ class ConfigGen {
     List<String> snis = const [],   // override the default Reality SNIs (page parity)
     String lang = 'en',             // install console language (matches app UI)
   }) async {
+    // TLS/domain mode? (computed early — it changes which ports Reality may use)
+    final tlsEnabled = tlsDomain != null && tlsDomain.isNotEmpty && tlsProtoKinds.isNotEmpty;
     // Reality ports: custom base (sequential) when the user set one — useful when
     // the defaults are taken by another panel — else the built-in well-known set.
-    final ports = basePort > 0
+    // In domain mode, 443 and 80 are reserved for Caddy, so Reality MUST NOT use
+    // them (a Reality inbound on 443 would collide with Caddy → Xray/Caddy fails
+    // to bind and the whole server stops passing traffic). Matches core.py/app.js.
+    final basePorts = basePort > 0
         ? [for (var i = 0; i < _ports.length; i++) basePort + i]
-        : _ports;
+        : List<int>.from(_ports);
+    final ports = tlsEnabled
+        ? basePorts.where((p) => p != 443 && p != 80).toList()
+        : basePorts;
     // Use caller-supplied SNIs when given (custom SNI), else the built-in set.
     final activeSnis = snis.where((s) => s.trim().isNotEmpty).toList();
     final useSnis = activeSnis.isEmpty ? _snis : activeSnis;
@@ -166,7 +174,6 @@ class ConfigGen {
     final ssPassword = ss ? _b64url(List<int>.generate(16, (_) => _rnd.nextInt(256))).substring(0, 22) : '';
 
     // TLS profiles (internal localhost ports behind Caddy)
-    final tlsEnabled = tlsDomain != null && tlsDomain.isNotEmpty && tlsProtoKinds.isNotEmpty;
     final dom = tlsDomain ?? '';   // non-null for the link/caddyfile builders
     final tls = <Map<String, dynamic>>[];
     if (tlsEnabled) {

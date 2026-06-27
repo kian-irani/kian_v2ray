@@ -108,14 +108,57 @@ def remove_user(name: str) -> tuple[int, str]:
 
 LINKS_FILE = os.environ.get("KIAN_LINKS_FILE", "/etc/kian-v2ray/links.txt")
 USERS_FILE_PATH = USERS_JSON
+ETC_DIR = os.environ.get("KIAN_ETC_DIR", "/etc/kian-v2ray")
+
+_URI_PREFIXES = ("vless://", "vmess://", "ss://", "trojan://",
+                 "hysteria2://", "tuic://", "anytls://")
+
+
+def _links_from_sub_file(name: str) -> list[str]:
+    """Decode the user's subscription file ($ETC_DIR/sub/<token>.txt = base64 of
+    that user's links). This is the authoritative per-user source the server uses,
+    so it works even when links.txt is absent or UUID filtering misses. Returns []
+    if the token/file isn't found."""
+    import base64
+    import json as _json
+    tokmap = os.path.join(ETC_DIR, "sub_tokens.json")
+    try:
+        with open(tokmap, "r", encoding="utf-8") as fh:
+            m = _json.load(fh)
+    except (OSError, ValueError):
+        return []
+    # sub_tokens.json is keyed by email (e.g. "ali@kian"); accept name or local part.
+    token = ""
+    for email, tok in (m.items() if isinstance(m, dict) else []):
+        local = str(email).split("@")[0]
+        if email == name or local == name:
+            token = str(tok)
+            break
+    if not token:
+        return []
+    fpath = os.path.join(ETC_DIR, "sub", token + ".txt")
+    try:
+        with open(fpath, "rb") as fh:
+            raw = fh.read()
+    except OSError:
+        return []
+    try:
+        decoded = base64.b64decode(raw).decode("utf-8", "ignore")
+    except Exception:
+        decoded = raw.decode("utf-8", "ignore")
+    return [l.strip() for l in decoded.splitlines()
+            if l.strip().startswith(_URI_PREFIXES)]
 
 
 def read_user_links(name: str) -> list[str]:
-    """Return the share-URI config links that belong to ``name`` (by uuid match).
+    """Return the share-URI config links that belong to ``name``.
 
-    Reads the installer's links.txt (one URI per line) and filters lines whose
-    path/query contains the user's UUID.  Falls back to CLI if links.txt absent.
+    Primary source: the user's own subscription file (authoritative, always has
+    every protocol). Falls back to links.txt (UUID-filtered) and then the CLI.
     """
+    sub = _links_from_sub_file(name)
+    if sub:
+        return sub
     # get uuid from users.json
     uuid = ""
     users = read_installer_users()

@@ -611,7 +611,11 @@
       if (u) u.click();
     }
   }
-  $("#mode-toggle").addEventListener("click", function () {
+  // null-safe binder: a missing element (e.g. an index.html older than this
+  // app.js) must NEVER throw here, or it would abort the rest of init and leave
+  // later buttons (new-user, nodes…) unwired.
+  function on(sel, ev, fn) { var el = $(sel); if (el) el.addEventListener(ev, fn); }
+  on("#mode-toggle", "click", function () {
     state.mode = state.mode === "advanced" ? "simple" : "advanced";
     try { localStorage.setItem("kian_mode", state.mode); } catch (e) {}
     applyMode();
@@ -619,23 +623,24 @@
 
   // ---- Xray config editor (advanced) ------------------------------------- //
   async function loadXray() {
+    var ed = $("#xray-editor"); if (!ed) return;
     $("#xray-err").textContent = ""; $("#xray-ok").textContent = "";
     try {
       var d = await api("/api/xray");
-      $("#xray-editor").value = JSON.stringify(d.config || {}, null, 2);
+      ed.value = JSON.stringify(d.config || {}, null, 2);
       $("#xray-counts").textContent = "in " + (d.inbounds || 0) + " · out " + (d.outbounds || 0);
     } catch (e) {
       $("#xray-err").textContent = (t("xray.loadfail") || "Failed to load config") + " — " + e.message;
     }
   }
-  $("#xray-reload").addEventListener("click", loadXray);
-  $("#xray-format").addEventListener("click", function () {
+  on("#xray-reload", "click", loadXray);
+  on("#xray-format", "click", function () {
     $("#xray-err").textContent = "";
     try {
       $("#xray-editor").value = JSON.stringify(JSON.parse($("#xray-editor").value), null, 2);
     } catch (e) { $("#xray-err").textContent = (t("xray.badjson") || "Invalid JSON") + ": " + e.message; }
   });
-  $("#xray-apply").addEventListener("click", async function () {
+  on("#xray-apply", "click", async function () {
     $("#xray-err").textContent = ""; $("#xray-ok").textContent = "";
     var cfg;
     try { cfg = JSON.parse($("#xray-editor").value); }

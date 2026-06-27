@@ -621,12 +621,18 @@ cmd_renew(){
 #  ۲) اگر دامنه ست شده و Caddyfile مالِ ماست (تک‌بلوک)، هندلرِ /sub/* را به آن
 #     تزریق و Caddy را reload می‌کند. کاملاً idempotent — اگر از قبل باشد کاری نمی‌کند.
 ensure_domain_sub(){
-  # (۱) پورت پل
-  local pf="$ETC_DIR/sub_port.txt" ports
+  # (۱) پورت پل: 8765 را به لیستِ پورت‌های sub اضافه کن. نکته: ری‌استارتِ ساده
+  #     کافی نیست چون ExecStart در یونیتِ systemd پورت‌های قدیمی را دارد و 8765
+  #     bind نمی‌شود — پس اول ExecStart را به‌روز و daemon-reload می‌کنیم.
+  local pf="$ETC_DIR/sub_port.txt" ports unit=/etc/systemd/system/kian-sub.service
   ports="$(cat "$pf" 2>/dev/null || echo 80)"
   case ",$ports," in
     *",8765,"*) : ;;
-    *) printf '%s' "${ports},8765" > "$pf"
+    *) ports="${ports},8765"; printf '%s' "$ports" > "$pf"
+       if [ -f "$unit" ]; then
+         sed -i -E "s#(ExecStart=.*kian-sub-server\.py )[^ ]+#\1${ports}#" "$unit"
+         systemctl daemon-reload >/dev/null 2>&1 || true
+       fi
        systemctl restart kian-sub >/dev/null 2>&1 || true ;;
   esac
   # (۲) هندلرِ Caddy
