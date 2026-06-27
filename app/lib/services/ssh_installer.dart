@@ -85,7 +85,7 @@ class SshInstaller {
   /// Completely remove kian_v2ray from the server (Xray container, configs,
   /// scripts, panel). Irreversible — callers must show a confirmation dialog.
   Future<(int, String)> uninstall() =>
-      run('kian-v2ray uninstall', timeout: const Duration(minutes: 5));
+      run('kian-v2ray uninstall --yes', timeout: const Duration(minutes: 5));
 
   String _q(String s) => "'${s.replaceAll("'", "'\\''")}'";
 
