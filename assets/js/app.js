@@ -324,8 +324,8 @@ function readForm() {
   // حالتِ اتصال حذف شد — همیشه از WARP عبور می‌کند (غیرقابل‌انتخاب).
   const mode      = 'warp';
   const hasDomain = !!($('#tls-enabled')?.checked && $('#tls-domain')?.value.trim());
-  // SS/Hysteria2/TUIC دامنه نمی‌خواهند → همیشه فعال‌اند (تیک نمی‌خواهند).
-  const ssEnabled = true;
+  // بدونِ دامنه: SS/Hy2/TUIC خودکار. با دامنه: فقط آنهایی که کاربر تیک زده.
+  const ssEnabled = hasDomain ? !!($('#d-ss') && $('#d-ss').checked) : true;
   const sniMode   = ($('#sni-mode') && $('#sni-mode').value) || 'auto';   // auto | manual
   const manualSni = ($('#sni').value === '__custom__' ? $('#sni-custom').value.trim() : $('#sni').value).trim();
   const sniCount  = parseInt(($('#sni-count') && $('#sni-count').value) || '2', 10);
@@ -353,8 +353,11 @@ function readForm() {
       channel: 'warp',   // همیشه از WARP — حالتِ مستقیم حذف شد
       protos: $$('input[name="tls-proto"]:checked').map(el => el.value),
     },
-    // Hysteria2/TUIC دامنه نمی‌خواهند → همیشه فعال (چه دامنه باشد چه نباشد).
-    extraProtocols: ['hysteria2', 'tuic'],
+    // بدونِ دامنه: Hy2+TUIC خودکار. با دامنه: فقط تیک‌خورده‌ها.
+    extraProtocols: hasDomain
+      ? [...(($('#d-hy2') && $('#d-hy2').checked) ? ['hysteria2'] : []),
+         ...(($('#d-tuic') && $('#d-tuic').checked) ? ['tuic'] : [])]
+      : ['hysteria2', 'tuic'],
   };
 }
 
@@ -765,7 +768,10 @@ function syncVisibility() {
   // ولی اگر TLS غیر است، هشدار همیشه دیده می‌شود
   const ipWarn = $('#ip-blacklist-warn');
   if (ipWarn) ipWarn.classList.toggle('hidden', !!(tlsEn && tlsEn.checked));
-  // Shadowsocks/Hy2/TUIC همیشه فعال‌اند — note همیشه دیده می‌شود (چک‌باکسی نیست).
+  // note «بدونِ دامنه» فقط وقتی دامنه نداری دیده می‌شود؛ با دامنه، کاربر خودش تیک می‌زند.
+  const hasDomainSync = !!(tlsEn && tlsEn.checked && $('#tls-domain') && $('#tls-domain').value.trim());
+  const nodomainNote = $('#nodomain-proto-note');
+  if (nodomainNote) nodomainNote.classList.toggle('hidden', hasDomainSync);
 }
 
 function initTabs() {
@@ -924,21 +930,13 @@ function init() {
   $('#sni-mode') && $('#sni-mode').addEventListener('change', syncVisibility);
   $('#sni') && $('#sni').addEventListener('change', syncVisibility);
 
-  // وقتی دامنهٔ TLS معتبر وارد شد، همهٔ پروتکل‌ها خودکار فعال می‌شوند
+  // با وارد کردن دامنه، note «بدونِ دامنه» مخفی می‌شود — ولی هیچ پروتکلی خودکار تیک
+  // نمی‌خورد؛ کاربر خودش هر پروتکلی را خواست تیک می‌زند.
   const tlsDomainEl = $('#tls-domain');
-  if (tlsDomainEl) {
-    tlsDomainEl.addEventListener('input', () => {
-      const v = tlsDomainEl.value.trim().toLowerCase();
-      const note = $('#tls-auto-note');
-      if (isDomain(v)) {
-        $$('input[name="tls-proto"]').forEach(cb => { cb.checked = true; });
-        if (note) note.hidden = false;
-      } else {
-        if (note) note.hidden = true;
-      }
-      syncVisibility();
-    });
-  }
+  if (tlsDomainEl) tlsDomainEl.addEventListener('input', syncVisibility);
+  ['d-ss', 'd-hy2', 'd-tuic'].forEach(id => {
+    const el = $('#' + id); if (el) el.addEventListener('change', syncVisibility);
+  });
 
   syncVisibility();
 
@@ -952,11 +950,8 @@ function init() {
     if (!f.prefix) { err.textContent = 'یک نام کاربر (انگلیسی) وارد کن — این نام لینک‌های هر کاربر را از هم جدا می‌کند.'; $('#user-prefix').focus(); return; }
     if (f.tls && f.tls.enabled) {
       if (!isDomain(f.tls.domain)) { err.textContent = 'دامنهٔ TLS معتبر نیست (نمونه: vpn.example.com). یک رکورد A این دامنه باید به IP سرورت اشاره کند.'; $('#tls-domain').focus(); return; }
-      // اگر دامنه وارد شده ولی هیچ پروتکلی انتخاب نشده، همه را خودکار فعال کن
-      if (!f.tls.protos.length) {
-        $$('input[name="tls-proto"]').forEach(cb => { cb.checked = true; });
-        f.tls.protos = $$('input[name="tls-proto"]:checked').map(el => el.value);
-      }
+      // در حالتِ دامنه، کاربر خودش پروتکل‌ها را تیک می‌زند. اگر هیچ‌کدام را تیک نزند،
+      // فقط Reality (پایه) نصب می‌شود — که معتبر است.
     }
     if (f.sniMode === 'manual' && !f.manualSni) { err.textContent = 'یک دامنهٔ استتار (SNI) انتخاب یا وارد کن.'; return; }
     if (f.basePort < 0 || f.basePort > 65500) { err.textContent = 'پورت پایه نامعتبر است؛ خالی بگذار یا عددی بین 1 تا 65500 بده.'; return; }

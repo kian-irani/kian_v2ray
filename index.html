@@ -300,10 +300,16 @@
             </div>
 
             <div class="field">
-              <label data-i18n="gen.tlsproto.label">پروتکل‌ها (با وارد کردن دامنه همه فعال می‌شوند)</label>
-              <div id="tls-auto-note" class="callout tls-auto-note" hidden data-i18n-html="g.tls.auto.note">✅ <b>دامنه شناسایی شد — همهٔ پروتکل‌ها خودکار فعال شدند.</b> هر کاربر برای هر پروتکل یک لینک می‌گیرد. می‌توانی هر کدام را دلخواه غیرفعال کنی.</div>
+              <label>پروتکل‌هایی که می‌خواهی فعال شوند را تیک بزن (هیچ‌کدام پیش‌فرض روشن نیست):</label>
+              <!-- پروتکل‌های بدونِ دامنه — IP سرور در کانفیگ دیده می‌شود -->
+              <div class="tls-protos" style="margin-bottom:.5rem">
+                <label class="proto-chk"><input type="checkbox" id="d-ss"> <b>Shadowsocks</b><small>بدونِ دامنه · IP سرورت دیده می‌شود</small></label>
+                <label class="proto-chk"><input type="checkbox" id="d-hy2"> <b>Hysteria2</b><small>بدونِ دامنه · UDP · IP سرورت دیده می‌شود</small></label>
+                <label class="proto-chk"><input type="checkbox" id="d-tuic"> <b>TUIC v5</b><small>بدونِ دامنه · QUIC · IP سرورت دیده می‌شود</small></label>
+              </div>
+              <label class="muted small">پروتکل‌های TLS (دامنه‌دار — دامنه‌ات دیده می‌شود):</label>
               <div class="tls-protos">
-                <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vless-ws" checked> <b>VLESS-WS</b><small data-i18n="proto.vless-ws">پایدارترین، عبور خوب از DPI و CDN</small></label>
+                <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vless-ws"> <b>VLESS-WS</b><small data-i18n="proto.vless-ws">پایدارترین، عبور خوب از DPI و CDN</small></label>
                 <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vmess-ws"> <b>VMess-WS</b><small data-i18n="proto.vmess-ws">سازگاری بالا با کلاینت‌های قدیمی</small></label>
                 <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vless-grpc"> <b>VLESS-gRPC</b><small data-i18n="proto.vless-grpc">مالتی‌پلکس، خوب روی شبکهٔ پرتاخیر</small></label>
                 <label class="proto-chk"><input type="checkbox" name="tls-proto" value="vmess-grpc"> <b>VMess-gRPC</b><small data-i18n="proto.vmess-grpc">gRPC با VMess</small></label>
