@@ -655,6 +655,30 @@ ensure_domain_sub(){
   fi
 }
 
+# فعال‌سازیِ خودکارِ swap برای VPSهای کم‌رم (نصب‌های قدیمی هم با update می‌گیرند).
+# امن و idempotent؛ روی OpenVZ/LXC که swap مجاز نیست با خطای ملایم رد می‌شود.
+ensure_swap(){
+  local cur_kb; cur_kb="$(awk '/SwapTotal/{print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+  [ "${cur_kb:-0}" -gt 0 ] && return 0
+  local ram_mb; ram_mb="$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0)"
+  [ "${ram_mb:-0}" -gt 0 ] && [ "$ram_mb" -le 2048 ] || return 0
+  local size_mb=2048 free_mb sf=/swapfile
+  free_mb="$(df -Pm / 2>/dev/null | awk 'NR==2{print $4}')"
+  [ "${free_mb:-0}" -ge $((size_mb + 1024)) ] || { warn "فضای دیسک برای swap کافی نیست — رد شد"; return 0; }
+  inf "ساختِ فایلِ swap (${size_mb} MB) برای سرورِ کم‌رم..."
+  rm -f "$sf" 2>/dev/null || true
+  fallocate -l "${size_mb}M" "$sf" 2>/dev/null \
+    || dd if=/dev/zero of="$sf" bs=1M count="$size_mb" status=none 2>/dev/null \
+    || { warn "ساختِ swap ناموفق — رد شد"; rm -f "$sf"; return 0; }
+  chmod 600 "$sf"
+  mkswap "$sf" >/dev/null 2>&1 || { warn "mkswap ناموفق (OpenVZ/LXC؟) — رد شد"; rm -f "$sf"; return 0; }
+  swapon "$sf" 2>/dev/null || { warn "swapon ناموفق — رد شد"; rm -f "$sf"; return 0; }
+  grep -qF "$sf" /etc/fstab 2>/dev/null || echo "$sf none swap sw 0 0" >> /etc/fstab
+  printf 'vm.swappiness=10\nvm.vfs_cache_pressure=50\n' > /etc/sysctl.d/99-kian-swap.conf
+  sysctl -p /etc/sysctl.d/99-kian-swap.conf >/dev/null 2>&1 || true
+  say "swap فعال شد (${size_mb} MB) — جلوی کرشِ سرویس‌ها روی VPS کم‌رم گرفته شد"
+}
+
 cmd_update(){
   need_root
   # نسخهٔ پایدار را از VERSION ریپو بخوان (نه latest کور)
@@ -746,6 +770,9 @@ cmd_update(){
   # ۴.۵) نصب‌های قدیمی را به لینکِ HTTPS روی دامنهٔ خودِ کاربر ارتقا بده
   #      (پورت پل + هندلرِ /sub/* در Caddy) — بدونِ نیاز به اقدامِ کاربر.
   ensure_domain_sub
+
+  # ۴.۶) اگر سرور کم‌رم است و swap ندارد، فعالش کن (جلوی کرشِ سرویس‌ها).
+  ensure_swap
 
   # ۵) همهٔ لینک‌های Subscription را بازسازی و با Gist همگام کن تا قابلیت‌های جدید
   #    (پروتکل‌های اضافه‌شده) خودکار در لینکِ همهٔ کاربران بیاید — بدونِ دادنِ لینکِ تازه.

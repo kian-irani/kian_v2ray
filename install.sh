@@ -371,6 +371,37 @@ TUNE
 }
 if ! done_step tune; then apply_tune; mark_step tune; else inf "بهینه‌سازی شبکه قبلاً انجام شده — رد شد"; fi
 
+# --- مرحله ۲.۶: فعال‌سازیِ خودکارِ swap برای VPSهای کم‌رم — امن، idempotent ----
+# روی سرورهای کم‌رم (≤ 2GB) که Xray + sing-box + Caddy + پنل + Docker را با هم اجرا
+# می‌کنند، نبودِ swap باعثِ OOM و کرشِ سرویس‌ها می‌شود. این مرحله یک فایلِ swap می‌سازد.
+# روی OpenVZ/LXC که swap مجاز نیست، با خطای ملایم رد می‌شود (مشکلی پیش نمی‌آید).
+ensure_swap(){
+  local cur_kb; cur_kb="$(awk '/SwapTotal/{print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+  if [ "${cur_kb:-0}" -gt 0 ]; then inf "swap از قبل فعال است ($((cur_kb/1024)) MB) — رد شد"; return 0; fi
+  local ram_mb; ram_mb="$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0)"
+  [ "${ram_mb:-0}" -gt 0 ] && [ "$ram_mb" -le 2048 ] || { inf "رم کافی است (${ram_mb} MB) — swap لازم نیست"; return 0; }
+  local size_mb=2048                              # دو گیگ swap برای سرورهای ≤ ۲ گیگ رم
+  local free_mb; free_mb="$(df -Pm / 2>/dev/null | awk 'NR==2{print $4}')"
+  if [ "${free_mb:-0}" -lt $((size_mb + 1024)) ]; then
+    warn "فضای دیسک برای swap کافی نیست (آزاد: ${free_mb}MB) — رد شد"; return 0
+  fi
+  local sf=/swapfile
+  inf "ساختِ فایلِ swap (${size_mb} MB)..."
+  rm -f "$sf" 2>/dev/null || true
+  if ! fallocate -l "${size_mb}M" "$sf" 2>/dev/null; then
+    dd if=/dev/zero of="$sf" bs=1M count="$size_mb" status=none 2>/dev/null \
+      || { warn "ساختِ فایلِ swap ناموفق — رد شد"; rm -f "$sf"; return 0; }
+  fi
+  chmod 600 "$sf"
+  mkswap "$sf" >/dev/null 2>&1 || { warn "mkswap ناموفق (احتمالاً OpenVZ/LXC) — رد شد"; rm -f "$sf"; return 0; }
+  swapon "$sf" 2>/dev/null      || { warn "swapon ناموفق (احتمالاً مجازی‌سازی swap را اجازه نمی‌دهد) — رد شد"; rm -f "$sf"; return 0; }
+  grep -qF "$sf" /etc/fstab 2>/dev/null || echo "$sf none swap sw 0 0" >> /etc/fstab
+  printf 'vm.swappiness=10\nvm.vfs_cache_pressure=50\n' > /etc/sysctl.d/99-kian-swap.conf
+  sysctl -p /etc/sysctl.d/99-kian-swap.conf >/dev/null 2>&1 || true
+  say "swap فعال شد (${size_mb} MB) — جلوی کرشِ سرویس‌ها روی VPS کم‌رم گرفته شد"
+}
+if ! done_step swap; then ensure_swap; mark_step swap; else inf "swap قبلاً بررسی شده — رد شد"; fi
+
 # --- مرحله ۳: WARP (فقط در صورت نیاز) --------------------------------------
 # fallback خودکار: اگر WARP وصل نشد، قوانینِ routing که به warp می‌روند موقتاً به
 # direct تغییر می‌کنند تا کاربرِ کانفیگ‌های warp بی‌نت نماند. هنگام برگشتِ WARP
