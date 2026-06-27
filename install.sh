@@ -569,10 +569,10 @@ if [ "$(printf '%s' "$SUB_TOKENS" | jq 'length')" -gt 0 ]; then
   # برای هر ایمیل، لینک‌های همان کاربر (که نام کاربر در label لینک هست) را جمع کن
   printf '%s' "$SUB_TOKENS" | jq -r 'to_entries[]|.key+"\t"+.value' | while IFS=$'\t' read -r email token; do
     local_name="${email%@*}"
-    # لینک‌های این کاربر = خطوطی از links.txt که با KIAN-<name>- برچسب خورده‌اند یا SS مشترک
-    user_links="$(grep -F "#KIAN-${local_name}-" "$ETC_DIR/links.txt" 2>/dev/null || true)"
-    ss_link="$(grep -iE 'KIAN-Shadowsocks|KIAN-SS' "$ETC_DIR/links.txt" 2>/dev/null || true)"
-    all_links="$(printf '%s\n%s\n' "$user_links" "$ss_link" | sed '/^$/d')"
+    # لینک‌های این کاربر = خطوطی از links.txt که با <name>- برچسب خورده‌اند
+    # (هر لینک: <name>-<proto>-<port> — Reality/SS/TLS/Hy2/TUIC همگی همین فرمت).
+    user_links="$(grep -F "#${local_name}-" "$ETC_DIR/links.txt" 2>/dev/null || true)"
+    all_links="$(printf '%s\n' "$user_links" | sed '/^$/d')"
     [ -z "$all_links" ] && all_links="$(cat "$ETC_DIR/links.txt")"   # fallback: همه
     printf '%s' "$all_links" | base64 -w0 > "$ETC_DIR/sub/${token}.txt"
   done
@@ -671,22 +671,22 @@ rebuild_links_from_config(){
     | $ri[] as $ib
     | "\($c.id)|\($c.email)|\($ib.port)|\($ib.streamSettings.realitySettings.serverNames[0])|\($ib.streamSettings.realitySettings.shortIds[0])|\($ib.tag)"
   ' "$XRAY_DIR/config.json" 2>/dev/null | while IFS='|' read -r uuid email port sni sid tag; do
-    local label_ch local_name
-    case "$tag" in
-      *warp*) label_ch="WARP" ;;
-      *) label_ch="سریع" ;;
-    esac
-    local_name="${email%@*}"
-    printf 'vless://%s@%s:%s?encryption=none&flow=xtls-rprx-vision&security=reality&sni=%s&fp=chrome&pbk=%s&sid=%s&type=tcp#KIAN-%s-%s-%s\n' \
-      "$uuid" "$SERVER_IP" "$port" "$sni" "$PBK" "$sid" "$local_name" "$label_ch" "$sni" >> "$ETC_DIR/links.txt"
+    local local_name; local_name="${email%@*}"
+    # label scheme: <name>-reality-<port>
+    printf 'vless://%s@%s:%s?encryption=none&flow=xtls-rprx-vision&security=reality&sni=%s&fp=chrome&pbk=%s&sid=%s&type=tcp#%s-reality-%s\n' \
+      "$uuid" "$SERVER_IP" "$port" "$sni" "$PBK" "$sid" "$local_name" "$port" >> "$ETC_DIR/links.txt"
   done
-  # Shadowsocks (در صورت وجود)
+  # Shadowsocks (در صورت وجود) — per-user label so the #<name>- grep picks it up
   local ssport
   ssport="$(jq -r '.inbounds[]|select(.tag=="shadowsocks")|.port' "$XRAY_DIR/config.json" 2>/dev/null)"
   if [ -n "$ssport" ] && [ -n "$SS_PASS" ]; then
     local ssb64
     ssb64="$(printf 'chacha20-ietf-poly1305:%s' "$SS_PASS" | base64 -w0)"
-    printf 'ss://%s@%s:%s#KIAN-Shadowsocks\n' "$ssb64" "$SERVER_IP" "$ssport" >> "$ETC_DIR/links.txt"
+    jq -r '[.inbounds[]|select((.tag//"")|startswith("reality-"))][0].settings.clients[].email' \
+      "$XRAY_DIR/config.json" 2>/dev/null | while IFS= read -r email; do
+      [ -n "$email" ] && printf 'ss://%s@%s:%s#%s-shadowsocks-%s\n' \
+        "$ssb64" "$SERVER_IP" "$ssport" "${email%@*}" "$ssport" >> "$ETC_DIR/links.txt"
+    done
   fi
   return 0
 }
@@ -694,11 +694,11 @@ rebuild_links_from_config(){
 # فقط اگر تداخل بود و pbk داریم، links.txt را از config بازبساز؛ وگرنه همان لینک‌های payload می‌مانند
 if [ "$COLLISION" = 1 ] && [ -n "$PBK" ]; then
   if rebuild_links_from_config; then
-    # فایل‌های Subscription را از links.txt جدید بازبساز (هر کاربر = خطوط KIAN-<name>- + SS)
+    # فایل‌های Subscription را از links.txt جدید بازبساز (هر کاربر = خطوط <name>-)
     if [ -d "$ETC_DIR/sub" ] && [ -f "$ETC_DIR/sub_tokens.json" ]; then
       jq -r 'to_entries[]|.key+"\t"+.value' "$ETC_DIR/sub_tokens.json" | while IFS=$'\t' read -r email token; do
         ln="${email%@*}"
-        ul="$( { grep -F "#KIAN-${ln}-" "$ETC_DIR/links.txt"; grep -iE 'KIAN-Shadowsocks' "$ETC_DIR/links.txt"; } 2>/dev/null )"
+        ul="$(grep -F "#${ln}-" "$ETC_DIR/links.txt" 2>/dev/null || true)"
         [ -z "$ul" ] && ul="$(cat "$ETC_DIR/links.txt")"
         printf '%s' "$ul" | sed '/^$/d' | base64 -w0 > "$ETC_DIR/sub/${token}.txt"
       done
@@ -920,9 +920,9 @@ if { [ -n "$EXTRA_PROTOCOLS" ] || [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ]; } \
    && [ -x /usr/local/bin/kian-protocols.sh ]; then
   inf "فعال‌سازی پروتکل‌های اضافی (Hysteria2/TUIC روی sing-box): ${EXTRA_PROTOCOLS:-env}"
   if bash /usr/local/bin/kian-protocols.sh enable; then
-    # لینک‌های per-user (برچسب #KIAN-<name>-Hysteria2/-TUIC/-AnyTLS/-ShadowTLS) را بگیر
+    # لینک‌های per-user (برچسب #<name>-hysteria2/-tuic/-anytls/-shadowtls) را بگیر
     EXTRA_LINKS="$(bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
-      | grep -oE '(hysteria2|tuic|anytls|ss)://[^[:space:]]+#KIAN-[^[:space:]]+' || true)"
+      | grep -oE '(hysteria2|tuic|anytls|ss)://[^[:space:]]+#[^[:space:]]+' || true)"
     if [ -n "$EXTRA_LINKS" ]; then
       printf '%s\n' "$EXTRA_LINKS" >> "$ETC_DIR/links.txt"
       printf '%s\n' "$EXTRA_LINKS" > "$ETC_DIR/extra_links.txt"
@@ -935,8 +935,8 @@ if { [ -n "$EXTRA_PROTOCOLS" ] || [ "${KIAN_EXTRA_PROTOCOLS:-0}" = "1" ]; } \
               local_name="${email%@*}"
               f="$ETC_DIR/sub/${token}.txt"
               [ -f "$f" ] || continue
-              # فقط لینک‌های همان کاربر (#KIAN-<name>-Hysteria2/-TUIC)
-              user_extra="$(printf '%s\n' "$EXTRA_LINKS" | grep -F "#KIAN-${local_name}-" || true)"
+              # فقط لینک‌های همان کاربر (#<name>-hysteria2/-tuic …)
+              user_extra="$(printf '%s\n' "$EXTRA_LINKS" | grep -F "#${local_name}-" || true)"
               [ -z "$user_extra" ] && continue
               { base64 -d "$f" 2>/dev/null; printf '%s\n' "$user_extra"; } \
                 | sed '/^$/d' | base64 -w0 > "${f}.new" && mv "${f}.new" "$f"

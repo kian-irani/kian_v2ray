@@ -462,14 +462,14 @@ async function generate(f) {
       const link = vlessLink({
         uuid: u.id, ip: f.serverIp, port: p.port, sni: p.sni,
         pubkey: reality.publicKey, shortId: reality.shortId,
-        label: `KIAN-${local}-Reality-${p.port}`,
+        label: `${local}-reality-${p.port}`,
       });
       links.push(link);
       return { channel: p.channel, sni: p.sni, port: p.port, link };
     });
     // فاز ۳: لینک‌های TLS این کاربر
     const tlsLinks = tlsProfiles.map(t => {
-      const label = `KIAN-${local}-${TLS_PROTOS[t.kind].label}`;
+      const label = `${local}-${TLS_PROTOS[t.kind].label.toLowerCase()}-443`;
       const link = tlsLink({ kind: t.kind, path: t.path, label }, u, f.tls.domain);
       links.push(link);
       return { kind: t.kind, label: TLS_PROTOS[t.kind].label, note: TLS_PROTOS[t.kind].note, link };
@@ -486,10 +486,15 @@ async function generate(f) {
 
   let ssOut = null;
   if (f.ss.enabled) {
-    ssOut = ssLink({ ip: f.serverIp, port: f.ss.port, password: f.ss.password, label: 'KIAN-Shadowsocks' });
-    links.push(ssOut);
-    // SS مشترک به محتوای sub همهٔ کاربران اضافه می‌شود
-    perUser.forEach(pu => pu.userLinks.push(ssOut));
+    // SS link is shared (same port/password) but labeled per-user so the
+    // per-user subscription grep (#<name>-) picks it up: <name>-shadowsocks-<port>
+    perUser.forEach(pu => {
+      const ssLnk = ssLink({ ip: f.serverIp, port: f.ss.port, password: f.ss.password,
+        label: `${pu.local}-shadowsocks-${f.ss.port}` });
+      pu.userLinks.push(ssLnk);
+      links.push(ssLnk);
+    });
+    ssOut = ssLink({ ip: f.serverIp, port: f.ss.port, password: f.ss.password, label: 'shadowsocks' });
   }
 
   // install_id یکتا برای این نصب (مرورگر می‌سازد، سرور همان را استفاده می‌کند → URL Gist یکسان می‌ماند)

@@ -395,9 +395,8 @@ cmd_configs(){
     printf "\n${C_B}👤 %s${C_N}\n" "$local_name"
     printf '%s\n' "$inbounds_tsv" | while IFS=$'\t' read -r tag port sni; do
       [ -z "$tag" ] && continue
-      local ch="سریع"; case "$tag" in *warp*) ch="WARP";; esac
-      local l; l="$(build_vless "$uuid" "$port" "$sni" "KIAN-${local_name}-${ch}-${sni}")"
-      printf "${C_G}• %s · %s · پورت %s:${C_N}\n%s\n" "$ch" "$sni" "$port" "$l"; show_qr "$l"
+      local l; l="$(build_vless "$uuid" "$port" "$sni" "${local_name}-reality-${port}")"
+      printf "${C_G}• Reality · %s · پورت %s:${C_N}\n%s\n" "$sni" "$port" "$l"; show_qr "$l"
     done
     # کانفیگ‌های TLS (فاز ۳) — اگر دامنه نصب باشد
     if [ -n "$(meta_tls_domain)" ]; then
@@ -405,7 +404,7 @@ cmd_configs(){
       tls_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("tls-"))|[.tag,.protocol,(.streamSettings.network//"ws"),(.streamSettings.wsSettings.path // .streamSettings.httpupgradeSettings.path // ("/"+(.streamSettings.grpcSettings.serviceName//"")) // "/")]|@tsv' "$CONFIG" 2>/dev/null)"
       printf '%s\n' "$tls_tsv" | while IFS=$'\t' read -r t_tag t_proto t_net t_path; do
         [ -z "$t_tag" ] && continue
-        local lbl="KIAN-${local_name}-${t_tag#tls-}" link=""
+        local lbl="${local_name}-${t_tag#tls-}-443" link=""
         case "$t_proto" in
           vless)  link="$(build_vless_tls "$uuid" "$t_net" "$t_path" "$lbl")";;
           vmess)  link="$(build_vmess_tls "$uuid" "$t_net" "$t_path" "$lbl")";;
@@ -417,7 +416,7 @@ cmd_configs(){
   done
   if [ -n "$ss" ] && { [ -z "$filter" ] || [ "$filter" = "ss" ]; }; then
     read -r sp sm spw <<<"$ss"
-    local l; l="ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#KIAN-SS"
+    local l; l="ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#shadowsocks-${sp}"
     printf "\n${C_B}🧩 Shadowsocks (مشترک):${C_N}\n%s\n" "$l"; show_qr "$l"
   fi
   echo ""
@@ -446,8 +445,7 @@ cmd_sub(){
     local all=""
     while IFS=$'\t' read -r tag port sni; do
       [ -z "$tag" ] && continue
-      local ch="سریع"; case "$tag" in *warp*) ch="WARP";; esac
-      all="${all}$(build_vless "$uuid" "$port" "$sni" "KIAN-${local_name}-${ch}-${sni}")"$'\n'
+      all="${all}$(build_vless "$uuid" "$port" "$sni" "${local_name}-reality-${port}")"$'\n'
     done <<EOF
 $inbounds_tsv
 EOF
@@ -457,7 +455,7 @@ EOF
       tls_tsv="$(jq -r '.inbounds[]|select((.tag//"")|startswith("tls-"))|[.tag,.protocol,(.streamSettings.network//"ws"),(.streamSettings.wsSettings.path // .streamSettings.httpupgradeSettings.path // ("/"+(.streamSettings.grpcSettings.serviceName//"")) // "/")]|@tsv' "$CONFIG" 2>/dev/null)"
       while IFS=$'\t' read -r t_tag t_proto t_net t_path; do
         [ -z "$t_tag" ] && continue
-        local tls_label="KIAN-${local_name}-${t_tag#tls-}"
+        local tls_label="${local_name}-${t_tag#tls-}-443"
         local tls_link=""
         case "$t_proto" in
           vless)  tls_link="$(build_vless_tls "$uuid" "$t_net" "$t_path" "$tls_label")";;
@@ -471,11 +469,11 @@ EOF
     fi
     if [ -n "$ss" ]; then
       read -r sp sm spw <<<"$ss"
-      all="${all}ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#KIAN-${local_name}-SS"$'\n'
+      all="${all}ss://$(printf '%s' "$sm:$spw" | base64 -w0)@$(meta_ip):$sp#${local_name}-shadowsocks-${sp}"$'\n'
     fi
     # لینک‌های Hysteria2/TUIC این کاربر (اگر کامپنیون sing-box فعال است) — per-user
     if [ -f "$ETC_DIR/extra_links.txt" ]; then
-      local ex; ex="$(grep -F "#KIAN-${local_name}-" "$ETC_DIR/extra_links.txt" 2>/dev/null || true)"
+      local ex; ex="$(grep -F "#${local_name}-" "$ETC_DIR/extra_links.txt" 2>/dev/null || true)"
       [ -n "$ex" ] && all="${all}${ex}"$'\n'
     fi
     # فایل subscription = base64 از مجموعهٔ لینک‌ها (فرمت v2rayNG)
@@ -534,7 +532,7 @@ cmd_add(){
   if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
     if bash /usr/local/bin/kian-protocols.sh adduser "$name" >/dev/null 2>&1; then
       local new_extra; new_extra="$(bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
-        | grep -F "#KIAN-${name}-" || true)"
+        | grep -F "#${name}-" || true)"
       if [ -n "$new_extra" ]; then
         printf '%s\n' "$new_extra" >> "$ETC_DIR/links.txt"
         printf '%s\n' "$new_extra" >> "$ETC_DIR/extra_links.txt"
@@ -561,7 +559,7 @@ cmd_remove(){
     bash /usr/local/bin/kian-protocols.sh deluser "$rm_name" >/dev/null 2>&1 || true
   fi
   if [ -f "$ETC_DIR/extra_links.txt" ]; then
-    grep -vF "#KIAN-${rm_name}-" "$ETC_DIR/extra_links.txt" > "$tmp" 2>/dev/null && mv "$tmp" "$ETC_DIR/extra_links.txt" || rm -f "$tmp"
+    grep -vF "#${rm_name}-" "$ETC_DIR/extra_links.txt" > "$tmp" 2>/dev/null && mv "$tmp" "$ETC_DIR/extra_links.txt" || rm -f "$tmp"
   fi
   # توکن Subscription کاربر را پاک کن و فایل sub او را حذف کن
   if [ -f "$ETC_DIR/sub_tokens.json" ]; then
@@ -707,7 +705,7 @@ cmd_update(){
 _refresh_extra_links(){
   if [ -x /usr/local/bin/kian-protocols.sh ] && systemctl is-active --quiet kian-singbox 2>/dev/null; then
     bash /usr/local/bin/kian-protocols.sh links 2>/dev/null \
-      | grep -oE '(hysteria2|tuic|anytls|ss)://[^[:space:]]+#KIAN-[^[:space:]]+' \
+      | grep -oE '(hysteria2|tuic|anytls|ss)://[^[:space:]]+#[^[:space:]]+' \
       > "$ETC_DIR/extra_links.txt" 2>/dev/null || true
   fi
 }

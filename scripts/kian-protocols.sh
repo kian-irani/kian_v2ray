@@ -296,8 +296,8 @@ open_ports(){
   fi
 }
 
-# Per-user share links, labeled #KIAN-<name>-<Proto> so the installer's per-user
-# subscription builder (grep "#KIAN-<name>-") picks each user's links up.
+# Per-user share links, labeled #<name>-<proto>-<port> so the installer's per-user
+# subscription builder (grep "#<name>-") picks each user's links up.
 print_links(){
   local ip sni map psk
   ip="$(curl -fsS4 https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')"
@@ -314,14 +314,14 @@ print_links(){
   jq -r '.[]|[.name,.hy2_pw,.tuic_uuid,.tuic_pw,(.anytls_pw//""),(.stls_pw//"")]|@tsv' "$map" \
     | while IFS=$'\t' read -r name hy2pw tuicuuid tuicpw anytlspw stlspw; do
         [ -z "$name" ] && continue
-        echo "hysteria2://${hy2pw}@${ip}:${HY2_PORT}/?sni=${sni}&insecure=1#KIAN-${name}-Hysteria2"
-        echo "tuic://${tuicuuid}:${tuicpw}@${ip}:${TUIC_PORT}/?sni=${sni}&congestion_control=bbr&allow_insecure=1#KIAN-${name}-TUIC"
+        echo "hysteria2://${hy2pw}@${ip}:${HY2_PORT}/?sni=${sni}&insecure=1#${name}-hysteria2-${HY2_PORT}"
+        echo "tuic://${tuicuuid}:${tuicpw}@${ip}:${TUIC_PORT}/?sni=${sni}&congestion_control=bbr&allow_insecure=1#${name}-tuic-${TUIC_PORT}"
         if [ "$anytls_on" = 1 ] && [ -n "$anytlspw" ]; then
-          echo "anytls://${anytlspw}@${ip}:${ANYTLS_PORT}/?sni=${sni}&insecure=1#KIAN-${name}-AnyTLS"
+          echo "anytls://${anytlspw}@${ip}:${ANYTLS_PORT}/?sni=${sni}&insecure=1#${name}-anytls-${ANYTLS_PORT}"
         fi
         if [ "$stls_on" = 1 ] && [ -n "$stlspw" ]; then
           # ss:// over shadowtls (sing-box plugin form): shadow-tls v3 + host/pw.
-          echo "ss://${ss_b64}@${ip}:${STLS_PORT}?shadow-tls=v3&shadow-tls-password=${stlspw}&shadow-tls-sni=${sni}#KIAN-${name}-ShadowTLS"
+          echo "ss://${ss_b64}@${ip}:${STLS_PORT}?shadow-tls=v3&shadow-tls-password=${stlspw}&shadow-tls-sni=${sni}#${name}-shadowtls-${STLS_PORT}"
         fi
       done
   echo

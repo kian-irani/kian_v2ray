@@ -252,27 +252,27 @@ def generate(opts):
     ip=opts["server_ip"]
     for u in users:
         local=u["email"].split("@")[0]
+        # label scheme: <name>-<proto>-<port>  (e.g. ali-reality-2083)
         items=[{"channel":p["channel"],"sni":p["sni"],"port":p["port"],
                 "link":vless_link(u["id"],ip,p["port"],p["sni"],reality["publicKey"],
-                                  reality["shortId"],f'KIAN-{local}-Reality-{p["port"]}')}
+                                  reality["shortId"],f'{local}-reality-{p["port"]}')}
                for p in profiles]
         tls_items_links=[]
         for t in tls_profiles:
-            _chs=("-"+("سریع" if t.get("channel")=="direct" else "WARP")) if len(tls_channels)>1 else ""
-            _disp=TLS_PROTOS[t["kind"]]["label"]+_chs
-            lbl=f"KIAN-{local}-{_disp}"
+            _disp=TLS_PROTOS[t["kind"]]["label"]
+            lbl=f'{local}-{_disp.lower()}-443'
             tls_items_links.append({"kind":t["kind"],"label":_disp,
                                     "note":TLS_PROTOS[t["kind"]]["note"],
                                     "link":tls_link({"kind":t["kind"],"path":t["path"],"label":lbl},u,tls_domain)})
         token=secrets.token_hex(16); sub_tokens[u["email"]]=token
         sub_urls=[f"http://{ip}:{sp}/sub/{token}" for sp in SUB_PORTS]
         user_links=[it["link"] for it in items]+[t["link"] for t in tls_items_links]
+        if ss["enabled"]:
+            user_links.append(ss_link(ip,ss["port"],ss["password"],f'{local}-shadowsocks-{ss["port"]}'))
         per_user.append({"email":u["email"],"local":local,"items":items,
                          "tlsLinks":tls_items_links,"userLinks":user_links,
                          "subUrls":sub_urls,"subToken":token})
-    ss_out_link=ss_link(ip,ss["port"],ss["password"],"KIAN-Shadowsocks") if ss["enabled"] else None
-    if ss_out_link:
-        for u in per_user: u["userLinks"].append(ss_out_link)
+    ss_out_link=ss_link(ip,ss["port"],ss["password"],"shadowsocks") if ss["enabled"] else None
     links=[it["link"] for u in per_user for it in u["items"]]
     links+=[t["link"] for u in per_user for t in u.get("tlsLinks",[])]
     if ss_out_link: links.append(ss_out_link)
