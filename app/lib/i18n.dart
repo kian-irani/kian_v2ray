@@ -115,6 +115,7 @@ class Strings {
     'hist.users': ['کاربر', 'users'],
     'hist.sub': ['لینکِ Subscription', 'Subscription link'],
     'hist.panel': ['آدرسِ پنلِ وب', 'Web panel URL'],
+    'hist.openpanel': ['باز کردنِ پنلِ وب', 'Open web panel'],
     'hist.user': ['کاربر', 'user'],
     'hist.pass': ['رمز', 'pass'],
     'hist.show': ['نمایشِ رمز', 'Show password'],

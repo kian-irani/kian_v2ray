@@ -10,6 +10,18 @@
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- url_launcher: open the web panel (https) in a browser on Android 11+ -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
+
     <application
         android:label="Kv2m"
         android:name="${applicationName}"

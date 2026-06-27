@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../i18n.dart';
 import '../models/install_record.dart';
@@ -209,6 +210,22 @@ class _RecordCardState extends State<_RecordCard> {
                   icon: Icon(_showPass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                       size: 18),
                   onPressed: () => setState(() => _showPass = !_showPass),
+                ),
+              ),
+            ],
+            if (r.panelUrl != null) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () async {
+                    final uri = Uri.tryParse(r.panelUrl!);
+                    if (uri != null) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: Text(s.t('hist.openpanel')),
                 ),
               ),
             ],
