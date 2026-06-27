@@ -232,7 +232,10 @@ class ConfigGen {
       List<Map<String, dynamic>> users, String priv, String sid, String channel,
       bool ss, int ssPort, String ssPw, List<Map<String, dynamic>> tls, bool warp,
       List<String> snis) {
-    final sniff = {'enabled': true, 'destOverride': ['http', 'tls', 'quic']};
+    // routeOnly: sniff the domain for ROUTING only — never override the
+    // connection's destination. Avoids a second DNS resolution per request and
+    // keeps UDP/QUIC (gaming) intact. The big latency/packet-loss fix.
+    final sniff = {'enabled': true, 'destOverride': ['http', 'tls', 'quic'], 'routeOnly': true};
     final realityClients = users
         .map((u) => {'id': u['id'], 'email': u['email'], 'flow': 'xtls-rprx-vision'})
         .toList();
@@ -287,7 +290,7 @@ class ConfigGen {
     // ChatGPT/Claude/Gemini still work from a blocked server IP.
     final anyWarp = warp;
     final outbounds = <Map<String, dynamic>>[
-      {'tag': 'direct', 'protocol': 'freedom', 'settings': {'domainStrategy': 'UseIP'}},
+      {'tag': 'direct', 'protocol': 'freedom', 'settings': {'domainStrategy': 'AsIs'}},
     ];
     if (anyWarp) {
       outbounds.add({'tag': 'warp', 'protocol': 'socks',
@@ -316,7 +319,7 @@ class ConfigGen {
         'system': {'statsInboundUplink': true, 'statsInboundDownlink': true}},
       'inbounds': inbounds,
       'outbounds': outbounds,
-      'routing': {'rules': rules},
+      'routing': {'domainStrategy': 'AsIs', 'rules': rules},
     };
   }
 

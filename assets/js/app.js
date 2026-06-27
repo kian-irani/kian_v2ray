@@ -149,7 +149,7 @@ function buildConfig(o) {
         shortIds: [o.reality.shortId],
       },
     },
-    sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] },
+    sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'], routeOnly: true },
   });
 
   const apiPort = o.apiPort || 10085;
@@ -173,7 +173,7 @@ function buildConfig(o) {
     inbounds.push({
       listen: '127.0.0.1', port: t.intPort, protocol: t.proto, tag: t.tag,
       settings, streamSettings: stream,
-      sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] },
+      sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'], routeOnly: true },
     });
   });
   if (o.ss.enabled) {
@@ -184,11 +184,11 @@ function buildConfig(o) {
       tag: 'shadowsocks',
       // chacha20-ietf-poly1305 = تک‌کاربره: method + password (نه clients[])
       settings: { method: SS_METHOD, password: o.ss.password, network: 'tcp,udp' },
-      sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] },
+      sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'], routeOnly: true },
     });
   }
 
-  const outbounds = [{ tag: 'direct', protocol: 'freedom', settings: { domainStrategy: 'UseIP' } }];
+  const outbounds = [{ tag: 'direct', protocol: 'freedom', settings: { domainStrategy: 'AsIs' } }];
   if (anyWarp) outbounds.push({ tag: 'warp', protocol: 'socks', settings: { servers: [{ address: '127.0.0.1', port: WARP_PORT }] } });
   outbounds.push({ tag: 'block', protocol: 'blackhole', settings: {} });
 
@@ -218,7 +218,7 @@ function buildConfig(o) {
     },
     inbounds,
     outbounds,
-    routing: { domainStrategy: 'IPIfNonMatch', rules },
+    routing: { domainStrategy: 'AsIs', rules },
   };
 }
 

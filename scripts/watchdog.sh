@@ -40,7 +40,7 @@ fb_set(){ # on|off — outbound warp را بین freedom(direct) و socks سوی
   local tmp; tmp="$(mktemp)"
   if [ "$1" = on ]; then
     [ "$(cat "$FB_FLAG" 2>/dev/null)" = on ] && { rm -f "$tmp"; return 0; }
-    jq '(.outbounds[]|select(.tag=="warp"))|={tag:"warp",protocol:"freedom",settings:{domainStrategy:"UseIP"}}' "$CONFIG" > "$tmp" \
+    jq '(.outbounds[]|select(.tag=="warp"))|={tag:"warp",protocol:"freedom",settings:{domainStrategy:"AsIs"}}' "$CONFIG" > "$tmp" \
       && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$CONFIG" || { rm -f "$tmp"; return 0; }
     echo on > "$FB_FLAG"; log "WARP وصل نشد → fallback به direct فعال شد"
   else

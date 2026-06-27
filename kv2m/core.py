@@ -4,7 +4,7 @@ import base64, json, re, secrets, uuid
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives import serialization
 
-APP_VERSION = "4.4.0"  # 4.4: speed — direct by default, WARP only for geo-blocked AI domains
+APP_VERSION = "4.4.1"  # 4.4.1: latency — AsIs DNS strategy + sniffing routeOnly (no per-request re-resolve)
 RAW_BASE    = "https://raw.githubusercontent.com/KIAN-IRANI/kian_v2ray/main"
 GIST_PROXY  = "https://kian-sub.kian-mhrv.workers.dev"  # Cloudflare Worker → secret Gist HTTPS sub
 WARP_PORT   = 40000
@@ -138,14 +138,14 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
                     "show":False,"dest":f'{p["sni"]}:443',"xver":0,
                     "serverNames":[p["sni"]],"privateKey":reality["privateKey"],
                     "shortIds":[reality["shortId"]]}},
-                "sniffing":{"enabled":True,"destOverride":["http","tls","quic"]}}
+                "sniffing":{"enabled":True,"destOverride":["http","tls","quic"],"routeOnly":True}}
     inbounds=[{"listen":"127.0.0.1","port":api_port,"protocol":"dokodemo-door",
                "settings":{"address":"127.0.0.1"},"tag":"api"}]
     for p in profiles: inbounds.append(ri(p))
     if ss.get("enabled"):
         inbounds.append({"listen":"0.0.0.0","port":ss["port"],"protocol":"shadowsocks","tag":"shadowsocks",
                          "settings":{"method":SS_METHOD,"password":ss["password"],"network":"tcp,udp"},
-                         "sniffing":{"enabled":True,"destOverride":["http","tls","quic"]}})
+                         "sniffing":{"enabled":True,"destOverride":["http","tls","quic"],"routeOnly":True}})
     for t in tls_items:
         net=t["net"]
         if net=="ws":            stream={"network":"ws","security":"none","wsSettings":{"path":t["path"]}}
@@ -158,8 +158,8 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
         else:                      st={"clients":[{"password":u["id"],"email":u["email"]} for u in users]}
         inbounds.append({"listen":"127.0.0.1","port":t["intPort"],"protocol":t["proto"],"tag":t["tag"],
                          "settings":st,"streamSettings":stream,
-                         "sniffing":{"enabled":True,"destOverride":["http","tls","quic"]}})
-    outbounds=[{"tag":"direct","protocol":"freedom","settings":{"domainStrategy":"UseIP"}}]
+                         "sniffing":{"enabled":True,"destOverride":["http","tls","quic"],"routeOnly":True}})
+    outbounds=[{"tag":"direct","protocol":"freedom","settings":{"domainStrategy":"AsIs"}}]
     if any_warp: outbounds.append({"tag":"warp","protocol":"socks","settings":{"servers":[{"address":"127.0.0.1","port":WARP_PORT}]}})
     outbounds.append({"tag":"block","protocol":"blackhole","settings":{}})
     # Speed: all proxy traffic goes DIRECT (full server line, like plain Xray /
@@ -177,7 +177,7 @@ def build_config(profiles,reality,users,ss,api_port=10085,tls=None,tls_profiles=
             "stats":{},"policy":{"levels":{"0":{"statsUserUplink":True,"statsUserDownlink":True}},
             "system":{"statsInboundUplink":True,"statsInboundDownlink":True}},
             "inbounds":inbounds,"outbounds":outbounds,
-            "routing":{"domainStrategy":"IPIfNonMatch","rules":rules}}
+            "routing":{"domainStrategy":"AsIs","rules":rules}}
 
 def generate(opts):
     reality=gen_reality()

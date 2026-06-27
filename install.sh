@@ -386,7 +386,7 @@ warp_fallback(){ # $1 = on|off
   if [ "$1" = "on" ]; then
     [ "$(cat "$flag" 2>/dev/null)" = "on" ] && return 0
     tmp="$(mktemp)"
-    jq '(.outbounds[]|select(.tag=="warp"))|={tag:"warp",protocol:"freedom",settings:{domainStrategy:"UseIP"}}' "$cfg" > "$tmp" \
+    jq '(.outbounds[]|select(.tag=="warp"))|={tag:"warp",protocol:"freedom",settings:{domainStrategy:"AsIs"}}' "$cfg" > "$tmp" \
       && jq -e . "$tmp" >/dev/null 2>&1 && mv "$tmp" "$cfg" || rm -f "$tmp"
     echo on > "$flag"
     docker restart "$CONTAINER" >/dev/null 2>&1 || true
