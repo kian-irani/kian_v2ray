@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network security policy for Kv2m.
+
+  Base policy permits cleartext: this is a VPN / server-management client and
+  must reach user-provided panels, subscription URLs and SSH hosts that are
+  often plain HTTP/raw sockets on arbitrary IPs (e.g. http://1.2.3.4:8443).
+  Forbidding cleartext outright would break those legitimate, user-controlled
+  connections, so we keep it permitted rather than a blanket manifest flag.
+
+  First-party endpoints (app update + Gist/subscription sync) carry no user
+  servers and must never be downgraded to cleartext, so they are pinned to
+  HTTPS-only below. This makes the policy explicit and auditable and protects
+  the auto-update / sync channel from MITM downgrade.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- First-party channels: HTTPS only, no cleartext fallback. -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">github.com</domain>
+        <domain includeSubdomains="true">githubusercontent.com</domain>
+        <domain includeSubdomains="true">workers.dev</domain>
+    </domain-config>
+</network-security-config>
