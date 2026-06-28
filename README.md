@@ -112,7 +112,7 @@ kian-v2ray panel enable
 kian-panel.sh enable           # installs, creates systemd service, prints URL
 ```
 
-**Features:** JWT + refresh tokens + **TOTP 2FA** · CRUD users + search + **bulk actions** · per-user **IP / speed / HWID** limits + **auto-disable** · per-user **routing & DNS** · WebSocket live stats · CSV/JSON export · **audit log** · **node cluster** (health / route / GeoIP failover) · key rotation · CSP security headers + rate-limit + CORS · unauthenticated `/metrics` for Prometheus scraping.
+**Features:** JWT + refresh tokens + **TOTP 2FA** · CRUD users + search + **bulk actions** · per-user **IP / speed / HWID** limits + **auto-disable** · per-user **routing & DNS** · WebSocket live stats · CSV/JSON export · **audit log** · **node cluster** (health / route / GeoIP failover) · key rotation · CSP security headers + rate-limit + CORS · unauthenticated `/metrics` for Prometheus scraping (optional `KIAN_METRICS_IP_WHITELIST` to restrict scrapers — see [`docs/metrics.md`](docs/metrics.md)).
 
 ```
 http://YOUR-SERVER:8443/app      ← dashboard

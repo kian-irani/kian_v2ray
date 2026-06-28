@@ -52,8 +52,13 @@ from .schemas import (BulkAction, LoginRequest, NodeCreate, NodeHeartbeat,
                       TotpEnable, UserCreate, UserOut, UserUpdate)
 
 # Optional admin IP allowlist (2.9). Empty = allow all.
-_ADMIN_IPS = {ip.strip() for ip in
-              os.environ.get("KIAN_ADMIN_IP_WHITELIST", "").split(",") if ip.strip()}
+_ADMIN_IPS = security.parse_ip_allowlist(
+    os.environ.get("KIAN_ADMIN_IP_WHITELIST", ""))
+# Optional, independent allowlist for the unauthenticated /metrics scrape
+# endpoint (BUG-6). Empty = allow all (unchanged default); set to e.g. the
+# Prometheus host(s) when the panel is internet-facing.
+_METRICS_IPS = security.parse_ip_allowlist(
+    os.environ.get("KIAN_METRICS_IP_WHITELIST", ""))
 
 ACCESS_TTL = 900          # 15 min
 REFRESH_TTL = 7 * 86400   # 7 days
@@ -200,10 +205,8 @@ def _issue_pair(secret: str, sub: str) -> TokenPair:
 
 
 def _check_ip_allowlist(request: Request) -> None:
-    if not _ADMIN_IPS:
-        return
     ip = request.client.host if request.client else None
-    if ip not in _ADMIN_IPS:
+    if not security.ip_allowed(ip, _ADMIN_IPS):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "ip not allowed")
 
 
@@ -460,9 +463,13 @@ def api_analytics_preview(admin: str = Depends(require_admin), conn=Depends(get_
 
 
 @app.get("/metrics")
-def metrics(conn=Depends(get_db)):
+def metrics(request: Request, conn=Depends(get_db)):
     """Prometheus scrape endpoint (job 'kian-panel'). Unauthenticated by
-    convention; restrict at the network layer / behind the panel's TLS."""
+    convention; restrict at the network layer / behind the panel's TLS, or
+    set KIAN_METRICS_IP_WHITELIST to limit scrapers when internet-facing."""
+    ip = request.client.host if request.client else None
+    if not security.ip_allowed(ip, _METRICS_IPS):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "ip not allowed")
     from fastapi.responses import PlainTextResponse
     s = repo.stats(conn)
     nodes = repo.list_nodes(conn)

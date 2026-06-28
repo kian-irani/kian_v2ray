@@ -75,6 +75,22 @@ def test_totp_accepts_current_code_and_rejects_wrong():
     assert not security.verify_totp(secret, "000000", for_time=1_000_000) or code == "000000"
 
 
+# ---------- security: IP allowlist (BUG-6) ----------
+
+def test_ip_allowlist_parse_and_gate():
+    empty = security.parse_ip_allowlist("")
+    assert empty == frozenset()
+    # empty allowlist => no restriction (open), matching current /metrics default
+    assert security.ip_allowed("1.2.3.4", empty)
+    assert security.ip_allowed(None, empty)
+
+    allow = security.parse_ip_allowlist(" 10.0.0.1, 10.0.0.2 ,, ")
+    assert allow == frozenset({"10.0.0.1", "10.0.0.2"})
+    assert security.ip_allowed("10.0.0.1", allow)
+    assert not security.ip_allowed("10.0.0.9", allow)
+    assert not security.ip_allowed(None, allow)  # unknown client is rejected
+
+
 # ---------- repo ----------
 
 def test_repo_user_lifecycle(tmp_path):

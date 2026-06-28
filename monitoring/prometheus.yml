@@ -19,7 +19,9 @@ scrape_configs:
     static_configs:
       - targets: ["xray-exporter:9550"]
 
-  # The KIAN panel can expose /metrics in a later step.
+  # The KIAN panel exposes /metrics (unauthenticated by convention). When the
+  # panel is internet-facing, restrict scrapers via KIAN_METRICS_IP_WHITELIST
+  # or a network rule — see docs/metrics.md.
   - job_name: kian-panel
     metrics_path: /metrics
     static_configs:
