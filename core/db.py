@@ -91,6 +91,13 @@ MIGRATIONS: list[str] = [
     """
     ALTER TABLE users ADD COLUMN sub_token TEXT;
     """,
+    # 0008 — periodic traffic-quota reset (FR-S1). reset_strategy is one of
+    # daily|weekly|monthly (NULL/none = lifetime cap, the old behaviour);
+    # last_reset is the unix ts of the most recent automatic reset.
+    """
+    ALTER TABLE users ADD COLUMN reset_strategy TEXT;
+    ALTER TABLE users ADD COLUMN last_reset INTEGER;
+    """,
 ]
 
 

@@ -11,7 +11,7 @@ import time
 import uuid as _uuid
 from typing import Any, Optional
 
-from core import audit
+from core import audit, quota
 
 
 def _row(r: Optional[sqlite3.Row]) -> Optional[dict[str, Any]]:
@@ -39,16 +39,21 @@ def create_user(conn: sqlite3.Connection, *, actor: str, name: str,
                 quota_bytes: int = 0, expires_at: Optional[int] = None,
                 ip_limit: int = 0, speed_kbps: int = 0,
                 hwid: Optional[str] = None, routing: Optional[str] = None,
-                dns: Optional[str] = None) -> dict[str, Any]:
+                dns: Optional[str] = None,
+                reset_strategy: Optional[str] = None) -> dict[str, Any]:
     import secrets as _sec
     user_uuid = str(_uuid.uuid4())
     sub_token = _sec.token_urlsafe(16)
+    # normalize the strategy: only daily/weekly/monthly persist; anything else
+    # (incl. "none"/"") means a lifetime cap and is stored as NULL.
+    rs = (reset_strategy or "").strip().lower()
+    reset_strategy = rs if rs in quota.VALID_STRATEGIES else None
     conn.execute(
         "INSERT INTO users (name, uuid, quota_bytes, expires_at, ip_limit, "
-        "speed_kbps, hwid, routing, dns, sub_token) VALUES "
-        "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "speed_kbps, hwid, routing, dns, sub_token, reset_strategy) VALUES "
+        "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (name, user_uuid, quota_bytes, expires_at, ip_limit, speed_kbps, hwid,
-         routing, dns, sub_token),
+         routing, dns, sub_token, reset_strategy),
     )
     audit.record(conn, actor=actor, action="user.add", target=name,
                  detail=f"quota={quota_bytes} ip_limit={ip_limit}")
@@ -58,7 +63,8 @@ def create_user(conn: sqlite3.Connection, *, actor: str, name: str,
 def update_user(conn: sqlite3.Connection, *, actor: str, name: str,
                 **fields: Any) -> Optional[dict[str, Any]]:
     allowed = {"quota_bytes", "used_bytes", "expires_at", "ip_limit",
-               "speed_kbps", "hwid", "enabled", "routing", "dns"}
+               "speed_kbps", "hwid", "enabled", "routing", "dns",
+               "reset_strategy"}
     sets = {k: v for k, v in fields.items() if k in allowed and v is not None}
     if not sets:
         return get_user(conn, name)
@@ -111,6 +117,32 @@ def auto_disable_expired(conn: sqlite3.Connection, *, actor: str = "system",
     for r in rows:
         set_enabled(conn, actor=actor, name=r["name"], enabled=False)
     return len(rows)
+
+
+def apply_quota_resets(conn: sqlite3.Connection, *, actor: str = "system",
+                       now: Optional[int] = None) -> int:
+    """Zero used_bytes for users whose periodic reset (daily/weekly/monthly) is
+    due (FR-S1). A user disabled *only* because they hit their quota is
+    re-enabled on reset, unless their validity has also expired. Returns the
+    number of users reset."""
+    ts = int(now if now is not None else time.time())
+    rows = conn.execute(
+        "SELECT name, last_reset, reset_strategy, enabled, expires_at "
+        "FROM users WHERE reset_strategy IS NOT NULL AND reset_strategy != '' "
+        "AND reset_strategy != 'none'").fetchall()
+    n = 0
+    for r in rows:
+        if not quota.is_due(r["reset_strategy"], r["last_reset"], now=ts):
+            continue
+        conn.execute("UPDATE users SET used_bytes=0, last_reset=? WHERE name=?",
+                     (ts, r["name"]))
+        # restore service if they were cut off and are still within validity
+        if not r["enabled"] and (r["expires_at"] is None or r["expires_at"] > ts):
+            conn.execute("UPDATE users SET enabled=1 WHERE name=?", (r["name"],))
+        audit.record(conn, actor=actor, action="user.quota_reset",
+                     target=r["name"], detail=str(r["reset_strategy"]))
+        n += 1
+    return n
 
 
 def stats(conn: sqlite3.Connection) -> dict[str, Any]:
