@@ -10,7 +10,7 @@ fully unit-testable without a running Xray.
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 
 
 # --------------------------------------------------------------------------- #
@@ -45,6 +45,30 @@ def wireguard_inbound(port: int, private_key: str, peers: list[dict]) -> dict:
         "listen_port": port, "private_key": private_key,
         "peers": peers,
     }
+
+
+def amneziawg_inbound(port: int, private_key: str, peers: list[dict], *,
+                      jc: int = 4, jmin: int = 40, jmax: int = 70,
+                      s1: int = 0, s2: int = 0,
+                      h1: int = 1, h2: int = 2, h3: int = 3, h4: int = 4) -> dict:
+    """AmneziaWG (FR-T7): obfuscated WireGuard that hides the WG handshake
+    pattern, for networks that block plain WireGuard. Same shape as
+    :func:`wireguard_inbound` plus the Amnezia obfuscation parameters.
+
+    ``jc`` is the junk-packet count; ``jmin``/``jmax`` the junk size range;
+    ``s1``/``s2`` init/response junk sizes; ``h1``-``h4`` the (distinct) magic
+    header values. Client and server must share identical values, so they are
+    surfaced here for the panel to distribute.
+    """
+    if jc < 0 or jmin < 0 or jmax < jmin:
+        raise ValueError("bad amnezia junk parameters (need 0<=jmin<=jmax)")
+    if len({h1, h2, h3, h4}) != 4:
+        raise ValueError("amnezia h1..h4 must be four distinct values")
+    ib = wireguard_inbound(port, private_key, peers)
+    ib["tag"] = "amneziawg-in"
+    ib["obfs"] = {"type": "amnezia", "jc": jc, "jmin": jmin, "jmax": jmax,
+                  "s1": s1, "s2": s2, "h1": h1, "h2": h2, "h3": h3, "h4": h4}
+    return ib
 
 
 def mux_settings(enabled: bool = True, protocol: str = "h2mux",
@@ -134,6 +158,34 @@ def fragment_settings(packets: str = "tlshello", length: str = "100-200",
     return {"packets": packets, "length": length, "interval": interval}
 
 
+# Named Fragment profiles (FR-D2): tune split size/interval per network. The
+# "aggressive" profile uses smaller fragments + longer gaps for strict DPI.
+_FRAGMENT_PROFILES = {
+    "off": None,
+    "default": {"packets": "tlshello", "length": "100-200", "interval": "10-20"},
+    "balanced": {"packets": "tlshello", "length": "40-100", "interval": "20-40"},
+    "aggressive": {"packets": "1-3", "length": "10-40", "interval": "30-60"},
+}
+
+
+def fragment_profile(name: str = "default") -> Optional[dict]:
+    """Return a ready Fragment setting for a named profile, or ``None`` for
+    ``off``. Raises on an unknown profile so a typo never silently disables
+    fragmentation."""
+    key = (name or "default").strip().lower()
+    if key not in _FRAGMENT_PROFILES:
+        raise ValueError(
+            f"unknown fragment profile {name!r}; valid: "
+            + ", ".join(sorted(_FRAGMENT_PROFILES)))
+    prof = _FRAGMENT_PROFILES[key]
+    return dict(prof) if prof else None
+
+
+def fragment_profiles() -> list[str]:
+    """Names of the available Fragment profiles (for UI drop-downs)."""
+    return sorted(_FRAGMENT_PROFILES)
+
+
 def utls_settings(fingerprint: str = "chrome") -> dict:
     """Mimic a real browser's TLS fingerprint. Valid: chrome/firefox/safari/ios/edge/random."""
     return {"enabled": True, "fingerprint": fingerprint}
@@ -182,6 +234,24 @@ def to_singbox(proxies: Iterable[dict]) -> dict:
             ob["password"] = p["password"]
         if p.get("tls"):
             ob["tls"] = {"enabled": True, "server_name": p.get("sni", p["server"])}
+        # transport (ws / grpc / httpupgrade) for the v2ray-family protocols
+        net = p.get("network")
+        if net in ("ws", "httpupgrade"):
+            t: dict[str, Any] = {"type": net}
+            if p.get("path"):
+                t["path"] = p["path"]
+            ob["transport"] = t
+        elif net == "grpc":
+            ob["transport"] = {"type": "grpc",
+                               "service_name": p.get("path", "").lstrip("/")}
+        # QUIC-family tuning (hysteria2 / tuic)
+        if p["type"] == "hysteria2":
+            if p.get("up_mbps"):
+                ob["up_mbps"] = int(p["up_mbps"])
+            if p.get("down_mbps"):
+                ob["down_mbps"] = int(p["down_mbps"])
+        elif p["type"] == "tuic" and p.get("congestion_control"):
+            ob["congestion_control"] = p["congestion_control"]
         outbounds.append(ob)
     outbounds.append({"type": "selector", "tag": "proxy",
                       "outbounds": tags or ["direct"]})
@@ -207,6 +277,13 @@ def to_clash(proxies: Iterable[dict]) -> str:
             line += f", password: {_yq(p['password'])}"
         if p.get("tls"):
             line += f", tls: true, servername: {p.get('sni', p['server'])}"
+        net = p.get("network")
+        if net:
+            line += f", network: {net}"
+            if net == "ws" and p.get("path"):
+                line += f", ws-opts: {{path: {_yq(p['path'])}}}"
+            elif net == "grpc" and p.get("path"):
+                line += f", grpc-opts: {{grpc-service-name: {_yq(p['path'].lstrip('/'))}}}"
         line += "}"
         lines.append(line)
     lines.append("proxy-groups:")

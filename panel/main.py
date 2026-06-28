@@ -143,6 +143,33 @@ def _on_startup() -> None:
     _bootstrap()
 
 
+# Period between automatic maintenance passes (quota resets + auto-disable).
+MAINTENANCE_INTERVAL = int(os.environ.get("KIAN_MAINTENANCE_INTERVAL", "3600"))
+
+
+async def _maintenance_loop() -> None:
+    """Periodically apply FR-S1 quota resets, then disable expired/over-quota
+    users. Fail-soft: a single failed pass is logged and the loop continues."""
+    import logging
+    log = logging.getLogger("kian.panel")
+    while True:
+        await asyncio.sleep(MAINTENANCE_INTERVAL)
+        try:
+            with core_db.session(DB_PATH) as conn:
+                repo.apply_quota_resets(conn)
+                repo.auto_disable_expired(conn)
+        except Exception:
+            log.exception("maintenance pass failed")
+
+
+@app.on_event("startup")
+async def _start_maintenance() -> None:
+    # Opt-out for multi-worker deploys that schedule maintenance externally.
+    if os.environ.get("KIAN_DISABLE_MAINTENANCE") == "1":
+        return
+    asyncio.create_task(_maintenance_loop())
+
+
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     resp = await call_next(request)
@@ -422,7 +449,37 @@ def api_bulk(body: BulkAction, admin: str = Depends(require_admin),
 
 @app.post("/api/users/auto-disable")
 def api_auto_disable(admin: str = Depends(require_admin), conn=Depends(get_db)):
-    return {"disabled": repo.auto_disable_expired(conn, actor=admin)}
+    # Apply periodic quota resets *before* the over-quota check, so a user whose
+    # monthly/weekly/daily allowance just rolled over is restored, not disabled.
+    reset = repo.apply_quota_resets(conn, actor=admin)
+    return {"reset": reset, "disabled": repo.auto_disable_expired(conn, actor=admin)}
+
+
+@app.post("/api/users/apply-resets")
+def api_apply_resets(admin: str = Depends(require_admin), conn=Depends(get_db)):
+    """Run only the periodic traffic-quota resets (FR-S1)."""
+    return {"reset": repo.apply_quota_resets(conn, actor=admin)}
+
+
+@app.get("/api/users/{name}/devices")
+def api_list_devices(name: str, admin: str = Depends(require_admin),
+                     conn=Depends(get_db)):
+    """List the devices seen for a user + their limit (FR-S2)."""
+    user = repo.get_user(conn, name)
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
+    return {"devices": repo.list_devices(conn, name),
+            "limit": int(user.get("device_limit") or 0)}
+
+
+@app.delete("/api/users/{name}/devices")
+def api_reset_devices(name: str, device_id: Optional[str] = None,
+                      admin: str = Depends(require_admin), conn=Depends(get_db)):
+    """Forget a user's devices (all, or one ?device_id=...) so they can re-pair."""
+    if not repo.get_user(conn, name):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
+    return {"removed": repo.reset_devices(conn, actor=admin, name=name,
+                                          device_id=device_id)}
 
 
 # --------------------------------------------------------------------------- #

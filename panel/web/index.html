@@ -301,6 +301,7 @@
     <div class="field"><label data-i18n="f.quota">حجم (GB — ۰ نامحدود)</label><input id="f-quota" type="number" min="0" value="0"></div>
     <div class="field"><label data-i18n="f.days">اعتبار (روز — ۰ دائمی)</label><input id="f-days" type="number" min="0" value="0"></div>
     <div class="field"><label data-i18n="f.iplimit">سقف IP همزمان</label><input id="f-iplimit" type="number" min="0" value="0"></div>
+    <div class="field"><label data-i18n="f.devlimit">سقف دستگاه (۰ نامحدود)</label><input id="f-devlimit" type="number" min="0" value="0"></div>
     <div class="field"><label data-i18n="f.speed">سقف سرعت (KB/s — ۰ نامحدود)</label><input id="f-speed" type="number" min="0" value="0"></div>
     <div class="field"><label data-i18n="f.routing">مسیریابی</label>
       <select id="f-routing">
@@ -316,6 +317,13 @@
         <option value="all" data-i18n="f.filter.all">همه (دامنه‌دار + بدون دامنه)</option>
         <option value="domain" data-i18n="f.filter.domain">فقط دامنه‌دار (TLS)</option>
         <option value="nodomain" data-i18n="f.filter.nodomain">فقط بدون دامنه (Reality/SS/Hy2/TUIC)</option>
+      </select></div>
+    <div class="field"><label data-i18n="f.reset">ریستِ دوره‌ای حجم</label>
+      <select id="f-reset">
+        <option value="none" data-i18n="f.reset.none">بدون ریست (سقف کل)</option>
+        <option value="daily" data-i18n="f.reset.daily">روزانه</option>
+        <option value="weekly" data-i18n="f.reset.weekly">هفتگی</option>
+        <option value="monthly" data-i18n="f.reset.monthly">ماهانه</option>
       </select></div>
     <div class="err" id="modal-err"></div>
     <div class="modal-actions">

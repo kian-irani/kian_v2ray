@@ -22,6 +22,38 @@ def test_wireguard_inbound_and_mux():
     assert protocols.mux_settings()["max_streams"] == 8
 
 
+def test_amneziawg_inbound():
+    awg = protocols.amneziawg_inbound(51821, "priv", [{"public_key": "p"}],
+                                      jc=5, jmin=30, jmax=80)
+    assert awg["type"] == "wireguard"        # WG-compatible base shape
+    assert awg["tag"] == "amneziawg-in"
+    o = awg["obfs"]
+    assert o["type"] == "amnezia" and o["jc"] == 5 and o["jmin"] == 30
+    assert (o["h1"], o["h2"], o["h3"], o["h4"]) == (1, 2, 3, 4)
+    # bad junk range and non-distinct headers are rejected
+    for bad in (lambda: protocols.amneziawg_inbound(1, "k", [], jmin=90, jmax=10),
+                lambda: protocols.amneziawg_inbound(1, "k", [], h1=1, h2=1)):
+        try:
+            bad(); raised = False
+        except ValueError:
+            raised = True
+        assert raised
+
+
+def test_fragment_profiles():
+    assert "aggressive" in protocols.fragment_profiles()
+    assert protocols.fragment_profile("off") is None
+    agg = protocols.fragment_profile("aggressive")
+    assert agg["length"] == "10-40" and agg["interval"] == "30-60"
+    # case-insensitive, and a typo raises rather than silently disabling
+    assert protocols.fragment_profile("DEFAULT")["packets"] == "tlshello"
+    try:
+        protocols.fragment_profile("nope"); raised = False
+    except ValueError:
+        raised = True
+    assert raised
+
+
 def test_phase10_companion_protocols():
     # ShadowTLS v3 (10.2)
     st = protocols.shadowtls_inbound(8443, "pw", "www.microsoft.com")
@@ -91,6 +123,22 @@ def test_to_clash_yaml_quotes_when_needed():
     assert "type: vless" in yaml
     assert '"NL ss"' in yaml          # name with space gets quoted
     assert '"p@ss word"' in yaml      # password with space gets quoted
+
+
+def test_converters_carry_transport_and_quic_tuning():
+    proxies = [
+        {"name": "ws", "type": "vless", "server": "1.1.1.1", "port": 443,
+         "uuid": "u", "tls": True, "network": "ws", "path": "/v"},
+        {"name": "hy", "type": "hysteria2", "server": "2.2.2.2", "port": 443,
+         "password": "p", "up_mbps": 50, "down_mbps": 100},
+    ]
+    sb = protocols.to_singbox(proxies)
+    ws = [o for o in sb["outbounds"] if o.get("tag") == "ws"][0]
+    assert ws["transport"] == {"type": "ws", "path": "/v"}
+    hy = [o for o in sb["outbounds"] if o.get("tag") == "hy"][0]
+    assert hy["up_mbps"] == 50 and hy["down_mbps"] == 100
+    clash = protocols.to_clash(proxies)
+    assert "network: ws" in clash and 'ws-opts: {path: "/v"}' in clash
 
 
 def test_detect_client():

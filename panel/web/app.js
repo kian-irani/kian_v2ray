@@ -93,6 +93,11 @@
     "f.filter.all": ["همه (دامنه‌دار + بدون دامنه)", "All (domain + no-domain)"],
     "f.filter.domain": ["فقط دامنه‌دار (TLS)", "Domain only (TLS)"],
     "f.filter.nodomain": ["فقط بدون دامنه (Reality/SS/Hy2/TUIC)", "No-domain only (Reality/SS/Hy2/TUIC)"],
+    "f.devlimit": ["سقف دستگاه (۰ نامحدود)", "Device limit (0 = unlimited)"],
+    "f.reset": ["ریستِ دوره‌ای حجم", "Periodic traffic reset"],
+    "f.reset.none": ["بدون ریست (سقف کل)", "No reset (lifetime cap)"],
+    "f.reset.daily": ["روزانه", "Daily"], "f.reset.weekly": ["هفتگی", "Weekly"],
+    "f.reset.monthly": ["ماهانه", "Monthly"],
     "f.routing.default": ["پیش‌فرض سرور", "Server default"], "f.routing.global": ["سراسری", "Global"],
     "f.routing.lan": ["عبور از LAN", "Bypass LAN"], "f.routing.iran": ["عبور از ایران", "Bypass Iran"],
     "f.routing.both": ["LAN + ایران", "LAN + Iran"],
@@ -741,10 +746,12 @@
     $("#f-quota").value = u ? Math.round(u.quota_bytes / 1073741824) : 0;
     $("#f-days").value = 0;
     $("#f-iplimit").value = u ? u.ip_limit : 0;
+    if ($("#f-devlimit")) $("#f-devlimit").value = u ? (u.device_limit || 0) : 0;
     $("#f-speed").value = u ? u.speed_kbps : 0;
     $("#f-routing").value = (u && u.routing) ? u.routing : "";
     $("#f-dns").value = (u && u.dns) ? u.dns : "";
     if ($("#f-filter")) $("#f-filter").value = (u && u.sub_filter) ? u.sub_filter : "all";
+    if ($("#f-reset")) $("#f-reset").value = (u && u.reset_strategy) ? u.reset_strategy : "none";
     $("#modal").classList.remove("hidden");
   }
   $("#new-user").addEventListener("click", function () { openModal(null); });
@@ -759,6 +766,7 @@
     var payload = {
       quota_bytes: Math.max(0, +$("#f-quota").value) * 1073741824,
       ip_limit: Math.max(0, +$("#f-iplimit").value),
+      device_limit: Math.max(0, +($("#f-devlimit") ? $("#f-devlimit").value : 0)),
       speed_kbps: Math.max(0, +$("#f-speed").value)
     };
     var routing = $("#f-routing").value;
@@ -769,6 +777,8 @@
     if (days > 0) payload.expires_at = Math.floor(Date.now() / 1000) + days * 86400;
     var filt = $("#f-filter") ? $("#f-filter").value : "all";
     if (filt) payload.sub_filter = filt;   // per-user config selection
+    var reset = $("#f-reset") ? $("#f-reset").value : "none";
+    payload.reset_strategy = reset;        // FR-S1 periodic quota reset
     try {
       if (edit) {
         await api("/api/users/" + encodeURIComponent(edit), { method: "PATCH", body: JSON.stringify(payload) });

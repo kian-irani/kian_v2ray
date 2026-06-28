@@ -28,6 +28,7 @@ class RefreshRequest(BaseModel):
 
 
 _ROUTING = r"^(global|bypass-lan|bypass-iran|bypass-both)$"
+_RESET = r"^(none|daily|weekly|monthly)$"   # periodic quota reset (FR-S1)
 
 
 class UserCreate(BaseModel):
@@ -40,6 +41,8 @@ class UserCreate(BaseModel):
     hwid: Optional[str] = None
     routing: Optional[str] = Field(None, pattern=_ROUTING)  # per-user routing (11.2)
     dns: Optional[str] = None                               # per-user DNS (11.2)
+    device_limit: int = Field(0, ge=0)                      # FR-S2 (0 = unlimited)
+    reset_strategy: Optional[str] = Field(None, pattern=_RESET)  # FR-S1
     # per-user config selection: which kinds this user's subscription includes.
     sub_filter: str = Field("all", pattern=r"^(all|domain|nodomain)$")
 
@@ -54,6 +57,8 @@ class UserUpdate(BaseModel):
     enabled: Optional[bool] = None
     routing: Optional[str] = Field(None, pattern=_ROUTING)
     dns: Optional[str] = None
+    device_limit: Optional[int] = Field(None, ge=0)
+    reset_strategy: Optional[str] = Field(None, pattern=_RESET)
     sub_filter: Optional[str] = Field(None, pattern=r"^(all|domain|nodomain)$")
 
 
@@ -71,6 +76,9 @@ class UserOut(BaseModel):
     created_at: int
     routing: Optional[str] = None
     dns: Optional[str] = None
+    device_limit: int = 0
+    reset_strategy: Optional[str] = None
+    last_reset: Optional[int] = None
     sub_token: Optional[str] = None
     sub_filter: str = "all"   # per-user config selection (from installer users.json)
 
