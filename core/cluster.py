@@ -42,7 +42,11 @@ def failover_order(nodes: Iterable[dict], *,
     nodes = list(nodes)
     alive = sorted(healthy_nodes(nodes, now=now),
                    key=lambda n: (n.get("load", 0.0), n["name"]))
-    dead = [n for n in nodes if n not in alive]
+    # Compare by the unique "name" key, not by whole-dict value: two distinct
+    # nodes with identical telemetry would otherwise be treated as equal and
+    # one of them silently dropped from the failover list. (also O(n) vs O(n^2))
+    alive_names = {n["name"] for n in alive}
+    dead = [n for n in nodes if n["name"] not in alive_names]
     return [n["name"] for n in alive] + [n["name"] for n in dead]
 
 
