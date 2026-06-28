@@ -100,7 +100,14 @@
     "enable": ["فعال", "On"], "disable": ["غیرفعال", "Off"],
     "del.confirm": ["این کاربر حذف شود؟", "Delete this user?"],
     "err.login": ["نام کاربری یا رمز اشتباه است", "Wrong username or password"],
-    "err.2fa": ["کد ۲FA اشتباه است", "Invalid 2FA code"]
+    "err.2fa": ["کد ۲FA اشتباه است", "Invalid 2FA code"],
+    "state.loading": ["در حال بارگذاری…", "Loading…"],
+    "state.retry": ["تلاش دوباره", "Retry"],
+    "state.err": ["بارگذاری ناموفق بود — اتصال را بررسی کنید.", "Couldn't load — check your connection."],
+    "empty.users": ["هنوز کاربری نیست. «کاربر جدید» را بزنید تا اولین کاربر ساخته شود.",
+      "No users yet. Click “New user” to create the first one."],
+    "empty.audit": ["هیچ رویدادی ثبت نشده است.", "No audit events recorded yet."],
+    "empty.nodes": ["سروری اضافه نشده. یک نودِ خروجی اضافه کنید.", "No nodes added. Add an outbound node."]
   };
   function t(k) { return (T[k] || [k, k])[state.lang === "fa" ? 0 : 1]; }
   function applyLang() {
@@ -235,6 +242,20 @@
       $("#sys-mem").textContent = (s.mem_used_pct != null ? s.mem_used_pct + "%" : "—");
     } catch (e) {}
   }
+  /* Consistent full-width state row (loading / empty / error) for tables.
+   * kind: "loading" | "empty" | "error". retry: optional view name to reload. */
+  function stateRow(colspan, kind, msg, retry) {
+    var icon = {
+      loading: "<div class=\"spin\" role=\"status\" aria-label=\"loading\"></div>",
+      empty: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M3 7h18M3 12h18M3 17h10\"/></svg>",
+      error: "<svg class=\"icon\" viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8v5M12 16h.01\"/></svg>"
+    }[kind] || "";
+    var btn = retry
+      ? "<button class=\"btn sm act-retry\" data-retry=\"" + esc(retry) + "\">" + t("state.retry") + "</button>"
+      : "";
+    return "<tr><td colspan=\"" + colspan + "\"><div class=\"state " + kind + "\">" +
+      icon + "<div class=\"state-msg\">" + esc(msg) + "</div>" + btn + "</div></td></tr>";
+  }
   function usageBar(u) {
     var pct = u.quota_bytes > 0 ? Math.min(100, u.used_bytes / u.quota_bytes * 100) : 0;
     var q = u.quota_bytes > 0 ? fmtGB(u.quota_bytes) + " GB" : "∞";
@@ -243,13 +264,17 @@
   }
   async function refreshUsers() {
     var q = $("#search").value.trim();
+    var body = $("#users-body");
     try {
       state.users = await api("/api/users?limit=500" + (q ? "&q=" + encodeURIComponent(q) : ""));
-      if (!state.users) { state.users = []; return; }
-    } catch (e) { return; }
-    var body = $("#users-body");
+      if (!state.users) state.users = [];
+    } catch (e) {
+      state.users = [];
+      body.innerHTML = stateRow(7, "error", t("state.err"), "users");
+      return;
+    }
     if (!state.users.length) {
-      body.innerHTML = "<tr><td colspan=\"7\" class=\"muted\" style=\"text-align:center;padding:24px\">—</td></tr>";
+      body.innerHTML = stateRow(7, "empty", q ? "—" : t("empty.users"), null);
       return;
     }
     body.innerHTML = state.users.map(function (u) {
@@ -273,21 +298,23 @@
     }).join("");
   }
   async function refreshAudit() {
+    var body = $("#audit-body");
     try {
       var d = await api("/api/audit?limit=100");
-      if (!d) return;
-      $("#audit-body").innerHTML = (d.entries || []).map(function (a) {
+      if (!d) { body.innerHTML = stateRow(5, "error", t("state.err"), "audit"); return; }
+      body.innerHTML = (d.entries || []).map(function (a) {
         var dt = new Date(a.ts * 1000).toISOString().replace("T", " ").slice(0, 19);
         return "<tr><td class=\"mono muted\">" + dt + "</td><td>" + esc(a.actor) + "</td><td><b>" + esc(a.action) + "</b></td><td>" + esc(a.target || "—") + "</td><td class=\"hide mono muted\">" + esc(a.ip || "—") + "</td></tr>";
-      }).join("") || "<tr><td colspan=\"5\" class=\"muted\" style=\"text-align:center;padding:20px\">—</td></tr>";
-    } catch (e) {}
+      }).join("") || stateRow(5, "empty", t("empty.audit"), null);
+    } catch (e) { body.innerHTML = stateRow(5, "error", t("state.err"), "audit"); }
   }
   async function refreshNodes() {
+    var body = $("#nodes-body");
     try {
       var d = await api("/api/nodes");
-      if (!d) return;
+      if (!d) { body.innerHTML = stateRow(6, "error", t("state.err"), "nodes"); return; }
       var nodes = d.nodes || [];
-      $("#nodes-body").innerHTML = nodes.length ? nodes.map(function (n) {
+      body.innerHTML = nodes.length ? nodes.map(function (n) {
         return "<tr data-name=\"" + esc(n.name) + "\">" +
           "<td><b>" + esc(n.name) + "</b></td>" +
           "<td class=\"hide mono muted\">" + esc(n.address) + ":" + esc(n.api_port) + "</td>" +
@@ -296,7 +323,7 @@
           "<td><span class=\"tag " + (n.alive ? "on" : "off") + "\">" + (n.alive ? t("nd.alive") : t("nd.down")) + "</span></td>" +
           "<td><button class=\"btn sm danger act-ndel\" aria-label=\"delete\"><svg class=\"icon\" viewBox=\"0 0 24 24\"><path d=\"M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6\"/></svg></button></td>" +
           "</tr>";
-      }).join("") : "<tr><td colspan=\"6\" class=\"muted\" style=\"text-align:center;padding:24px\">—</td></tr>";
+      }).join("") : stateRow(6, "empty", t("empty.nodes"), null);
       var r = await api("/api/route");
       if (!r) return;
       var alerts = (r.alerts || []).map(function (a) { return a.name; });
@@ -304,7 +331,7 @@
         "<b>" + esc(r.chosen || "—") + "</b>" +
         (r.failover && r.failover.length ? " · failover: " + r.failover.map(esc).join(" → ") : "") +
         (alerts.length ? " · ⚠ bandwidth: " + alerts.map(esc).join(", ") : "");
-    } catch (e) {}
+    } catch (e) { body.innerHTML = stateRow(6, "error", t("state.err"), "nodes"); }
   }
 
   var _2faMode = "setup";
@@ -599,6 +626,20 @@
       if (state.view === "xray") loadXray();
       if (state.view === "settings") refreshSettings();
     });
+  });
+
+  // Retry buttons inside error state rows re-run the matching loader.
+  var _retry = { users: refreshUsers, audit: refreshAudit, nodes: refreshNodes };
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest(".act-retry");
+    if (!b) return;
+    var fn = _retry[b.getAttribute("data-retry")];
+    if (fn) {
+      var td = b.closest("td"), host = b.closest("tbody");
+      var cs = td ? (td.getAttribute("colspan") || 6) : 6;
+      if (host) host.innerHTML = stateRow(cs, "loading", t("state.loading"), null);
+      fn();
+    }
   });
 
   // ---- Simple / Advanced mode -------------------------------------------- //
