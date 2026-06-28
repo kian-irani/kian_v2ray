@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 
 from core import db, migrate
-from panel import repo, security
+from panel import provision, repo, security
 
 
 def _tmp_db(tmp_path) -> str:
@@ -113,3 +113,64 @@ def test_repo_bulk_and_auto_disable(tmp_path):
                                     names=["a"])
         assert affected == 1
         assert repo.get_user(conn, "a")["enabled"] == 0
+
+
+# ---------- provision: orphan-safe user creation (BUG-3) ----------
+
+def test_provision_returns_db_result_on_success():
+    calls = {"removed": False}
+    out = provision.create_user_orphan_safe(
+        db_create=lambda: {"name": "ok"},
+        server_remove=lambda: calls.__setitem__("removed", True))
+    assert out == {"name": "ok"}
+    assert calls["removed"] is False  # no rollback on success
+
+
+def test_provision_rolls_back_server_when_db_insert_fails():
+    # BUG-3 regression: server already has the client but the DB write blows up
+    # (e.g. UNIQUE race / disk error) -> the orphan must be removed from the
+    # server, and the original error must still propagate.
+    calls = {"removed": False}
+
+    def boom():
+        raise RuntimeError("UNIQUE constraint failed")
+
+    try:
+        provision.create_user_orphan_safe(
+            db_create=boom,
+            server_remove=lambda: calls.__setitem__("removed", True))
+        raised = False
+    except RuntimeError:
+        raised = True
+    assert raised
+    assert calls["removed"] is True  # compensating removal ran
+
+
+def test_provision_no_rollback_when_nothing_provisioned():
+    # CLI unavailable -> server_remove is None -> nothing to roll back.
+    def boom():
+        raise RuntimeError("db down")
+
+    try:
+        provision.create_user_orphan_safe(db_create=boom, server_remove=None)
+        raised = False
+    except RuntimeError:
+        raised = True
+    assert raised
+
+
+def test_provision_failed_rollback_does_not_mask_original_error():
+    # A rollback that itself fails must be swallowed (logged) so the real DB
+    # error still surfaces to the caller.
+    def boom():
+        raise ValueError("real failure")
+
+    def bad_remove():
+        raise RuntimeError("server unreachable")
+
+    try:
+        provision.create_user_orphan_safe(db_create=boom, server_remove=bad_remove)
+        err = None
+    except Exception as e:  # noqa: BLE001
+        err = e
+    assert isinstance(err, ValueError) and str(err) == "real failure"

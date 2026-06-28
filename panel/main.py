@@ -46,7 +46,7 @@ from core import db as core_db
 from core import migrate
 from . import bridge
 from . import metrics as panel_metrics
-from . import repo, security
+from . import provision, repo, security
 from .schemas import (BulkAction, LoginRequest, NodeCreate, NodeHeartbeat,
                       PasswordChange, RefreshRequest, StatsOut, TokenPair,
                       TotpEnable, UserCreate, UserOut, UserUpdate)
@@ -316,13 +316,20 @@ def api_create_user(body: UserCreate, admin: str = Depends(require_admin),
     # Create the user on the REAL server first — this adds the Xray client AND
     # generates the subscription/configs. Without it the user would be a DB-only
     # ghost with no configs (the 'add user but no config' bug).
+    server_remove = None
     if bridge.cli_available():
         gb = int((body.quota_bytes or 0) // (1024 ** 3))
         code, out = bridge.add_user(body.name, gb, _days_until(body.expires_at), flt)
         if code != 0:
             raise HTTPException(status.HTTP_400_BAD_REQUEST,
                                 f"server add failed: {out.strip()[:300]}")
-    return repo.create_user(conn, actor=admin, **data)
+        server_remove = lambda: bridge.remove_user(body.name)  # noqa: E731
+    # If the DB insert fails after the server already has the client, the user
+    # would be an orphan: connectable but invisible to the panel. The helper
+    # compensates by removing it from the server so the two stay consistent.
+    return provision.create_user_orphan_safe(
+        db_create=lambda: repo.create_user(conn, actor=admin, **data),
+        server_remove=server_remove)
 
 
 @app.get("/api/users/{name}", response_model=UserOut)
