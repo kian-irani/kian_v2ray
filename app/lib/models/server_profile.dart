@@ -69,10 +69,18 @@ class ServerProfile {
 /// Parse a subscription payload (base64 of newline-separated links) into a list.
 List<ServerProfile> parseSubscription(String body) {
   String decoded = body.trim();
-  try {
-    decoded = utf8.decode(base64.decode(_pad(decoded)));
-  } catch (_) {
-    // already plain text
+  // Only attempt base64 decoding when the body is *not* already a plaintext
+  // list of links. Some raw payloads (e.g. a single `vless://…` line) happen
+  // to be valid base64 by length/alphabet and would decode without throwing
+  // into garbage that contains no `://`, yielding zero servers. Decode only
+  // when the input has no `://` and the decoded result actually does.
+  if (!decoded.contains('://')) {
+    try {
+      final candidate = utf8.decode(base64.decode(_pad(decoded)));
+      if (candidate.contains('://')) decoded = candidate;
+    } catch (_) {
+      // not base64 -> treat as plain text
+    }
   }
   return decoded
       .split(RegExp(r'\r?\n'))

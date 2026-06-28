@@ -120,6 +120,19 @@ def verify_totp(secret_b32: str, code: str, *, for_time: Optional[int] = None,
     return False
 
 
+def parse_ip_allowlist(raw: str) -> frozenset[str]:
+    """Parse a comma-separated IP allowlist env value into a set of IPs."""
+    return frozenset(ip.strip() for ip in (raw or "").split(",") if ip.strip())
+
+
+def ip_allowed(ip: Optional[str], allowlist: "frozenset[str] | set[str]") -> bool:
+    """Allowlist gate. An empty allowlist means 'no restriction' (allow all);
+    otherwise *ip* must be an exact member."""
+    if not allowlist:
+        return True
+    return ip is not None and ip in allowlist
+
+
 def _pad_b32(s: str) -> str:
     return s + "=" * (-len(s) % 8)
 

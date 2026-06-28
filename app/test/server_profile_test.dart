@@ -34,5 +34,23 @@ void main() {
       expect(list.length, 1);
       expect(list[0].port, 443);
     });
+
+    test('keeps plaintext when body already contains a scheme', () {
+      // BUG-2 regression: a body that already looks like a link list must be
+      // treated as plaintext and never base64-decoded into garbage.
+      final raw = 'vless://u@1.1.1.1:443#A\ntrojan://p@2.2.2.2:443#B';
+      final list = parseSubscription(raw);
+      expect(list.length, 2);
+      expect(list[0].host, '1.1.1.1');
+      expect(list[1].protocol, 'trojan');
+    });
+
+    test('does not mangle a single base64-shaped plaintext line', () {
+      // A lone link without newline: even when its length/alphabet flirts with
+      // base64, the presence of `://` keeps it as plaintext (one server).
+      final list = parseSubscription('  ss://YWVzOnBhc3M@3.3.3.3:8388#C  ');
+      expect(list.length, 1);
+      expect(list[0].protocol, 'ss');
+    });
   });
 }

@@ -46,14 +46,19 @@ from core import db as core_db
 from core import migrate
 from . import bridge
 from . import metrics as panel_metrics
-from . import repo, security
+from . import provision, repo, security
 from .schemas import (BulkAction, LoginRequest, NodeCreate, NodeHeartbeat,
                       PasswordChange, RefreshRequest, StatsOut, TokenPair,
                       TotpEnable, UserCreate, UserOut, UserUpdate)
 
 # Optional admin IP allowlist (2.9). Empty = allow all.
-_ADMIN_IPS = {ip.strip() for ip in
-              os.environ.get("KIAN_ADMIN_IP_WHITELIST", "").split(",") if ip.strip()}
+_ADMIN_IPS = security.parse_ip_allowlist(
+    os.environ.get("KIAN_ADMIN_IP_WHITELIST", ""))
+# Optional, independent allowlist for the unauthenticated /metrics scrape
+# endpoint (BUG-6). Empty = allow all (unchanged default); set to e.g. the
+# Prometheus host(s) when the panel is internet-facing.
+_METRICS_IPS = security.parse_ip_allowlist(
+    os.environ.get("KIAN_METRICS_IP_WHITELIST", ""))
 
 ACCESS_TTL = 900          # 15 min
 REFRESH_TTL = 7 * 86400   # 7 days
@@ -200,10 +205,8 @@ def _issue_pair(secret: str, sub: str) -> TokenPair:
 
 
 def _check_ip_allowlist(request: Request) -> None:
-    if not _ADMIN_IPS:
-        return
     ip = request.client.host if request.client else None
-    if ip not in _ADMIN_IPS:
+    if not security.ip_allowed(ip, _ADMIN_IPS):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "ip not allowed")
 
 
@@ -316,13 +319,20 @@ def api_create_user(body: UserCreate, admin: str = Depends(require_admin),
     # Create the user on the REAL server first — this adds the Xray client AND
     # generates the subscription/configs. Without it the user would be a DB-only
     # ghost with no configs (the 'add user but no config' bug).
+    server_remove = None
     if bridge.cli_available():
         gb = int((body.quota_bytes or 0) // (1024 ** 3))
         code, out = bridge.add_user(body.name, gb, _days_until(body.expires_at), flt)
         if code != 0:
             raise HTTPException(status.HTTP_400_BAD_REQUEST,
                                 f"server add failed: {out.strip()[:300]}")
-    return repo.create_user(conn, actor=admin, **data)
+        server_remove = lambda: bridge.remove_user(body.name)  # noqa: E731
+    # If the DB insert fails after the server already has the client, the user
+    # would be an orphan: connectable but invisible to the panel. The helper
+    # compensates by removing it from the server so the two stay consistent.
+    return provision.create_user_orphan_safe(
+        db_create=lambda: repo.create_user(conn, actor=admin, **data),
+        server_remove=server_remove)
 
 
 @app.get("/api/users/{name}", response_model=UserOut)
@@ -453,9 +463,13 @@ def api_analytics_preview(admin: str = Depends(require_admin), conn=Depends(get_
 
 
 @app.get("/metrics")
-def metrics(conn=Depends(get_db)):
+def metrics(request: Request, conn=Depends(get_db)):
     """Prometheus scrape endpoint (job 'kian-panel'). Unauthenticated by
-    convention; restrict at the network layer / behind the panel's TLS."""
+    convention; restrict at the network layer / behind the panel's TLS, or
+    set KIAN_METRICS_IP_WHITELIST to limit scrapers when internet-facing."""
+    ip = request.client.host if request.client else None
+    if not security.ip_allowed(ip, _METRICS_IPS):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "ip not allowed")
     from fastapi.responses import PlainTextResponse
     s = repo.stats(conn)
     nodes = repo.list_nodes(conn)

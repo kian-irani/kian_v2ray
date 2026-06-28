@@ -49,6 +49,24 @@ def test_failover_order_alive_first():
     assert order[-1] == "us"   # stale node last
 
 
+def test_failover_order_dedups_by_unique_name():
+    # BUG-1 regression: the "dead" tail must be computed by the unique `name`
+    # key, not by whole-dict value equality. When the same node name appears
+    # both fresh (alive) and stale (dead) -- e.g. a re-registered node -- the
+    # old value-based comparison let the stale copy leak into the failover
+    # tail, listing the name twice. It must now appear exactly once.
+    common = {"name": "x", "enabled": 1, "healthy": True, "load": 0.5}
+    nodes = [dict(common, last_seen=NOW - 10),      # fresh -> alive
+             dict(common, last_seen=NOW - 9999)]    # stale -> dead
+    order = cluster.failover_order(nodes, now=NOW)
+    assert order == ["x"]
+
+    # And distinct nodes with byte-identical telemetry are all preserved.
+    same = {"enabled": 1, "healthy": True, "load": 0.5, "last_seen": NOW - 9999}
+    two = [dict(same, name="a"), dict(same, name="b")]
+    assert sorted(cluster.failover_order(two, now=NOW)) == ["a", "b"]
+
+
 def test_geo_routing_prefers_region():
     # IR maps to "me"; no me node alive -> falls back to least loaded alive
     assert cluster.route_by_geo("IR", _nodes(), now=NOW)["name"] == "nl"
