@@ -98,6 +98,22 @@ MIGRATIONS: list[str] = [
     ALTER TABLE users ADD COLUMN reset_strategy TEXT;
     ALTER TABLE users ADD COLUMN last_reset INTEGER;
     """,
+    # 0009 — real device (HWID) enforcement (FR-S2). device_limit caps the
+    # number of distinct devices (0 = unlimited); user_devices is the registry
+    # of seen devices per user, so the panel can list and reset them.
+    """
+    ALTER TABLE users ADD COLUMN device_limit INTEGER NOT NULL DEFAULT 0;
+    CREATE TABLE IF NOT EXISTS user_devices (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_name   TEXT    NOT NULL,
+        device_id   TEXT    NOT NULL,
+        label       TEXT,
+        first_seen  INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+        last_seen   INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+        UNIQUE(user_name, device_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_devices_name ON user_devices(user_name);
+    """,
 ]
 
 

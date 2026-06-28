@@ -103,3 +103,41 @@ def test_create_user_normalizes_reset_strategy(tmp_path):
         assert repo.get_user(conn, "b")["reset_strategy"] is None
         repo.create_user(conn, actor="root", name="c", reset_strategy="bogus")
         assert repo.get_user(conn, "c")["reset_strategy"] is None
+
+
+# ---------- FR-S2 device enforcement ----------
+
+def test_device_enforcement_and_reset(tmp_path):
+    path = os.path.join(str(tmp_path), "kian.db")
+    migrate.migrate_path(path)
+    with db.session(path) as conn:
+        repo.create_user(conn, actor="root", name="d", device_limit=2)
+        r1 = repo.register_device(conn, name="d", device_id="phoneA")
+        r2 = repo.register_device(conn, name="d", device_id="phoneB")
+        assert r1["allowed"] and r2["allowed"] and r2["count"] == 2
+        # a known device is always allowed and doesn't grow the count
+        again = repo.register_device(conn, name="d", device_id="phoneA")
+        assert again["allowed"] and again["known"] and again["count"] == 2
+        # a third *new* device is over the cap -> denied and not stored
+        r3 = repo.register_device(conn, name="d", device_id="tablet")
+        assert not r3["allowed"]
+        assert len(repo.list_devices(conn, "d")) == 2
+        # resetting one frees a slot
+        assert repo.reset_devices(conn, actor="root", name="d",
+                                  device_id="phoneB") == 1
+        assert repo.register_device(conn, name="d", device_id="tablet")["allowed"]
+        # reset-all clears the registry
+        assert repo.reset_devices(conn, actor="root", name="d") == 2
+        assert repo.list_devices(conn, "d") == []
+
+
+def test_device_unlimited_when_limit_zero(tmp_path):
+    path = os.path.join(str(tmp_path), "kian.db")
+    migrate.migrate_path(path)
+    with db.session(path) as conn:
+        repo.create_user(conn, actor="root", name="u")  # device_limit defaults 0
+        for i in range(5):
+            assert repo.register_device(conn, name="u", device_id=f"dev{i}")["allowed"]
+        assert len(repo.list_devices(conn, "u")) == 5
+        # unknown user -> denied, no crash
+        assert not repo.register_device(conn, name="ghost", device_id="x")["allowed"]

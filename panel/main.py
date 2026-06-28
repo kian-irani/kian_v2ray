@@ -461,6 +461,27 @@ def api_apply_resets(admin: str = Depends(require_admin), conn=Depends(get_db)):
     return {"reset": repo.apply_quota_resets(conn, actor=admin)}
 
 
+@app.get("/api/users/{name}/devices")
+def api_list_devices(name: str, admin: str = Depends(require_admin),
+                     conn=Depends(get_db)):
+    """List the devices seen for a user + their limit (FR-S2)."""
+    user = repo.get_user(conn, name)
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
+    return {"devices": repo.list_devices(conn, name),
+            "limit": int(user.get("device_limit") or 0)}
+
+
+@app.delete("/api/users/{name}/devices")
+def api_reset_devices(name: str, device_id: Optional[str] = None,
+                      admin: str = Depends(require_admin), conn=Depends(get_db)):
+    """Forget a user's devices (all, or one ?device_id=...) so they can re-pair."""
+    if not repo.get_user(conn, name):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no such user")
+    return {"removed": repo.reset_devices(conn, actor=admin, name=name,
+                                          device_id=device_id)}
+
+
 # --------------------------------------------------------------------------- #
 # stats / export / key rotation
 # --------------------------------------------------------------------------- #

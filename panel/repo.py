@@ -40,7 +40,8 @@ def create_user(conn: sqlite3.Connection, *, actor: str, name: str,
                 ip_limit: int = 0, speed_kbps: int = 0,
                 hwid: Optional[str] = None, routing: Optional[str] = None,
                 dns: Optional[str] = None,
-                reset_strategy: Optional[str] = None) -> dict[str, Any]:
+                reset_strategy: Optional[str] = None,
+                device_limit: int = 0) -> dict[str, Any]:
     import secrets as _sec
     user_uuid = str(_uuid.uuid4())
     sub_token = _sec.token_urlsafe(16)
@@ -50,10 +51,10 @@ def create_user(conn: sqlite3.Connection, *, actor: str, name: str,
     reset_strategy = rs if rs in quota.VALID_STRATEGIES else None
     conn.execute(
         "INSERT INTO users (name, uuid, quota_bytes, expires_at, ip_limit, "
-        "speed_kbps, hwid, routing, dns, sub_token, reset_strategy) VALUES "
-        "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "speed_kbps, hwid, routing, dns, sub_token, reset_strategy, "
+        "device_limit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (name, user_uuid, quota_bytes, expires_at, ip_limit, speed_kbps, hwid,
-         routing, dns, sub_token, reset_strategy),
+         routing, dns, sub_token, reset_strategy, int(device_limit or 0)),
     )
     audit.record(conn, actor=actor, action="user.add", target=name,
                  detail=f"quota={quota_bytes} ip_limit={ip_limit}")
@@ -64,7 +65,7 @@ def update_user(conn: sqlite3.Connection, *, actor: str, name: str,
                 **fields: Any) -> Optional[dict[str, Any]]:
     allowed = {"quota_bytes", "used_bytes", "expires_at", "ip_limit",
                "speed_kbps", "hwid", "enabled", "routing", "dns",
-               "reset_strategy"}
+               "reset_strategy", "device_limit"}
     sets = {k: v for k, v in fields.items() if k in allowed and v is not None}
     if not sets:
         return get_user(conn, name)
@@ -143,6 +144,63 @@ def apply_quota_resets(conn: sqlite3.Connection, *, actor: str = "system",
                      target=r["name"], detail=str(r["reset_strategy"]))
         n += 1
     return n
+
+
+def list_devices(conn: sqlite3.Connection, name: str) -> list[dict[str, Any]]:
+    """Devices seen for a user, most-recent first."""
+    return [dict(r) for r in conn.execute(
+        "SELECT device_id, label, first_seen, last_seen FROM user_devices "
+        "WHERE user_name=? ORDER BY last_seen DESC", (name,)).fetchall()]
+
+
+def register_device(conn: sqlite3.Connection, *, name: str, device_id: str,
+                    label: Optional[str] = None,
+                    now: Optional[int] = None) -> dict[str, Any]:
+    """Record that *device_id* connected as user *name*, enforcing the user's
+    device_limit (FR-S2). A known device is always allowed (last_seen bumped);
+    a new device is allowed only if under the limit (0 = unlimited). Returns
+    ``{"allowed": bool, "known": bool, "count": int, "limit": int}``.
+
+    The DB write is the source of truth for the device list; actual blocking
+    happens where connections are observed (node side), which calls this.
+    """
+    ts = int(now if now is not None else time.time())
+    u = get_user(conn, name)
+    if u is None:
+        return {"allowed": False, "known": False, "count": 0, "limit": 0}
+    limit = int(u.get("device_limit") or 0)
+    existing = conn.execute(
+        "SELECT id FROM user_devices WHERE user_name=? AND device_id=?",
+        (name, device_id)).fetchone()
+    count = conn.execute(
+        "SELECT COUNT(*) FROM user_devices WHERE user_name=?", (name,)
+    ).fetchone()[0]
+    if existing:
+        conn.execute("UPDATE user_devices SET last_seen=? WHERE id=?",
+                     (ts, existing["id"]))
+        return {"allowed": True, "known": True, "count": count, "limit": limit}
+    if limit and count >= limit:
+        # over the cap: do not register the new device, deny it
+        return {"allowed": False, "known": False, "count": count, "limit": limit}
+    conn.execute(
+        "INSERT INTO user_devices (user_name, device_id, label, first_seen, "
+        "last_seen) VALUES (?, ?, ?, ?, ?)", (name, device_id, label, ts, ts))
+    return {"allowed": True, "known": False, "count": count + 1, "limit": limit}
+
+
+def reset_devices(conn: sqlite3.Connection, *, actor: str, name: str,
+                  device_id: Optional[str] = None) -> int:
+    """Forget a user's devices (all, or one *device_id*). Returns the count
+    removed. Frees up slots so the user can re-pair on a new phone."""
+    if device_id:
+        cur = conn.execute(
+            "DELETE FROM user_devices WHERE user_name=? AND device_id=?",
+            (name, device_id))
+    else:
+        cur = conn.execute("DELETE FROM user_devices WHERE user_name=?", (name,))
+    audit.record(conn, actor=actor, action="user.device_reset", target=name,
+                 detail=device_id or "all")
+    return cur.rowcount
 
 
 def stats(conn: sqlite3.Connection) -> dict[str, Any]:
