@@ -36,10 +36,17 @@ jobs:
           mkdir -p /tmp/vpn
           cp android/app/src/main/AndroidManifest.xml /tmp/vpn/
           cp -r android/app/src/main/kotlin /tmp/vpn/kotlin
+          # Preserve custom res resources the manifest references (e.g.
+          # res/xml/network_security_config.xml); flutter create won't recreate them.
+          [ -d android/app/src/main/res/xml ] && cp -r android/app/src/main/res/xml /tmp/vpn/res-xml || true
           rm -rf android
           flutter create --org com.kianirani --project-name kv2m --platforms=android .
           cp /tmp/vpn/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           cp -r /tmp/vpn/kotlin/com android/app/src/main/kotlin/
+          if [ -d /tmp/vpn/res-xml ]; then
+            mkdir -p android/app/src/main/res/xml
+            cp -r /tmp/vpn/res-xml/. android/app/src/main/res/xml/
+          fi
           props=android/gradle/wrapper/gradle-wrapper.properties
           sed -i -E 's#gradle-[0-9.]+-(all|bin)\.zip#gradle-8.7-all.zip#' "$props"
 
