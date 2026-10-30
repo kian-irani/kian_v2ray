@@ -5,5 +5,5 @@
 # نسخه‌های Xray: https://github.com/XTLS/Xray-core/releases
 
 SCRIPT_VERSION=4.7.0
-XRAY_VERSION=26.5.9
+XRAY_VERSION=26.10.29
 SINGBOX_VERSION=1.12.0
